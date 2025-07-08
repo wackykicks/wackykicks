@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wackykicks.in</title>
+    <link rel="stylesheet" href="assets/CSS/styles.css">
+    <script defer src="script.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="logo">Wackykicks.in</div>
+
+    <ul class="nav-links">
+        <li><a href="#">Home</a></li>
+        <li><a href="#product-grid">Products</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i></a></li>
+        <li><a href="https://www.instagram.com/wackykicks.in/" target="_blank"><i class="fab fa-instagram"></i></a></li>
+    </ul>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search products...">
+        <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
+    </div>
+
+    <div class="hamburger">
+        <i class="fas fa-bars"></i>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Step Up Your Sneaker Game</h1>
+        <p>Discover premium sneakers at the best prices. Fresh drops, unbeatable styles, and free delivery in Kerala.</p>
+        <a href="#product-grid" class="hero-btn">Shop Now</a>
+    </div>
+</section>
+
+<!-- Product Grid Section -->
+<section class="product-grid-section" id="product-grid">
+    <h2>Latest Sneakers</h2>
+    <div class="product-grid" id="productList">
+        <!-- Products will be dynamically injected here -->
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-logo">
+            <h2>WackyKicks</h2>
+            <p>Premium Sneakers, Unique Style.</p>
+        </div>
+
+        <div class="footer-links">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#product-grid">Products</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-social">
+            <h4>Connect</h4>
+            <a href="https://wa.me/918138999550" target="_blank">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <a href="https://www.instagram.com/wackykicks.in/" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>&copy; <span id="year"></span> WackyKicks. All rights reserved.</p>
+    </div>
+</footer>
+
+
+<!-- Firebase Scripts (add your Firebase config in JS) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="assets/JS/products.js"></script>
+<script src="assets/js/scripts.js"></script>
+</body>
+</html>
