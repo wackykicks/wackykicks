@@ -19,6 +19,16 @@ const db = firebase.firestore();
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('id');
 
+// ✅ Make scrollPhotoSlider global
+function scrollPhotoSlider(direction) {
+    const slider = document.querySelector('.slider');
+    if (!slider) return;
+    slider.scrollBy({
+        left: slider.offsetWidth * direction,
+        behavior: 'smooth'
+    });
+}
+
 // ✅ Load Product
 function loadProduct() {
     const productDetails = document.getElementById('productDetails');
@@ -38,7 +48,9 @@ function loadProduct() {
         const images = product.imgUrl || [];
 
         // ✅ Build gallery HTML
-        let galleryHTML = '<div class="slider">';
+        let galleryHTML = `
+            <div class="slider">
+        `;
         images.forEach(url => {
             galleryHTML += `
                 <div class="image-slide">
@@ -46,7 +58,13 @@ function loadProduct() {
                 </div>
             `;
         });
-        galleryHTML += '</div><div class="pagination" id="pagination"></div>';
+        galleryHTML += `</div>
+            <div class="photo-slider-arrows">
+                <button type="button" onclick="scrollPhotoSlider(-1)">&larr;</button>
+                <div class="pagination" id="pagination"></div>
+                <button type="button" onclick="scrollPhotoSlider(1)">&rarr;</button>
+            </div>
+        `;
 
         // ✅ Inject product HTML
         productDetails.innerHTML = `
