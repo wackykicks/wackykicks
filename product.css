@@ -284,7 +284,7 @@
     min-width: 180px;
     max-width: 200px;
     flex-shrink: 0;
-    background: #fff;
+    background: #fafafa;
     border-radius: 10px;
     padding: 10px;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
@@ -416,4 +416,20 @@
 /* Hide the default pagination if outside .photo-slider-arrows */
 .product-gallery > .pagination {
     display: none !important;
+}
+
+.share-btn {
+    padding: 12px 24px;
+    background-color: #747575;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.share-btn:hover {
+    background-color: #9b9b9b;
 }
