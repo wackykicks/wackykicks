@@ -101,33 +101,72 @@ function setupSlider() {
     });
 }
 
-// ✅ Load All Products (for index.html)
+// Pagination variables
+let allProducts = [];
+let currentPage = 1;
+const productsPerPage = 4;
+
+// Fetch all products once and paginate
 function loadProducts() {
     const productList = document.getElementById('productList');
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
 
     db.collection("products").get().then(snapshot => {
+        allProducts = [];
         snapshot.forEach(doc => {
             const product = doc.data();
             const productId = doc.id;
             const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
-
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            productCard.innerHTML = `
-                <a href="product.html?id=${productId}" class="product-link">
-                    ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
-                    <img src="${firstImage}" alt="${product.name}">
-                    <h3>${product.name}</h3>
-                    <p class="price">₹${product.price}</p>
-                </a>
-                <button class="buy-now" onclick="copyToWhatsApp('${product.name}', ${product.price}); event.stopPropagation();">Buy Now</button>
-            `;
-
-            productList.appendChild(productCard);
+            allProducts.push({ ...product, id: productId, img: firstImage });
         });
+        renderProducts();
     }).catch(error => {
         console.error("Error fetching products: ", error);
     });
+
+    function renderProducts() {
+        productList.innerHTML = '';
+        const start = (currentPage - 1) * productsPerPage;
+        const end = start + productsPerPage;
+        const pageProducts = allProducts.slice(start, end);
+
+        pageProducts.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.innerHTML = `
+                <a href="product.html?id=${product.id}" class="product-link">
+                    ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
+                    <img src="${product.img}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p class="price">₹${product.price}</p>
+                </a>
+            `;
+            productList.appendChild(productCard);
+        });
+
+        // Update pagination
+        const totalPages = Math.ceil(allProducts.length / productsPerPage);
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+    }
+
+    prevBtn.onclick = function() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderProducts();
+        }
+    };
+
+    nextBtn.onclick = function() {
+        const totalPages = Math.ceil(allProducts.length / productsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderProducts();
+        }
+    };
 }
 
 // ✅ Run the right loader depending on page
@@ -138,3 +177,4 @@ window.addEventListener('DOMContentLoaded', () => {
         loadProducts();
     }
 });
+
