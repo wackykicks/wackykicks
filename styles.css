@@ -164,10 +164,9 @@ body {
 
 /* Product Card */
 .product-card {
-    background-color: #fafafa;
+    background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
     transition: transform 0.3s;
     text-align: center;
     padding: 20px;
@@ -200,7 +199,7 @@ body {
     top: 12px;
     left: 12px;
     background-color: #000000;
-    color: white;
+    color: rgb(255, 255, 255);
     font-size: 0.75rem;
     padding: 4px 8px;
     border-radius: 20px;
@@ -220,7 +219,7 @@ body {
 }
 
 .product-card .buy-now:hover {
-    background-color: #828385;
+    background-color: #ffffff;
 }
 
 /* Hover Effect */
