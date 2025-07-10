@@ -47,6 +47,8 @@ function loadProduct() {
         const product = doc.data();
         const images = product.imgUrl || [];
 
+        const sizes = product.sizes || [];
+
         // ✅ Build gallery HTML
         let galleryHTML = `
             <div class="slider">
@@ -66,6 +68,15 @@ function loadProduct() {
             </div>
         `;
 
+        let sizesHTML = '';
+        if (sizes.length) {
+            sizesHTML = '<div class="sizes"><h4>Available Sizes:</h4><div class="size-list">';
+            sizes.forEach(size => {
+                sizesHTML += `<button type="button" class="size" onclick="selectSize(this, '${size}')">${size}</button>`;
+            });
+            sizesHTML += '</div></div>';
+        }
+
         // ✅ Inject product HTML
         productDetails.innerHTML = `
             <div class="product-container">
@@ -76,6 +87,7 @@ function loadProduct() {
                     <h2>${product.name}</h2>
                     <p class="price">₹${product.price}</p>
                     <p class="description">${product.description || 'No description available.'}</p>
+                    ${sizesHTML}
                     <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.price}')">Buy Now</button>
                 </div>
             </div>
@@ -115,7 +127,8 @@ function loadProduct() {
 
 // ✅ WhatsApp Buy Now
 function copyToWhatsApp(productName, productPrice) {
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}`;
+    let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
+    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}`;
     window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
 }
 
@@ -173,3 +186,9 @@ function scrollCarousel(direction) {
         behavior: 'smooth'
     });
 }
+
+window.selectSize = function(btn, size) {
+    document.querySelectorAll('.size').forEach(el => el.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedSize = size;
+};
