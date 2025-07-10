@@ -89,6 +89,7 @@ function loadProduct() {
                     <p class="description">${product.description || 'No description available.'}</p>
                     ${sizesHTML}
                     <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.price}')">Buy Now</button>
+                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.price}', window.location.href)">Share</button>
                 </div>
             </div>
         `;
@@ -192,3 +193,18 @@ window.selectSize = function(btn, size) {
     btn.classList.add('selected');
     selectedSize = size;
 };
+
+function shareProduct(name, price, url) {
+    const message = `Check out this product on WackyKicks!\n${name}\nPrice: ₹${price}\n${url}`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: name,
+            text: message,
+            url: url,
+        }).then(() => console.log('Shared successfully'))
+          .catch(error => console.error('Error sharing:', error));
+    } else {
+        alert("Sharing is not supported on this device.\nCopy the link: " + url);
+    }
+}
