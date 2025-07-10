@@ -70,6 +70,49 @@
     background-color: #616161;
 }
 
+/* Available Sizes */
+.sizes {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.sizes h4 {
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #000;
+    text-align: center;
+}
+
+.size-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.size {
+    padding: 6px 16px;
+    background: #eee;
+    border-radius: 20px;
+    font-size: 15px;
+    color: #333;
+    cursor: pointer;
+    border: 1.5px solid #eee;
+    outline: none;
+    transition: background 0.2s, border 0.2s, color 0.2s;
+    margin-bottom: 4px;
+    min-width: 36px;
+    min-height: 32px;
+    font-family: inherit;
+}
+
+.size.selected,
+.size:active {
+    background: #000000;
+    color: #fff;
+    border: 1.5px solid #000000;
+}
+
 /* Responsive */
 @media screen and (max-width: 768px) {
     .product-container {
