@@ -44,9 +44,26 @@
 }
 
 .price {
-    font-size: 24px;
-    color: #222;
-    margin-bottom: 15px;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.old-price {
+    color: #888;
+    text-decoration: line-through;
+    font-size: 1rem;
+    margin-right: 6px;
+}
+
+.new-price {
+    color: #000000;
+    font-weight: bold;
+    font-size: 1.15rem;
 }
 
 .description {
@@ -189,26 +206,30 @@
 /* Features Section */
 .features-section {
     display: flex;
+    flex-direction: row;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
     gap: 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;           /* Never wrap, always single row */
     padding: 40px 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .feature {
-    flex: 1 1 200px;
-    max-width: 240px;
-    min-width: 160px;
+    flex: 1 1 0;
+    min-width: 0;                /* Allow to shrink below content size */
     padding: 20px;
     border-radius: 12px;
     background-color: #fff;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     text-align: center;
-    transition: transform 0.3s, opacity 0.3s;
+    transition: transform 0.3s, opacity 0.3s, padding 0.3s;
     opacity: 0;
     transform: translateY(30px);
-    color: #000; /* All text black */
+    color: #000;
+    margin: 0;
+    max-width: 100%;
 }
 
 .feature.visible {
@@ -217,34 +238,21 @@
 }
 
 .feature i {
-    font-size: 36px;
+    font-size: 2.2rem;
     margin-bottom: 14px;
     color: #000000;
 }
 
 .feature h3 {
-    font-size: 18px;
+    font-size: 1.1rem;
     margin-bottom: 10px;
-    color: #000; /* Heading text black */
+    color: #000;
 }
 
 .feature p {
-    font-size: 14px;
-    color: #000; /* Paragraph text black */
-}
-
-/* Consistent layout on all screen sizes */
-@media (max-width: 768px) {
-    .features-section {
-        flex-wrap: wrap;
-    }
-
-    .feature {
-        flex: 1 1 140px;
-        max-width: 180px;
-        min-width: 120px;
-        padding: 16px;
-    }
+    font-size: 0.95rem;
+    color: #000;
+    margin: 0;
 }
 
 
@@ -432,4 +440,29 @@
 
 .share-btn:hover {
     background-color: #9b9b9b;
+}
+
+.footer {
+    background-color: #111;
+    color: #ccc;
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.footer a {
+    color: #4CAF50;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.built-by {
+    margin-top: 6px;
+    font-style: italic;
+    font-size: 13px;
+    color: #888;
 }
