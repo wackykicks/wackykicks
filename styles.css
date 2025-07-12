@@ -166,7 +166,9 @@ body {
 .product-card {
     background-color: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    /* Remove border and shadow */
+    border: none;
+    box-shadow: none;
     transition: transform 0.3s;
     text-align: center;
     padding: 20px;
@@ -190,7 +192,13 @@ body {
 .product-card .price {
     font-weight: bold;
     color: #111;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 /* Product Tags */
@@ -237,6 +245,16 @@ body {
 @media (max-width: 768px) {
     .product-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px;
+    }
+    .product-card {
+        padding: 12px;
     }
 }
 
@@ -321,9 +339,27 @@ body {
 }
 
 .product-info .price {
-    font-size: 1.3rem;
-    margin-bottom: 20px;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
     color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.old-price {
+    color: #888;
+    text-decoration: line-through;
+    font-size: 1rem;
+    margin-right: 6px;
+}
+
+.new-price {
+    color: #000000;
+    font-weight: bold;
+    font-size: 1.15rem;
 }
 
 .product-info p {
@@ -475,4 +511,29 @@ body {
 .product-pagination span {
     font-size: 1rem;
     color: #333;
+}
+
+.footer {
+    background-color: #111;
+    color: #ccc;
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.footer a {
+    color: #4CAF50;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.built-by {
+    margin-top: 6px;
+    font-style: italic;
+    font-size: 13px;
+    color: #888;
 }
