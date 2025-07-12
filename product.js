@@ -85,11 +85,14 @@ function loadProduct() {
                 </div>
                 <div class="product-info">
                     <h2>${product.name}</h2>
-                    <p class="price">₹${product.price}</p>
+                    <div class="price">
+                        ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                        <span class="new-price">₹${product.newPrice || product.price}</span>
+                    </div>
                     <p class="description">${product.description || 'No description available.'}</p>
                     ${sizesHTML}
-                    <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.price}')">Buy Now</button>
-                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.price}', window.location.href)">Share</button>
+                    <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')">Buy Now</button>
+                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
                 </div>
             </div>
         `;
@@ -166,7 +169,10 @@ function loadRelatedProducts() {
                     <a href="product.html?id=${productId}">
                         <img src="${(Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl) || ''}" alt="${product.name}">
                         <h4>${product.name}</h4>
-                        <p class="price">₹${product.price}</p>
+                        <div class="price">
+                            ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                            <span class="new-price">₹${product.newPrice || product.price}</span>
+                        </div>
                     </a>
                 `;
 
@@ -202,9 +208,17 @@ function shareProduct(name, price, url) {
             title: name,
             text: message,
             url: url,
-        }).then(() => console.log('Shared successfully'))
-          .catch(error => console.error('Error sharing:', error));
+        }).then(() => {
+            // Optionally show a toast or message
+        }).catch(error => {
+            alert("Sharing failed or was cancelled.");
+        });
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Link copied! You can share it anywhere.");
+        });
     } else {
-        alert("Sharing is not supported on this device.\nCopy the link: " + url);
+        // Fallback for very old browsers
+        prompt("Copy this link to share:", url);
     }
 }
