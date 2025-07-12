@@ -50,6 +50,7 @@ function loadProduct() {
         });
         galleryHTML += '</div><div class="pagination" id="pagination"></div>';
 
+        // For product page (product.js)
         productDetails.innerHTML = `
             <div class="product-container">
                 <div class="product-gallery">
@@ -57,9 +58,14 @@ function loadProduct() {
                 </div>
                 <div class="product-info">
                     <h2>${product.name}</h2>
-                    <p class="price">₹${product.price}</p>
+                    <div class="price">
+                        ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                        <span class="new-price">₹${product.newPrice || product.price}</span>
+                    </div>
                     <p class="description">${product.description || 'No description available.'}</p>
-                    <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.price}')">Buy Now</button>
+                    ${sizesHTML}
+                    <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')">Buy Now</button>
+                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
                 </div>
             </div>
         `;
@@ -135,12 +141,16 @@ function loadProducts() {
         pageProducts.forEach(product => {
             const productCard = document.createElement('div');
             productCard.className = 'product-card';
+            // For product card (grid and related products)
             productCard.innerHTML = `
                 <a href="product.html?id=${product.id}" class="product-link">
                     ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
                     <img src="${product.img}" alt="${product.name}">
                     <h3>${product.name}</h3>
-                    <p class="price">₹${product.price}</p>
+                    <div class="price">
+                        ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                        <span class="new-price">₹${product.newPrice || product.price}</span>
+                    </div>
                 </a>
             `;
             productList.appendChild(productCard);
