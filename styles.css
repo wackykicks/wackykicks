@@ -150,9 +150,12 @@ body {
 }
 
 .product-grid-section h2 {
-    font-size: 2.2rem;
+    font-size: 1.5rem;
     color: #111;
     margin-bottom: 40px;
+    text-align: left;
+    margin-left: 0;
+    font-weight: 700;
 }
 
 .product-grid {
