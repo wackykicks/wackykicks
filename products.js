@@ -107,18 +107,97 @@ function setupSlider() {
     });
 }
 
-// Pagination variables
 let allProducts = [];
+let filteredProducts = [];
+let isSearching = false;
 let currentPage = 1;
 const productsPerPage = 4;
 
-// Fetch all products once and paginate
-function loadProducts() {
+// Render products function
+function renderProducts(productsToShow = allProducts, paginated = true) {
     const productList = document.getElementById('productList');
     const prevBtn = document.getElementById('prevPage');
     const nextBtn = document.getElementById('nextPage');
     const pageInfo = document.getElementById('pageInfo');
+    const paginationDiv = document.querySelector('.product-pagination');
+    let pageProducts, totalPages;
 
+    if (paginated) {
+        totalPages = Math.ceil(productsToShow.length / productsPerPage);
+        const start = (currentPage - 1) * productsPerPage;
+        const end = start + productsPerPage;
+        pageProducts = productsToShow.slice(start, end);
+    } else {
+        totalPages = 1;
+        pageProducts = productsToShow;
+    }
+
+    productList.innerHTML = '';
+    pageProducts.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        productCard.innerHTML = `
+            <a href="product.html?id=${product.id}" class="product-link">
+                ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
+                <img src="${product.img}" alt="${product.name}">
+                <h3>${product.name}</h3>
+                <div class="price">
+                    ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                    <span class="new-price">₹${product.newPrice || product.price}</span>
+                </div>
+            </a>
+        `;
+        productList.appendChild(productCard);
+    });
+
+    // Show/hide pagination controls
+    if (paginated) {
+        paginationDiv.style.display = '';
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        prevBtn.disabled = (currentPage === 1);
+        nextBtn.disabled = (currentPage === totalPages || totalPages === 0);
+    } else {
+        paginationDiv.style.display = 'none';
+    }
+}
+
+// Search function
+function searchProducts() {
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput.value.trim().toLowerCase();
+
+    if (searchTerm) {
+        filteredProducts = allProducts.filter(product =>
+            (product.name && product.name.toLowerCase().includes(searchTerm)) ||
+            (product.tag && product.tag.toLowerCase().includes(searchTerm)) ||
+            (product.description && product.description.toLowerCase().includes(searchTerm))
+        );
+        isSearching = true;
+        currentPage = 1;
+        renderProducts(filteredProducts, false); // Show all matches in one page, no pagination
+    } else {
+        isSearching = false;
+        currentPage = 1;
+        renderProducts(allProducts, true); // Back to paginated
+    }
+}
+
+// Pagination button handlers
+document.getElementById('prevPage').onclick = () => {
+    if (!isSearching && currentPage > 1) {
+        currentPage--;
+        renderProducts(allProducts, true);
+    }
+};
+document.getElementById('nextPage').onclick = () => {
+    if (!isSearching && currentPage < Math.ceil(allProducts.length / productsPerPage)) {
+        currentPage++;
+        renderProducts(allProducts, true);
+    }
+};
+
+// Initial load
+function loadProducts() {
     db.collection("products").get().then(snapshot => {
         allProducts = [];
         snapshot.forEach(doc => {
@@ -127,64 +206,12 @@ function loadProducts() {
             const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
             allProducts.push({ ...product, id: productId, img: firstImage });
         });
-        renderProducts();
+        currentPage = 1;
+        renderProducts(allProducts, true);
     }).catch(error => {
         console.error("Error fetching products: ", error);
     });
-
-    function renderProducts() {
-        productList.innerHTML = '';
-        const start = (currentPage - 1) * productsPerPage;
-        const end = start + productsPerPage;
-        const pageProducts = allProducts.slice(start, end);
-
-        pageProducts.forEach(product => {
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            // For product card (grid and related products)
-            productCard.innerHTML = `
-                <a href="product.html?id=${product.id}" class="product-link">
-                    ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
-                    <img src="${product.img}" alt="${product.name}">
-                    <h3>${product.name}</h3>
-                    <div class="price">
-                        ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
-                        <span class="new-price">₹${product.newPrice || product.price}</span>
-                    </div>
-                </a>
-            `;
-            productList.appendChild(productCard);
-        });
-
-        // Update pagination
-        const totalPages = Math.ceil(allProducts.length / productsPerPage);
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-    }
-
-    prevBtn.onclick = function() {
-        if (currentPage > 1) {
-            currentPage--;
-            renderProducts();
-        }
-    };
-
-    nextBtn.onclick = function() {
-        const totalPages = Math.ceil(allProducts.length / productsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderProducts();
-        }
-    };
 }
 
-// ✅ Run the right loader depending on page
-window.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('productDetails')) {
-        loadProduct();
-    } else if (document.getElementById('productList')) {
-        loadProducts();
-    }
-});
+window.addEventListener('DOMContentLoaded', loadProducts);
 
