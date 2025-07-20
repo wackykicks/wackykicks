@@ -91,6 +91,10 @@ function loadProduct() {
                     </div>
                     <p class="description">${product.description || 'No description available.'}</p>
                     ${sizesHTML}
+                    <div class="quantity-container">
+                        <span>Quantity:</span>
+                        <input type="number" id="quantity" value="1" min="1" max="100">
+                    </div>
                     <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')">Buy Now</button>
                     <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
                 </div>
@@ -131,8 +135,14 @@ function loadProduct() {
 
 // ✅ WhatsApp Buy Now
 function copyToWhatsApp(productName, productPrice) {
+    const quantityInput = document.getElementById('quantity');
+    const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+
     let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}`;
+    const qtyMsg = `\nQuantity: ${quantity}`;
+    
+    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${qtyMsg}`;
+    
     window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
 }
 
