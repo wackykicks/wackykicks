@@ -466,3 +466,57 @@
     font-size: 13px;
     color: #888;
 }
+
+/* Improved CSS styles for quantity input */
+.quantity-container {
+  margin: 18px 0 22px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* <-- Center items horizontally */
+  gap: 14px;
+  font-weight: bold;
+  font-size: 1.08rem;
+  background: #f6f6f6;
+  border-radius: 8px;
+  padding: 12px 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  width: fit-content;
+}
+
+.quantity-container label {
+  margin: 0;
+  font-size: 1rem;
+  color: #222;
+  font-weight: 500;
+}
+
+.quantity-container input[type="number"] {
+  width: 70px;
+  padding: 8px 10px;
+  border: 1.5px solid #bbb;
+  border-radius: 6px;
+  font-size: 1.08rem;
+  background: #fff;
+  color: #222;
+  font-family: inherit;
+  transition: border 0.2s;
+  outline: none;
+}
+
+.quantity-container input[type="number"]:focus {
+  border: 1.5px solid #000;
+  background: #f9f9f9;
+}
+
+@media (max-width: 600px) {
+  .quantity-container {
+    padding: 8px 10px;
+    gap: 8px;
+    font-size: 1rem;
+  }
+  .quantity-container input[type="number"] {
+    width: 54px;
+    padding: 6px 6px;
+    font-size: 0.98rem;
+  }
+}
