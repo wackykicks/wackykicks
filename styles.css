@@ -1,7 +1,7 @@
 /* General styles */
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: "Times New Roman", Times, serif;
     background-color: #fff;
     color: #333;
 }
@@ -146,7 +146,7 @@ body {
 .product-grid-section {
     background-color: #fff;
     padding: 50px 20px;
-    text-align: center;
+    text-align: left;
 }
 
 .product-grid-section h2 {
@@ -173,7 +173,7 @@ body {
     border: none;
     box-shadow: none;
     transition: transform 0.3s;
-    text-align: center;
+    text-align: left;
     padding: 20px;
     position: relative;
 }
@@ -198,10 +198,10 @@ body {
     margin-bottom: 10px;
     font-size: 1.1rem;
     display: flex;
-    align-items: center;
+    align-items: left;
     gap: 10px;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: left;
 }
 
 /* Product Tags */
@@ -402,66 +402,47 @@ body {
 
 /* Footer Dark Theme */
 .footer {
-    background-color: #121212;
-    color: #ddd;
+    background-color: #111;
+    color: #ccc;
+    text-align: center;
     padding: 40px 20px 20px;
-    font-family: Arial, sans-serif;
+    font-size: 14px;
 }
 
 .footer-container {
     display: flex;
-    justify-content: space-between;
     flex-wrap: wrap;
+    justify-content: space-between;
     max-width: 1200px;
-    margin: auto;
+    margin: 0 auto;
 }
 
-.footer-logo h2 {
-    font-size: 24px;
-    margin-bottom: 8px;
-    color: #fff;
+.footer-column {
+    flex: 1 1 200px;
+    margin: 10px;
+    min-width: 180px;
 }
 
-.footer-logo p {
-    font-size: 14px;
-    color: #aaa;
-}
-
-.footer-links h4,
-.footer-social h4 {
-    font-size: 16px;
+.footer-column h4 {
     margin-bottom: 10px;
     color: #fff;
+    font-size: 16px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
 }
 
-.footer-links ul {
-    list-style: none;
-    padding: 0;
-}
-
-.footer-links ul li {
-    margin-bottom: 6px;
-}
-
-.footer-links ul li a {
+.footer-column a {
+    color: #bbb;
     text-decoration: none;
-    color: #bbb;
+    display: block;
+    margin: 6px 0;
+    font-size: 14px;
     transition: color 0.3s;
 }
 
-.footer-links ul li a:hover {
+.footer-column a:hover {
     color: #fff;
-}
-
-.footer-social a {
-    margin-right: 12px;
-    font-size: 20px;
-    color: #bbb;
-    transition: color 0.3s;
-}
-
-.footer-social a:hover {
-    color: #1DB954;
+    text-decoration: underline;
 }
 
 .footer-bottom {
@@ -473,16 +454,21 @@ body {
     padding-top: 15px;
 }
 
-/* Responsive */
+.built-by {
+    margin-top: 6px;
+    font-style: italic;
+    font-size: 13px;
+    color: #888;
+}
+
 @media screen and (max-width: 768px) {
     .footer-container {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-
-    .footer-social {
-        margin-top: 20px;
+    .footer-column {
+        margin: 18px 0;
     }
 }
 
@@ -539,4 +525,15 @@ body {
     font-style: italic;
     font-size: 13px;
     color: #888;
+}
+
+/* Remove underlines from all links and buttons */
+a,
+a:visited,
+a:active,
+a:hover,
+.product-link {
+    text-decoration: none !important;
+    outline: none;
+    color: inherit;
 }
