@@ -133,12 +133,45 @@ function loadProduct() {
     });
 }
 
+// ✅ Custom Size Alert
+function showSizeAlert() {
+    // Remove any existing alert
+    const oldAlert = document.getElementById('sizeAlert');
+    if (oldAlert) oldAlert.remove();
+
+    // Create alert container
+    const alertDiv = document.createElement('div');
+    alertDiv.id = 'sizeAlert';
+    alertDiv.className = 'custom-size-alert';
+    alertDiv.innerHTML = `
+        <span class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <span class="alert-text">Please select a size before buying.</span>
+        <button class="alert-close" onclick="document.getElementById('sizeAlert').remove()">&times;</button>
+    `;
+
+    // Insert alert above Buy Now button
+    const productInfo = document.querySelector('.product-info');
+    const buyBtn = productInfo ? productInfo.querySelector('.buy-now') : null;
+    if (buyBtn && productInfo) {
+        productInfo.insertBefore(alertDiv, buyBtn);
+    } else {
+        // fallback: top of productDetails
+        document.getElementById('productDetails').prepend(alertDiv);
+    }
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) alertDiv.remove();
+    }, 3000);
+}
+
 // ✅ WhatsApp Buy Now
 function copyToWhatsApp(productName, productPrice) {
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-    let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
+    // Size selection is now optional, so no alert
+    let sizeMsg = (typeof selectedSize !== 'undefined' && selectedSize) ? `\nSize: ${selectedSize}` : '';
     const qtyMsg = `\nQuantity: ${quantity}`;
     
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${qtyMsg}`;
