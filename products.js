@@ -118,15 +118,12 @@ function renderProducts(productsToShow = allProducts) {
     const productList = document.getElementById('productList');
     productList.innerHTML = '';
     productsToShow.forEach(product => {
-        const mainImg = product.mainPhoto || product.img; // Use mainPhoto if available
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         productCard.innerHTML = `
             <a href="product.html?id=${product.id}" class="product-link">
                 ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
-                <div class="main-photo">
-                    <img src="${mainImg}" alt="${product.name}">
-                </div>
+                <img src="${product.img}" alt="${product.name}">
                 <h3>${product.name}</h3>
                 <div class="price">
                     ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
