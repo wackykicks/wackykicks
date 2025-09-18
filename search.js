@@ -19,28 +19,63 @@ const query = params.get('q')?.toLowerCase() || "";
 
 const resultCount = document.getElementById("resultCount");
 const searchGrid = document.getElementById("searchGrid");
+const searchInput = document.querySelector('input[type="text"]');
 
-async function performSearch() {
+let allProducts = [];
+
+// Load all products once on page load
+async function loadAllProducts() {
     const snapshot = await getDocs(collection(db, "products"));
-    const matches = [];
-
+    allProducts = [];
+    
     snapshot.forEach(doc => {
         const product = doc.data();
+        allProducts.push({ id: doc.id, ...product });
+    });
+    
+    // Perform initial search if query exists
+    if (query) {
+        performSearch(query);
+    } else {
+        // Show all products initially
+        renderResults(allProducts);
+    }
+}
+
+// Real-time search function
+function performRealTimeSearch() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    if (searchTerm === "") {
+        // Show all products when search is empty
+        renderResults(allProducts);
+        return;
+    }
+    
+    performSearch(searchTerm);
+}
+
+async function performSearch(searchTerm = query) {
+    const matches = allProducts.filter(product => {
         const name = product.name?.toLowerCase() || "";
         const desc = product.description?.toLowerCase() || "";
         const tag = product.tag?.toLowerCase() || "";
 
-        if (name.includes(query) || desc.includes(query) || tag.includes(query)) {
-            matches.push({ id: doc.id, ...product });
-        }
+        return name.includes(searchTerm) || desc.includes(searchTerm) || tag.includes(searchTerm);
     });
 
-    renderResults(matches);
+    renderResults(matches, searchTerm);
 }
 
-function renderResults(products) {
+function renderResults(products, searchTerm = query) {
     searchGrid.innerHTML = "";
-    resultCount.textContent = `${products.length} result${products.length !== 1 ? 's' : ''} found for "${query}"`;
+    
+    const displayTerm = searchTerm || "all products";
+    const resultText = searchTerm ? 
+        `${products.length} result${products.length !== 1 ? 's' : ''} found for "${searchTerm}"` :
+        `Showing ${products.length} products`;
+    
+    resultCount.textContent = resultText;
 
     products.forEach(product => {
         const img = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
@@ -49,12 +84,14 @@ function renderResults(products) {
         const card = document.createElement("div");
         card.className = "product-card";
         card.innerHTML = `
-            ${product.tag ? `<span class="tag">${product.tag}</span>` : ''}
+            ${product.tag ? `<span class=\"tag\">${product.tag}</span>` : ''}
             <a href="product.html?id=${product.id}">
-                <img src="${img}" alt="${product.name}">
+                <div class="img-wrapper">
+                    <img src="${img}" alt="${product.name}">
+                </div>
                 <h3>${product.name}</h3>
                 <div class="price">
-                    ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ""}
+                    ${product.oldPrice ? `<span class=\"old-price\">₹${product.oldPrice}</span>` : ""}
                     <span class="new-price">₹${price}</span>
                 </div>
             </a>
@@ -63,4 +100,15 @@ function renderResults(products) {
     });
 }
 
-performSearch();
+// Initialize page
+loadAllProducts();
+
+// Add real-time search listener
+if (searchInput) {
+    searchInput.addEventListener('input', performRealTimeSearch);
+    
+    // Update the search input with current query if it exists
+    if (query) {
+        searchInput.value = query;
+    }
+}
