@@ -194,8 +194,6 @@ body {
     height: auto;
     object-fit: cover;
     margin-bottom: 14px;
-    border-radius: 8px;
-    background: #eaeaea;
 }
 
 .product-card:hover {
@@ -597,5 +595,6 @@ a:hover,
     outline: none;
     color: inherit;
 }
+
 
 
