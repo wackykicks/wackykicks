@@ -188,28 +188,14 @@ body {
     overflow: visible;
 }
 
-.product-card .img-wrapper {
+.product-card img {
     width: 100%;
     aspect-ratio: 1 / 1;
-    background: #f8f8f8;
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 12px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.product-card .img-wrapper img {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: 1 / 1;
+    height: auto;
     object-fit: cover;
-    border-radius: 15px;
-    display: block;
-    transition: transform 0.3s;
+    margin-bottom: 14px;
+    border-radius: 8px;
+    background: #eaeaea;
 }
 
 .product-card:hover {
@@ -611,4 +597,5 @@ a:hover,
     outline: none;
     color: inherit;
 }
+
 
