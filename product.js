@@ -70,11 +70,19 @@ function loadProduct() {
 
         let sizesHTML = '';
         if (sizes.length) {
-            sizesHTML = '<div class="sizes"><h4>Available Sizes:</h4><div class="size-list">';
+            sizesHTML = `
+                <div class="sizes">
+                    <h4>Available Sizes:</h4>
+                    <select id="sizeDropdown" class="size-dropdown" onchange="selectSize(this.value)">
+                        <option value="">Select Size</option>
+            `;
             sizes.forEach(size => {
-                sizesHTML += `<button type="button" class="size" onclick="selectSize(this, '${size}')">${size}</button>`;
+                sizesHTML += `<option value="${size}">${size}</option>`;
             });
-            sizesHTML += '</div></div>';
+            sizesHTML += `
+                    </select>
+                </div>
+            `;
         }
 
         // ✅ Inject product HTML
@@ -126,6 +134,9 @@ function loadProduct() {
                 dot.classList.toggle('active', i === index);
             });
         });
+
+        // ✅ Auto-adjust layout based on image size
+        adjustLayoutToImageSize();
 
     }).catch(error => {
         console.error("Error loading product: ", error);
@@ -237,10 +248,43 @@ function scrollCarousel(direction) {
     });
 }
 
-window.selectSize = function(btn, size) {
-    document.querySelectorAll('.size').forEach(el => el.classList.remove('selected'));
-    btn.classList.add('selected');
+// ✅ Auto-adjust layout based on image dimensions
+function adjustLayoutToImageSize() {
+    const productContainer = document.querySelector('.product-container');
+    const firstImage = document.querySelector('.image-slide img');
+    
+    if (!productContainer || !firstImage) return;
+    
+    firstImage.onload = function() {
+        const imageAspectRatio = this.naturalWidth / this.naturalHeight;
+        const imageWidth = this.offsetWidth;
+        
+        // If image is smaller or more square, reduce gap
+        if (imageAspectRatio >= 0.8 && imageWidth < 400) {
+            productContainer.style.gap = '15px';
+            productContainer.classList.add('compact-layout');
+        } else if (imageWidth < 300) {
+            productContainer.style.gap = '10px';
+            productContainer.classList.add('very-compact-layout');
+        } else {
+            // Default gap for larger images
+            productContainer.style.gap = '30px';
+            productContainer.classList.remove('compact-layout', 'very-compact-layout');
+        }
+    };
+    
+    // If image is already loaded
+    if (firstImage.complete) {
+        firstImage.onload();
+    }
+}
+
+window.selectSize = function(size) {
     selectedSize = size;
+    const dropdown = document.getElementById('sizeDropdown');
+    if (dropdown) {
+        dropdown.value = size;
+    }
 };
 
 function shareProduct(name, price, url) {
