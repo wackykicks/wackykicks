@@ -260,7 +260,7 @@ body {
     position: absolute;
     top: 12px;
     left: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: black;
     color: #ffffff;
     font-size: 0.7rem;
     font-weight: 700;
@@ -623,3 +623,4 @@ a:hover,
     outline: none;
     color: inherit;
 }
+
