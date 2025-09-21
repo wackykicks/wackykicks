@@ -1,18 +1,3 @@
-// ✅ Firebase Config
-const firebaseConfig = {
-    apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-    authDomain: "wackykicks-65cbe.firebaseapp.com",
-    projectId: "wackykicks-65cbe",
-    storageBucket: "wackykicks-65cbe.appspot.com",
-    messagingSenderId: "911540684237",
-    appId: "1:911540684237:web:faa772c146ff4acfadb084",
-    measurementId: "G-7HWH0SEJN2"
-};
-
-// ✅ Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
 // ✅ WhatsApp Buy Now
 function copyToWhatsApp(productName, productPrice) {
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}`;
@@ -127,12 +112,12 @@ let filteredProducts = [];
 let isSearching = false;
 let selectedCategories = [];
 
-// Filter products by categories
+// Filter products by categories (single category selection)
 function filterProducts(categories = []) {
     selectedCategories = categories;
     
     if (categories.length === 0) {
-        // Show all products if no categories selected
+        // Show all products if no category selected
         if (isSearching) {
             renderProducts(filteredProducts);
         } else {
@@ -141,10 +126,11 @@ function filterProducts(categories = []) {
         return;
     }
     
-    // Filter products that have at least one matching category
+    // Filter products that match the single selected category
+    const categoryId = categories[0]; // Only one category can be selected
     const categoryFilteredProducts = allProducts.filter(product => {
         if (!product.categories || product.categories.length === 0) return false;
-        return categories.some(categoryId => product.categories.includes(categoryId));
+        return product.categories.includes(categoryId);
     });
     
     if (isSearching) {
@@ -242,7 +228,7 @@ function equalizeCardHeights() {
     });
 }
 
-// Search function (no pagination)
+// Search function (with single category selection support)
 function searchProducts() {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput.value.trim().toLowerCase();
@@ -250,11 +236,12 @@ function searchProducts() {
     if (searchTerm) {
         let productsToFilter = allProducts;
         
-        // If categories are selected, first filter by categories
+        // If a category is selected, first filter by that single category
         if (selectedCategories.length > 0) {
+            const categoryId = selectedCategories[0]; // Only one category selected
             productsToFilter = allProducts.filter(product => {
                 if (!product.categories || product.categories.length === 0) return false;
-                return selectedCategories.some(categoryId => product.categories.includes(categoryId));
+                return product.categories.includes(categoryId);
             });
         }
         

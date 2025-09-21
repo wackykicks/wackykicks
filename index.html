@@ -101,6 +101,26 @@
 <!-- Firebase Scripts (add your Firebase config in JS) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<!-- Initialize Firebase Config -->
+<script>
+// Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+    authDomain: "wackykicks-65cbe.firebaseapp.com",
+    projectId: "wackykicks-65cbe",
+    storageBucket: "wackykicks-65cbe.appspot.com",
+    messagingSenderId: "911540684237",
+    appId: "1:911540684237:web:faa772c146ff4acfadb084",
+    measurementId: "G-7HWH0SEJN2"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log('Firebase initialized for main page');
+</script>
+
 <script src="categories.js"></script>
 <script src="cart.js"></script>
 <script src="products.js"></script>

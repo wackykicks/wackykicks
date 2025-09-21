@@ -8,26 +8,70 @@ class CategoryManager {
 
     // Initialize category manager
     init() {
-        this.loadCategories();
+        // Wait for Firebase to be ready before loading categories
+        if (typeof db !== 'undefined') {
+            this.loadCategories();
+        } else {
+            // Wait for Firebase to initialize
+            const checkFirebase = setInterval(() => {
+                if (typeof db !== 'undefined') {
+                    clearInterval(checkFirebase);
+                    this.loadCategories();
+                }
+            }, 100);
+            
+            // Fallback after 5 seconds if Firebase doesn't load
+            setTimeout(() => {
+                clearInterval(checkFirebase);
+                if (typeof db === 'undefined') {
+                    console.warn('Firebase not available, using default categories');
+                    this.categories = this.getDefaultCategories();
+                    this.renderCategories();
+                }
+            }, 5000);
+        }
         this.setupEventListeners();
     }
 
     // Load categories from Firebase
     async loadCategories() {
+        console.log('🏷️ Loading categories...');
+        console.log('🔥 Firebase db available:', typeof db !== 'undefined');
+        
         try {
             if (typeof db !== 'undefined') {
-                const categoriesSnapshot = await db.collection('categories').get();
-                this.categories = categoriesSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                console.log('📡 Fetching categories from Firebase...');
+                const categoriesSnapshot = await db.collection('category').get();
+                console.log('📦 Categories found:', categoriesSnapshot.size);
+                
+                this.categories = categoriesSnapshot.docs.map(doc => {
+                    const data = { 
+                        id: doc.id, 
+                        ...doc.data(),
+                        name: doc.data().name || 'Unnamed Category',
+                        image: doc.data().image || doc.data().icon || '',
+                        color: doc.data().color || '#667eea'
+                    };
+                    console.log('🏷️ Loaded category:', data.name);
+                    return data;
+                });
+                
+                console.log('✅ Categories loaded successfully:', this.categories.length);
             } else {
-                // Fallback data if Firebase is not available
+                console.log('⚠️ Firebase not available, using fallback categories');
                 this.categories = this.getDefaultCategories();
             }
+            
+            // If no categories found, use defaults
+            if (this.categories.length === 0) {
+                console.log('📭 No categories found, using defaults');
+                this.categories = this.getDefaultCategories();
+            }
+            
             this.renderCategories();
         } catch (error) {
-            console.error('Error loading categories:', error);
+            console.error('❌ Error loading categories:', error);
+            console.log('🔄 Using default categories due to error');
             this.categories = this.getDefaultCategories();
             this.renderCategories();
         }
@@ -36,16 +80,12 @@ class CategoryManager {
     // Default categories for fallback
     getDefaultCategories() {
         return [
-            { id: 'all', name: 'All Products', icon: '🏠', color: '#667eea' },
-            { id: 'nike', name: 'Nike', icon: '✓', color: '#000000' },
-            { id: 'adidas', name: 'Adidas', icon: '⚡', color: '#0066cc' },
-            { id: 'shoes', name: 'Shoes', icon: '👟', color: '#ff6b35' },
-            { id: 'watches', name: 'Watches', icon: '⌚', color: '#28a745' },
-            { id: 'accessories', name: 'Accessories', icon: '🎒', color: '#6f42c1' },
-            { id: 'clothing', name: 'Clothing', icon: '👕', color: '#fd7e14' },
-            { id: 'electronics', name: 'Electronics', icon: '📱', color: '#20c997' },
-            { id: 'sports', name: 'Sports', icon: '⚽', color: '#dc3545' },
-            { id: 'lifestyle', name: 'Lifestyle', icon: '✨', color: '#ffc107' }
+            { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
+            { id: 'nike', name: 'Nike', image: 'https://via.placeholder.com/60x60?text=NIKE', color: '#000000' },
+            { id: 'adidas', name: 'Adidas', image: 'https://via.placeholder.com/60x60?text=ADIDAS', color: '#0066cc' },
+            { id: 'shoes', name: 'Shoes', image: 'https://via.placeholder.com/60x60?text=SHOES', color: '#ff6b35' },
+            { id: 'watches', name: 'Watches', image: 'https://via.placeholder.com/60x60?text=WATCH', color: '#28a745' },
+            { id: 'accessories', name: 'Accessories', image: 'https://via.placeholder.com/60x60?text=ACC', color: '#6f42c1' }
         ];
     }
 
@@ -73,25 +113,30 @@ class CategoryManager {
             <div class="category-card ${isSelected ? 'selected' : ''}" 
                  data-category-id="${category.id}"
                  onclick="categoryManager.selectCategory('${category.id}')"
-                 style="--category-color: ${category.color}">
-                <div class="category-icon">
-                    ${category.icon}
+                 style="--category-color: ${category.color || '#667eea'}">
+                <div class="category-image">
+                    <img src="${category.image || category.icon || 'https://via.placeholder.com/60x60?text=' + (category.name ? category.name.charAt(0) : 'C')}" 
+                         alt="${category.name || 'Category'}" 
+                         onerror="this.src='https://via.placeholder.com/60x60?text=' + '${category.name ? category.name.charAt(0) : 'C'}'">
                 </div>
-                <div class="category-name">${category.name}</div>
+                <div class="category-name">${category.name || 'Unnamed Category'}</div>
             </div>
         `;
     }
 
-    // Select/deselect category
+    // Select/deselect category (single selection only)
     selectCategory(categoryId) {
         if (categoryId === 'all') {
+            // Clear all selections when "All" is clicked
             this.selectedCategories = [];
         } else {
-            const index = this.selectedCategories.indexOf(categoryId);
-            if (index > -1) {
-                this.selectedCategories.splice(index, 1);
+            // Single category selection - replace current selection
+            if (this.selectedCategories.includes(categoryId)) {
+                // If already selected, deselect it (clear selection)
+                this.selectedCategories = [];
             } else {
-                this.selectedCategories.push(categoryId);
+                // Select only this category (replace any previous selection)
+                this.selectedCategories = [categoryId];
             }
         }
 
@@ -110,7 +155,7 @@ class CategoryManager {
     async addCategory(categoryData) {
         try {
             if (typeof db !== 'undefined') {
-                const docRef = await db.collection('categories').add(categoryData);
+                const docRef = await db.collection('category').add(categoryData);
                 categoryData.id = docRef.id;
             } else {
                 categoryData.id = Date.now().toString();
@@ -129,7 +174,7 @@ class CategoryManager {
     async updateCategory(categoryId, updateData) {
         try {
             if (typeof db !== 'undefined') {
-                await db.collection('categories').doc(categoryId).update(updateData);
+                await db.collection('category').doc(categoryId).update(updateData);
             }
             
             const categoryIndex = this.categories.findIndex(cat => cat.id === categoryId);
@@ -148,7 +193,7 @@ class CategoryManager {
     async deleteCategory(categoryId) {
         try {
             if (typeof db !== 'undefined') {
-                await db.collection('categories').doc(categoryId).delete();
+                await db.collection('category').doc(categoryId).delete();
             }
             
             this.categories = this.categories.filter(cat => cat.id !== categoryId);
