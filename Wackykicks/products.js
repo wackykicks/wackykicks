@@ -50,6 +50,19 @@ function loadProduct() {
         });
         galleryHTML += '</div><div class="pagination" id="pagination"></div>';
 
+        // Generate sizes HTML if available
+        let sizesHTML = '';
+        if (product.sizes && product.sizes.length > 0) {
+            sizesHTML = `
+                <div class="sizes">
+                    <label>Size:</label>
+                    <div class="size-options">
+                        ${product.sizes.map(size => `<span class="size-option">${size}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
         // For product page (product.js)
         productDetails.innerHTML = `
             <div class="product-container">
@@ -150,10 +163,21 @@ function filterProducts(categories = []) {
 
 // Render products function (no pagination)
 function renderProducts(productsToShow = allProducts) {
+    console.log('🎨 Rendering products...');
+    console.log('📦 Products to show:', productsToShow.length);
+    
     const productList = document.getElementById('productList');
+    console.log('🎯 Product list element found:', !!productList);
+    
+    if (!productList) {
+        console.error('❌ Product list element not found! Check if element with id="productList" exists');
+        return;
+    }
+    
     productList.innerHTML = '';
     
     if (productsToShow.length === 0) {
+        console.log('📭 No products to display');
         productList.innerHTML = `
             <div class="no-products-message">
                 <i class="fas fa-search"></i>
@@ -164,7 +188,9 @@ function renderProducts(productsToShow = allProducts) {
         return;
     }
     
-    productsToShow.forEach(product => {
+    console.log('✅ Adding products to DOM...');
+    productsToShow.forEach((product, index) => {
+        console.log(`📦 Adding product ${index + 1}:`, product.name);
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         productCard.innerHTML = `
@@ -183,6 +209,8 @@ function renderProducts(productsToShow = allProducts) {
         productList.appendChild(productCard);
     });
 
+    console.log('✅ Products rendered successfully');
+    
     // Hide pagination controls if present
     const paginationDiv = document.querySelector('.product-pagination');
     if (paginationDiv) paginationDiv.style.display = 'none';
@@ -245,7 +273,18 @@ function searchProducts() {
 
 // Initial load
 function loadProducts() {
+    console.log('🔄 Starting to load products...');
+    console.log('📱 Firebase db available:', typeof db !== 'undefined');
+    
+    if (typeof db === 'undefined') {
+        console.error('❌ Firebase database not initialized');
+        return;
+    }
+
     db.collection("products").get().then(snapshot => {
+        console.log('✅ Connected to Firebase successfully');
+        console.log('📦 Number of products found:', snapshot.size);
+        
         allProducts = [];
         snapshot.forEach(doc => {
             const product = doc.data();
@@ -258,9 +297,14 @@ function loadProducts() {
                 categories: product.categories || [] // Ensure categories array exists
             });
         });
+        
+        console.log('🎯 Products loaded:', allProducts.length);
+        console.log('📋 First product:', allProducts[0]);
         renderProducts(allProducts);
     }).catch(error => {
-        console.error("Error fetching products: ", error);
+        console.error("❌ Error fetching products: ", error);
+        console.log('🔄 Loading fallback demo data...');
+        
         // Fallback to demo data if Firebase fails
         allProducts = [
             {
@@ -283,11 +327,16 @@ function loadProducts() {
                 tag: 'New'
             }
         ];
+        console.log('✅ Demo products loaded:', allProducts.length);
         renderProducts(allProducts);
     });
 }
 
-window.addEventListener('DOMContentLoaded', loadProducts);
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 DOM loaded, initializing products...');
+    console.log('🔍 Checking for productList element:', !!document.getElementById('productList'));
+    loadProducts();
+});
 
 // Add resize listener to re-equalize heights
 window.addEventListener('resize', () => {
