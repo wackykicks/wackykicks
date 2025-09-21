@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Photo to URL Converter - ImgBB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include FontAwesome for icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Ensure body can scroll fully and extend to full height */
+html, body {
+    height: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+/* Adjust the body layout to allow scrolling */
+body {
+    display: block;  /* Remove flex so it scrolls normally */
+    padding-bottom: 80px; /* Extra space for bottom nav on mobile */
+}
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f7faff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: #5c3dff;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #555;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .upload-box {
+            background: #ffffff;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 40px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            transition: background 0.3s;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .upload-box:hover {
+            background: #f0f4ff;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: linear-gradient(90deg, #7f4fff, #b76fff);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #6741ff, #9f50ff);
+        }
+
+        #output {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            padding-bottom: 50px; /* extra space */
+        }
+
+        .image-card {
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            max-width: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .image-card img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .image-card p {
+            font-size: 0.85rem;
+            word-break: break-all;
+            text-align: center;
+        }
+
+        .copy-btn {
+            background: #6f47ff;
+            color: #fff;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #5533cc;
+        }
+
+        .custom-file-label {
+            display: inline-block;
+            background: #f0f4ff;
+            color: #5c3dff;
+            border: 2px solid #bdbfff;
+            border-radius: 30px;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 10px;
+            margin-top: 10px;
+            transition: background 0.3s, color 0.3s, border 0.3s;
+        }
+
+        .custom-file-label:hover {
+            background: #e0e7ff;
+            color: #6741ff;
+            border-color: #7f4fff;
+        }
+
+       /* Sidebar Styles */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 230px;
+    height: 100%;
+    background-color: #5c3dff;
+    color: white;
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.sidebar-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.sidebar-links li {
+    margin-bottom: 12px;
+}
+
+.sidebar-links a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.sidebar-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Bottom Nav Styles (Mobile) */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #fff;
+    border-top: 1px solid #ccc;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+}
+
+.bottom-nav a {
+    color: #5c3dff;
+    text-decoration: none;
+    font-size: 1.5rem;
+    padding: 10px;
+    transition: color 0.3s;
+    flex: 1 1 0;
+    text-align: center;
+}
+
+/* Active State */
+.sidebar-links a.active,
+.bottom-nav a.active {
+    background: white;
+    color: #5c3dff;
+    font-weight: bold;
+}
+
+.sidebar-links a.active i,
+.bottom-nav a.active i {
+    color: #5c3dff;
+}
+
+/* Responsive: Hide sidebar on small screens, show bottom nav */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+    .bottom-nav {
+        display: flex !important;
+    }
+    body {
+        padding-bottom: 80px; /* Ensure content is not hidden behind bottom nav */
+    }
+}
+
+@media (max-width: 600px) {
+    .copy-btn {
+        font-size: 1rem;
+        padding: 10px 16px;
+    }
+    .upload-box {
+        padding: 20px 8px;
+        width: 98%;
+        max-width: 98vw;
+    }
+    h2 {
+        font-size: 1.3rem;
+    }
+    .custom-file-label {
+        font-size: 0.95rem;
+        padding: 10px 16px;
+    }
+    #output {
+        gap: 10px;
+        padding-bottom: 70px; /* extra space for bottom nav */
+    }
+    .image-card {
+        max-width: 98vw;
+        padding: 10px;
+    }
+}
+    </style>
+</head>
+<body>
+
+  <!-- SIDEBAR NAV (Desktop) -->
+<nav class="sidebar">
+    <div class="sidebar-logo">NSS Admin</div>
+    <ul class="sidebar-links">
+        <li><a href="index.html" id="nav-admin"><i class="fa-solid fa-user-tie"></i> Dashboard</a></li>
+        <li><a href="photo-to-url.html" id="nav-converter"><i class="fa-solid fa-link"></i> Image Converter</a></li>
+    </ul>
+</nav>
+
+<!-- BOTTOM NAV (Mobile) -->
+<nav class="bottom-nav">
+    <a href="index.html" id="bottom-admin"><i class="fa-solid fa-user-tie"></i></a>
+    <a href="photo-to-url.html" id="bottom-converter"><i class="fa-solid fa-link"></i></a>
+</nav>
+
+<h2>Photo to URL Converter</h2>
+<p class="subtitle">Upload your images and get instant shareable URLs in JPEG format.</p>
+
+<div class="upload-box">
+    <div class="upload-icon">📤</div>
+    <label for="imageInput" class="custom-file-label">
+        <span id="fileLabelText">Choose Images</span>
+        <input type="file" id="imageInput" accept="image/*" multiple style="display:none;" onchange="updateFileLabel()">
+    </label>
+    <button onclick="uploadImage(); event.stopPropagation();">Upload</button>
+</div>
+
+<!-- Add this button just above your <div id="output"></div> -->
+<button onclick="copyAllUrls()" id="copyAllBtn" style="display:none;">Copy All URLs</button>
+<button onclick="toggleRearrange()" id="rearrangeBtn" style="display:none;">Rearrange Photos</button>
+
+<div id="output" class="rearrangeable"></div>
+
+<script>
+    let uploadedUrls = [];
+    let rearrangeMode = false;
+
+    function updateFileLabel() {
+        const input = document.getElementById('imageInput');
+        const label = document.getElementById('fileLabelText');
+        if (input.files.length === 1) {
+            label.textContent = input.files[0].name;
+        } else if (input.files.length > 1) {
+            label.textContent = `${input.files.length} files selected`;
+        } else {
+            label.textContent = "Choose Images";
+        }
+    }
+
+    async function uploadImage() {
+        const fileInput = document.getElementById('imageInput');
+        const files = fileInput.files;
+        if (!files.length) return alert('Please select at least one image!');
+
+        const apiKey = '6c06c886cd6678ed6b6aef4c033f66b0'; // Replace with your ImgBB API key
+        const output = document.getElementById('output');
+        uploadedUrls = []; // Reset previous uploads
+        output.innerHTML = ''; // Clear previous cards
+
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onloadend = async function () {
+                const base64String = reader.result.replace(/^data:.+;base64,/, '');
+
+                try {
+                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                        method: 'POST',
+                        body: new URLSearchParams({ image: base64String })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const url = data.data.url;
+                        uploadedUrls.push(url);
+                        const card = document.createElement('div');
+                        card.className = 'image-card';
+                        card.draggable = rearrangeMode;
+                        card.innerHTML = `
+                            <img src="${url}" alt="Uploaded Image">
+                            <p>${url}</p>
+                            <button class="copy-btn" onclick="navigator.clipboard.writeText('${url}')">Copy URL</button>
+                        `;
+                        card.setAttribute('data-url', url);
+                        output.appendChild(card);
+                        document.getElementById('copyAllBtn').style.display = 'inline-block';
+                        document.getElementById('rearrangeBtn').style.display = 'inline-block';
+                        if (rearrangeMode) enableDragAndDrop();
+                    } else {
+                        alert('Upload failed: ' + (data.error?.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Upload error: ' + error.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function copyAllUrls() {
+        // Get URLs in current order
+        const cards = document.querySelectorAll('.image-card');
+        const orderedUrls = Array.from(cards).map(card => card.getAttribute('data-url'));
+        if (!orderedUrls.length) return;
+        const allLinks = orderedUrls.join(', ');
+        navigator.clipboard.writeText(allLinks).then(() => {
+            alert('All URLs copied to clipboard (comma separated)!');
+        }).catch(err => {
+            alert('Failed to copy: ' + err.message);
+        });
+    }
+
+    function toggleRearrange() {
+        rearrangeMode = !rearrangeMode;
+        document.getElementById('rearrangeBtn').textContent = rearrangeMode ? "Done Rearranging" : "Rearrange Photos";
+        enableDragAndDrop();
+    }
+
+    function enableDragAndDrop() {
+        const cards = document.querySelectorAll('.image-card');
+        cards.forEach(card => {
+            card.draggable = rearrangeMode;
+            if (rearrangeMode) {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragover', handleDragOver);
+                card.addEventListener('drop', handleDrop);
+                card.style.cursor = 'grab';
+            } else {
+                card.removeEventListener('dragstart', handleDragStart);
+                card.removeEventListener('dragover', handleDragOver);
+                card.removeEventListener('drop', handleDrop);
+                card.style.cursor = 'default';
+            }
+        });
+    }
+
+    let draggedCard = null;
+
+    function handleDragStart(e) {
+        draggedCard = this;
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        if (draggedCard && draggedCard !== this) {
+            const output = document.getElementById('output');
+            const cards = Array.from(output.children);
+            const draggedIndex = cards.indexOf(draggedCard);
+            const targetIndex = cards.indexOf(this);
+
+            if (draggedIndex < targetIndex) {
+                output.insertBefore(draggedCard, this.nextSibling);
+            } else {
+                output.insertBefore(draggedCard, this);
+            }
+        }
+    }
+
+    // Nav highlighting
+    const path = window.location.pathname;
+    if (path.includes("admin.html")) {
+        document.getElementById("nav-admin")?.classList.add("active");
+        document.getElementById("bottom-admin")?.classList.add("active");
+    } else if (path.includes("photo-to-url.html")) {
+        document.getElementById("nav-converter")?.classList.add("active");
+        document.getElementById("bottom-converter")?.classList.add("active");
+    }
+</script>
+
+<style>
+/* ...existing styles... */
+.image-card[draggable="true"] {
+    border: 2px dashed #7f4fff;
+    cursor: grab;
+    opacity: 0.95;
+}
+.image-card.dragging {
+    opacity: 0.5;
+}
+#rearrangeBtn {
+    margin-left: 10px;
+    background: #f0f4ff;
+    color: #5c3dff;
+    border: 2px solid #bdbfff;
+    border-radius: 30px;
+    padding: 10px 22px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    transition: background 0.3s, color 0.3s, border 0.3s;
+}
+#rearrangeBtn:hover {
+    background: #e0e7ff;
+    color: #6741ff;
+    border-color: #7f4fff;
+}
+</style>
+
+<!
