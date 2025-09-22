@@ -191,6 +191,7 @@ function renderProducts(productsToShow = allProducts) {
                     <span class="new-price">₹${product.newPrice || product.price}</span>
                 </div>
             </a>
+            <button class="buy-now" onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}')">Buy Now</button>
         `;
         productList.appendChild(productCard);
     });

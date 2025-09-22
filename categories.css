@@ -103,7 +103,6 @@
 
 /* Hover and interaction states */
 .category-card:hover {
-    transform: translateY(-12px) scale(1.05);
     box-shadow: 
         0 20px 48px rgba(0, 0, 0, 0.18),
         0 8px 24px rgba(0, 0, 0, 0.12);
@@ -111,7 +110,6 @@
 }
 
 .category-card.selected {
-    transform: translateY(-8px) scale(1.02);
     background: white;
     box-shadow: 
         0 16px 40px rgba(0, 0, 0, 0.15),
@@ -160,17 +158,14 @@
 }
 
 .category-card:hover .category-image {
-    transform: scale(1.15) rotate(5deg);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .category-card:hover .category-image img {
-    transform: scale(1.1);
     filter: brightness(1.2) contrast(1.2);
 }
 
 .category-card.selected .category-image {
-    transform: scale(1.08);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -191,7 +186,6 @@
 .category-card:hover .category-name {
     color: var(--category-color, #667eea);
     font-weight: 700;
-    transform: translateY(-2px);
 }
 
 .category-card.selected .category-name {
@@ -235,12 +229,12 @@
     }
 }
 
-/* Pulse animation for selected state */
-.category-card.selected {
+/* Pulse animation for selected state - REMOVED */
+/* .category-card.selected {
     animation: selectedPulse 2s infinite alternate;
-}
+} */
 
-@keyframes selectedPulse {
+/* @keyframes selectedPulse {
     0% {
         box-shadow: 
             0 16px 40px rgba(0, 0, 0, 0.15),
@@ -254,11 +248,10 @@
             inset 0 0 0 2px var(--category-color, #667eea),
             0 0 20px rgba(102, 126, 234, 0.4);
     }
-}
+} */
 
 /* Active/Click state */
 .category-card:active {
-    transform: translateY(-4px) scale(0.98);
     transition: all 0.1s ease;
 }
 
@@ -376,7 +369,9 @@
     }
 
     .category-card:hover {
-        transform: translateY(-8px) scale(1.03);
+        box-shadow: 
+            0 20px 48px rgba(0, 0, 0, 0.18),
+            0 8px 24px rgba(0, 0, 0, 0.12);
     }
 }
 
