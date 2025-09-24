@@ -1,3 +1,14 @@
+// ✅ Calculate discount percentage (robust for string inputs)
+function calculateDiscountPercentage(oldPrice, newPrice) {
+    const o = parseFloat(oldPrice);
+    const n = parseFloat(newPrice);
+    if (!isFinite(o) || !isFinite(n) || o <= n) {
+        return null; // No discount or invalid prices
+    }
+    const discount = ((o - n) / o) * 100;
+    return Math.round(discount); // Round to nearest whole number
+}
+
 // Cart Management System
 class ShoppingCart {
     constructor() {
@@ -167,6 +178,7 @@ class ShoppingCart {
                         <div class="item-price">
                             ${item.oldPrice ? `<span class="old-price">₹${item.oldPrice}</span>` : ''}
                             <span class="new-price">₹${item.price}</span>
+                            ${calculateDiscountPercentage(item.oldPrice, item.price) ? `<span class="cart-discount">${calculateDiscountPercentage(item.oldPrice, item.price)}% OFF</span>` : ''}
                         </div>
                     </div>
                     <div class="quantity-controls">

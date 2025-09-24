@@ -67,6 +67,34 @@
     </div>
 </section>
 
+<section class="customer-reviews-section">
+    <h2>Reviews</h2>
+    <div class="reviews-overview" id="reviewsOverview">
+        <!-- Reviews overview will be loaded here -->
+    </div>
+    <div class="reviews-container" id="reviewsContainer">
+        <!-- Reviews will be loaded here -->
+    </div>
+    <div class="add-review-section">
+        <h3>Add Your Review</h3>
+        <form id="reviewForm" class="review-form">
+            <div class="rating-input">
+                <label>Rating:</label>
+                <div class="star-rating" id="starRating">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+            </div>
+            <input type="text" id="reviewerName" placeholder="Your Name" required>
+            <textarea id="reviewText" placeholder="Write your review..." required></textarea>
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+</section>
+
 <section class="related-products-section">
     <h2>Related Products</h2>
     <div class="related-carousel" id="relatedCarousel">
@@ -77,6 +105,12 @@
         <button onclick="scrollCarousel(1)">&#10095;</button>
     </div>
 </section>
+
+<!-- Fixed Buy/Add bar -->
+<div class="fixed-product-bar">
+  <button class="add-to-cart-btn" id="fixedAddToCart"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
+  <button class="buy-now" id="fixedBuyNow">Buy Now</button>
+</div>
 
 <footer class="footer">
   <div class="footer-container">

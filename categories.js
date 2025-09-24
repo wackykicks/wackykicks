@@ -81,6 +81,7 @@ class CategoryManager {
     getDefaultCategories() {
         return [
             { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
+            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#6c757d', special: true },
             { id: 'nike', name: 'Nike', image: 'https://via.placeholder.com/60x60?text=NIKE', color: '#000000' },
             { id: 'adidas', name: 'Adidas', image: 'https://via.placeholder.com/60x60?text=ADIDAS', color: '#0066cc' },
             { id: 'shoes', name: 'Shoes', image: 'https://via.placeholder.com/60x60?text=SHOES', color: '#ff6b35' },
@@ -93,6 +94,12 @@ class CategoryManager {
     renderCategories() {
         const categoriesContainer = document.getElementById('categoriesContainer');
         if (!categoriesContainer) return;
+        // Preserve current horizontal scroll position to avoid jump-to-start on re-render
+        let prevScrollLeft = 0;
+        const existingScrollEl = categoriesContainer.querySelector('.categories-scroll');
+        if (existingScrollEl) {
+            prevScrollLeft = existingScrollEl.scrollLeft;
+        }
 
         categoriesContainer.innerHTML = `
             <div class="categories-section">
@@ -104,13 +111,21 @@ class CategoryManager {
                 </div>
             </div>
         `;
+
+        // Restore previous scroll position after re-render
+        const newScrollEl = categoriesContainer.querySelector('.categories-scroll');
+        if (newScrollEl && Number.isFinite(prevScrollLeft)) {
+            newScrollEl.scrollLeft = prevScrollLeft;
+        }
     }
 
     // Render individual category card
     renderCategoryCard(category) {
         const isSelected = this.selectedCategories.includes(category.id);
+        const isSpecialOffer = category.id === 'today offer';
+        
         return `
-            <div class="category-card ${isSelected ? 'selected' : ''}" 
+            <div class="category-card ${isSelected ? 'selected' : ''} ${isSpecialOffer ? 'special-offer-card' : ''}" 
                  data-category-id="${category.id}"
                  onclick="categoryManager.selectCategory('${category.id}')"
                  style="--category-color: ${category.color || '#667eea'}">

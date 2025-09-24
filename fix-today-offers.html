@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Fix - Today's Offers</title>
+    <style>
+        body {
+            font-family: 'Lucida Console', monospace;
+            margin: 20px;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Lucida Console', monospace;
+            font-size: 14px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
+        }
+        .btn.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .steps {
+            counter-reset: step-counter;
+        }
+        .step {
+            counter-increment: step-counter;
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #6c757d;
+            background: #f8f9fa;
+        }
+        .step::before {
+            content: "Step " counter(step-counter) ": ";
+            font-weight: bold;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Today's Offers - Quick Fix & Setup</h1>
+        
+        <div class="highlight">
+            <h2>🎯 Target Product</h2>
+            <p><strong>Product ID:</strong> 0nGKhvNJls6Ehojd8DFD</p>
+            <p><strong>Product URL:</strong> <a href="http://127.0.0.1:5500/product.html?id=0nGKhvNJls6Ehojd8DFD" target="_blank" style="color: #ccc;">View Product</a></p>
+        </div>
+
+        <div class="section">
+            <h3>🚀 One-Click Complete Setup</h3>
+            <p>This will create the category and assign the product in one go:</p>
+            <button class="btn success" onclick="completeSetup()" id="completeBtn">
+                ⚡ COMPLETE SETUP NOW
+            </button>
+        </div>
+
+        <div class="section">
+            <h3>🔍 Individual Actions</h3>
+            <button class="btn" onclick="createCategory()">1️⃣ Create Category</button>
+            <button class="btn" onclick="assignProduct()">2️⃣ Assign Product</button>
+            <button class="btn" onclick="testQuery()">3️⃣ Test Query</button>
+            <button class="btn" onclick="viewResults()">4️⃣ View Results</button>
+        </div>
+
+        <div class="section">
+            <h3>📊 Status & Results</h3>
+            <div id="status"></div>
+        </div>
+
+        <div class="section steps">
+            <h3>✅ What This Does:</h3>
+            <div class="step">Creates "Today's Offers" category with gray theme (no emojis)</div>
+            <div class="step">Assigns product 0nGKhvNJls6Ehojd8DFD to the category</div>
+            <div class="step">Tests the updated query to ensure products load correctly</div>
+            <div class="step">Verifies the fix works on your main page</div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGdGh5VvTmwpqaXojrKqZUhctFjIKOyJs",
+            authDomain: "wackykicks-59e50.firebaseapp.com",
+            projectId: "wackykicks-59e50",
+            storageBucket: "wackykicks-59e50.appspot.com",
+            messagingSenderId: "46712635171",
+            appId: "1:46712635171:web:1f9a5b7b1f3d5e2c8f9e10"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const PRODUCT_ID = '0nGKhvNJls6Ehojd8DFD';
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML += `<div class="status ${type}"><strong>[${timestamp}]</strong> ${message}</div>`;
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function clearStatus() {
+            document.getElementById('status').innerHTML = '';
+        }
+
+        async function completeSetup() {
+            const btn = document.getElementById('completeBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Working...';
+            clearStatus();
+            
+            try {
+                showStatus('🚀 Starting complete setup for Today\'s Offers...', 'info');
+                
+                // Step 1: Create Category
+                showStatus('🏷️ Creating "Today\'s Offers" category...', 'info');
+                const categoryResult = await createTodayOffersCategory();
+                
+                if (categoryResult.success) {
+                    showStatus(`✅ ${categoryResult.message}`, 'success');
+                } else {
+                    showStatus(`❌ Category creation failed: ${categoryResult.message}`, 'error');
+                    return;
+                }
+                
+                // Step 2: Assign Product
+                showStatus('📦 Assigning product to Today\'s Offers...', 'info');
+                const productResult = await assignProductToCategory();
+                
+                if (productResult.success) {
+                    showStatus(`✅ ${productResult.message}`, 'success');
+                } else {
+                    showStatus(`❌ Product assignment failed: ${productResult.message}`, 'error');
+                    return;
+                }
+                
+                // Step 3: Test Query
+                showStatus('🔍 Testing the fixed query...', 'info');
+                await testQuery();
+                
+                // Step 4: Final verification
+                showStatus('🎉 SETUP COMPLETE! Check your main page now.', 'success');
+                showStatus('🌟 The product should now appear in the Today\'s Offers section.', 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Setup failed: ${error.message}`, 'error');
+                console.error('Complete setup error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⚡ COMPLETE SETUP NOW';
+            }
+        }
+
+        async function createCategory() {
+            showStatus('🏷️ Creating Today\'s Offers category...', 'info');
+            const result = await createTodayOffersCategory();
+            showStatus(result.success ? `✅ ${result.message}` : `❌ ${result.message}`, result.success ? 'success' : 'error');
+        }
+
+        async function assignProduct() {
+            showStatus('📦 Assigning product to category...', 'info');
+            const result = await assignProductToCategory();
+            showStatus(result.success ? `✅ ${result.message}` : `❌ ${result.message}`, result.success ? 'success' : 'error');
+        }
+
+        async function createTodayOffersCategory() {
+            try {
+                // Check if category already exists
+                const existingQuery = await db.collection("category").where("name", "==", "Today's Offers").get();
+                
+                if (!existingQuery.empty) {
+                    return { success: true, message: "Category already exists" };
+                }
+                
+                // Create the category with correct structure
+                const categoryData = {
+                    name: "Today's Offers",
+                    id: "today offer",
+                    color: "#6c757d",
+                    image: "https://via.placeholder.com/60x60?text=OFFER",
+                    icon: "https://via.placeholder.com/60x60?text=OFFER",
+                    special: true,
+                    description: "Limited time special offers and exclusive deals",
+                    displayOrder: 1,
+                    isActive: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    categoryType: "special",
+                    isSystemCategory: true,
+                    features: {
+                        animated: true,
+                        priority: true,
+                        showCountdown: true,
+                        gradientBackground: true,
+                        limitedTime: true
+                    }
+                };
+                
+                const docRef = await db.collection("category").add(categoryData);
+                return { success: true, message: `Category created successfully! Document ID: ${docRef.id}` };
+                
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
+        async function assignProductToCategory() {
+            try {
+                // Get the current product data
+                const productDoc = await db.collection('products').doc(PRODUCT_ID).get();
+                
+                if (!productDoc.exists) {
+                    return { success: false, message: `Product ${PRODUCT_ID} not found in database` };
+                }
+                
+                const productData = productDoc.data();
+                let categories = productData.categories || [];
+                
+                // Add "today offer" to categories if not already present
+                if (!categories.includes('today offer')) {
+                    categories.push('today offer');
+                    
+                    // Update the product with new categories
+                    await db.collection('products').doc(PRODUCT_ID).update({
+                        categories: categories,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    return { 
+                        success: true, 
+                        message: `Product "${productData.name}" successfully added to Today's Offers category` 
+                    };
+                } else {
+                    return { 
+                        success: true, 
+                        message: `Product "${productData.name}" was already in Today's Offers category` 
+                    };
+                }
+                
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
+        async function testQuery() {
+            showStatus('🔍 Testing the corrected query (categories array-contains)...', 'info');
+            
+            try {
+                // Test the corrected query that matches products.js
+                const productsQuery = await db.collection('products')
+                    .where('categories', 'array-contains', 'today offer')
+                    .get();
+                
+                if (productsQuery.empty) {
+                    showStatus('⚠️ Query returned no results. Product may not be assigned correctly.', 'warning');
+                } else {
+                    showStatus(`✅ Query successful! Found ${productsQuery.size} product(s) in Today's Offers:`, 'success');
+                    
+                    productsQuery.docs.forEach((doc, index) => {
+                        const product = doc.data();
+                        showStatus(`   ${index + 1}. ${product.name} (ID: ${doc.id})`, 'info');
+                    });
+                    
+                    showStatus('🎯 The main page should now display these products in Today\'s Offers section!', 'success');
+                }
+            } catch (error) {
+                showStatus(`❌ Query test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function viewResults() {
+            showStatus('📊 Checking final status...', 'info');
+            await testQuery();
+            showStatus('🌐 Now visit your main page to see the Today\'s Offers section with products!', 'info');
+            showStatus('🔗 Main page: <a href="http://127.0.0.1:5500/" target="_blank">http://127.0.0.1:5500/</a>', 'info');
+        }
+
+        // Auto-check status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            showStatus('🎯 Ready to fix Today\'s Offers! Click "COMPLETE SETUP NOW" to begin.', 'info');
+        });
+    </script>
+</body>
+</html>

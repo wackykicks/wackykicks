@@ -24,11 +24,14 @@
         <li><a href="https://www.instagram.com/wackykicks.in/" target="_blank"><i class="fab fa-instagram"></i></a></li>
     </ul>
 
-    <div class="search-container">
-        <a href="search.html" aria-label="Go to search page">
-            <button type="button"><i class="fas fa-search"></i></button>
-        </a>
-    </div>
+  <div class="search-container" role="search">
+    <i class="fas fa-search" aria-hidden="true" style="color:#666"></i>
+    <input id="searchInput" type="text" placeholder="Search for a product" aria-label="Search products" autocomplete="off" />
+    <button type="button" id="clearSearchBtn" aria-label="Clear search" title="Clear" style="display:none">
+      <i class="fas fa-times"></i>
+    </button>
+    <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" style="display:none"></div>
+  </div>
 
     <div class="cart-container">
         <a href="cart.html" aria-label="Go to cart">
@@ -48,6 +51,33 @@
 <div id="categoriesContainer">
     <!-- Categories will be dynamically loaded here -->
 </div>
+
+<!-- First Promotional Banner (after categories) -->
+<section class="promotional-banners full-width" id="promotional-banners-1">
+    <!-- Smartwatch Banner -->
+    <div class="promo-banner smartwatch-banner image-only" onclick="redirectToCategory('smartwatch')">
+        <img src="./Smartwatch (1).png" alt="Smartwatch Collection" loading="lazy">
+    </div>
+</section>
+
+<!-- Today's Offer Section -->
+<section class="todays-offer-section" id="todays-offer">
+    <div class="offer-header">
+        <h2>Today's Special Offers</h2>
+        <p>Limited time deals - Don't miss out!</p>
+    </div>
+    <div class="offer-grid" id="todaysOfferGrid">
+        <!-- Today's offer products will be dynamically loaded here -->
+    </div>
+</section>
+
+<!-- Second Promotional Banner (after today's offers) -->
+<section class="promotional-banners full-width" id="promotional-banners-2">
+    <!-- Smart Gadgets Banner -->
+    <div class="promo-banner gadgets-banner image-only" onclick="redirectToCategory('gadgets')">
+        <img src="./Smart Gadget.png" alt="Smart Gadgets Collection" loading="lazy">
+    </div>
+</section>
 
 <!-- Product Grid Section -->
 <section class="product-grid-section" id="product-grid">

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Reviews</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .review { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .product { border: 1px solid #007bff; padding: 15px; margin: 10px 0; border-radius: 8px; background: #f8f9fa; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; width: 300px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Debug Reviews System</h1>
+    
+    <div>
+        <button onclick="loadAllReviews()">Load All Reviews</button>
+        <button onclick="loadAllProducts()">Load All Products</button>
+        <button onclick="testProductPage()">Test Product Page</button>
+    </div>
+    
+    <div>
+        <input type="text" id="testProductId" placeholder="Enter Product ID to test">
+        <button onclick="testSpecificProduct()">Test This Product</button>
+    </div>
+    
+    <div id="output" style="margin-top: 20px;"></div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
+            messagingSenderId: "911540684237",
+            appId: "1:911540684237:web:faa772c146ff4acfadb084",
+            measurementId: "G-7HWH0SEJN2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function loadAllReviews() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>All Reviews in Database:</h2>';
+            
+            try {
+                const snapshot = await db.collection("reviews").get();
+                
+                if (snapshot.empty) {
+                    output.innerHTML += '<p>No reviews found in database!</p>';
+                    return;
+                }
+                
+                output.innerHTML += `<p>Found ${snapshot.size} reviews:</p>`;
+                
+                snapshot.forEach(doc => {
+                    const review = doc.data();
+                    output.innerHTML += `
+                        <div class="review">
+                            <strong>Review ID:</strong> ${doc.id}<br>
+                            <strong>Product ID:</strong> ${review.productId}<br>
+                            <strong>Reviewer:</strong> ${review.reviewerName}<br>
+                            <strong>Rating:</strong> ${review.rating}/5<br>
+                            <strong>Text:</strong> ${review.reviewText}<br>
+                            <strong>Timestamp:</strong> ${review.timestamp ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'No timestamp'}<br>
+                            <a href="product.html?id=${review.productId}" target="_blank">View Product Page</a>
+                        </div>
+                    `;
+                });
+                
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+                console.error(error);
+            }
+        }
+
+        async function loadAllProducts() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>All Products in Database:</h2>';
+            
+            try {
+                const snapshot = await db.collection("products").limit(20).get();
+                
+                if (snapshot.empty) {
+                    output.innerHTML += '<p>No products found in database!</p>';
+                    return;
+                }
+                
+                output.innerHTML += `<p>Found ${snapshot.size} products (showing first 20):</p>`;
+                
+                snapshot.forEach(doc => {
+                    const product = doc.data();
+                    output.innerHTML += `
+                        <div class="product">
+                            <strong>Product ID:</strong> ${doc.id}<br>
+                            <strong>Name:</strong> ${product.name}<br>
+                            <strong>Price:</strong> ₹${product.price || product.newPrice}<br>
+                            <button onclick="document.getElementById('testProductId').value='${doc.id}'">Use This ID</button>
+                            <a href="product.html?id=${doc.id}" target="_blank">View Product Page</a>
+                        </div>
+                    `;
+                });
+                
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+                console.error(error);
+            }
+        }
+
+        async function testSpecificProduct() {
+            const productId = document.getElementById('testProductId').value.trim();
+            const output = document.getElementById('output');
+            
+            if (!productId) {
+                output.innerHTML = '<p style="color: red;">Please enter a product ID!</p>';
+                return;
+            }
+            
+            output.innerHTML = `<h2>Testing Product: ${productId}</h2>`;
+            
+            try {
+                // Check if product exists
+                const productDoc = await db.collection("products").doc(productId).get();
+                if (!productDoc.exists) {
+                    output.innerHTML += '<p style="color: red;">❌ Product not found in database!</p>';
+                    return;
+                }
+                
+                output.innerHTML += '<p style="color: green;">✅ Product exists in database</p>';
+                
+                // Check for reviews
+                const reviewsSnapshot = await db.collection("reviews").where("productId", "==", productId).get();
+                
+                output.innerHTML += `<p>Found ${reviewsSnapshot.size} reviews for this product:</p>`;
+                
+                if (reviewsSnapshot.empty) {
+                    output.innerHTML += '<p style="color: orange;">⚠️ No reviews found for this product</p>';
+                    output.innerHTML += `<button onclick="addDemoReviewForProduct('${productId}')">Add Demo Review</button>`;
+                } else {
+                    reviewsSnapshot.forEach(doc => {
+                        const review = doc.data();
+                        output.innerHTML += `
+                            <div class="review">
+                                <strong>Reviewer:</strong> ${review.reviewerName}<br>
+                                <strong>Rating:</strong> ${review.rating}/5<br>
+                                <strong>Text:</strong> ${review.reviewText}
+                            </div>
+                        `;
+                    });
+                }
+                
+                output.innerHTML += `<p><a href="product.html?id=${productId}" target="_blank">🔗 Open Product Page</a></p>`;
+                
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+                console.error(error);
+            }
+        }
+
+        async function addDemoReviewForProduct(productId) {
+            try {
+                await db.collection("reviews").add({
+                    productId: productId,
+                    reviewerName: "Demo User",
+                    reviewText: "This is a test review to check if the system is working properly. Great product!",
+                    rating: 5,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert('Demo review added! Refresh the product page to see it.');
+                testSpecificProduct();
+                
+            } catch (error) {
+                alert('Error adding demo review: ' + error.message);
+            }
+        }
+
+        function testProductPage() {
+            // Get URL parameters to see what product ID is being used
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentProductId = urlParams.get('id');
+            
+            if (currentProductId) {
+                document.getElementById('testProductId').value = currentProductId;
+                testSpecificProduct();
+            } else {
+                document.getElementById('output').innerHTML = '<p>No product ID in current URL. Use the test input above.</p>';
+            }
+        }
+
+        // Auto-load on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAllReviews();
+        });
+    </script>
+</body>
+</html>

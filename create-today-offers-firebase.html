@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Today's Offers Category - Matching Firebase Structure</title>
+    <style>
+        body {
+            font-family: 'Lucida Console', monospace;
+            margin: 20px;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Lucida Console', monospace;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+        }
+        .btn.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        .highlight {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .firebase-structure {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="highlight">
+            <h1>🔧 Add Today's Offers Category</h1>
+            <p>Matching your exact Firebase structure</p>
+        </div>
+        
+        <div class="firebase-structure">
+            <strong>Expected Firebase Structure:</strong><br>
+            category/{document-id}/<br>
+            ├── color: "#6c757d"<br>
+            ├── createdAt: timestamp<br>
+            ├── description: ""<br>
+            ├── image: "https://i.ibb.co/..."<br>
+            └── name: "Today's Offers"
+        </div>
+
+        <div class="step">
+            <strong>Step 1:</strong> Create "Today's Offers" category with exact same structure as your existing categories
+        </div>
+        
+        <div class="step">
+            <strong>Step 2:</strong> Add product 0nGKhvNJls6Ehojd8DFD to this category
+        </div>
+        
+        <div class="step">
+            <strong>Step 3:</strong> Test that it appears on your main page
+        </div>
+
+        <h3>🎯 Actions</h3>
+        <button class="btn" onclick="completeSetup()" id="mainBtn">
+            ⚡ CREATE CATEGORY & ASSIGN PRODUCT
+        </button>
+        
+        <button class="btn secondary" onclick="listExistingCategories()">📋 Show Existing Categories</button>
+        <button class="btn secondary" onclick="checkProduct()">🔍 Check Product</button>
+        <button class="btn secondary" onclick="testQuery()">🧪 Test Query</button>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Firebase Scripts - Using same version as your main page -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Using the SAME Firebase config as your main page
+        const firebaseConfig = {
+            apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
+            messagingSenderId: "911540684237",
+            appId: "1:911540684237:web:faa772c146ff4acfadb084",
+            measurementId: "G-7HWH0SEJN2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const PRODUCT_ID = '0nGKhvNJls6Ehojd8DFD';
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML += `<div class="status ${type}"><strong>[${timestamp}]</strong> ${message}</div>`;
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function clearStatus() {
+            document.getElementById('status').innerHTML = '';
+        }
+
+        async function completeSetup() {
+            const btn = document.getElementById('mainBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Working...';
+            clearStatus();
+            
+            try {
+                showStatus('🚀 Starting setup with exact Firebase structure...', 'info');
+                showStatus(`🔥 Connected to project: ${firebase.app().options.projectId}`, 'info');
+                
+                // Step 1: Check existing categories to match structure
+                showStatus('🔍 Analyzing existing category structure...', 'info');
+                await analyzeExistingCategories();
+                
+                // Step 2: Create Today's Offers category
+                showStatus('🏷️ Creating "Today\'s Offers" category...', 'info');
+                const categoryResult = await createTodayOffersCategory();
+                
+                if (!categoryResult) {
+                    showStatus('❌ Failed to create category. Stopping.', 'error');
+                    return;
+                }
+                
+                // Step 3: Assign product to category
+                showStatus('📦 Assigning product to category...', 'info');
+                const productResult = await assignProductToCategory();
+                
+                if (!productResult) {
+                    showStatus('❌ Failed to assign product. Stopping.', 'error');
+                    return;
+                }
+                
+                // Step 4: Test the result
+                showStatus('✅ Testing final result...', 'info');
+                await testQuery();
+                
+                showStatus('🎉 SETUP COMPLETE! Check your main page now!', 'success');
+                showStatus('🌐 Main page: <a href="http://127.0.0.1:5500/" target="_blank">http://127.0.0.1:5500/</a>', 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Setup failed: ${error.message}`, 'error');
+                console.error('Complete setup error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⚡ CREATE CATEGORY & ASSIGN PRODUCT';
+            }
+        }
+
+        async function analyzeExistingCategories() {
+            try {
+                const categoriesSnapshot = await db.collection('category').limit(3).get();
+                
+                if (categoriesSnapshot.empty) {
+                    showStatus('⚠️ No existing categories found to analyze', 'warning');
+                    return;
+                }
+                
+                showStatus(`📊 Found ${categoriesSnapshot.size} existing categories`, 'info');
+                
+                // Show structure of first category
+                const firstDoc = categoriesSnapshot.docs[0];
+                const firstCategory = firstDoc.data();
+                
+                showStatus(`📋 Sample category structure:`, 'info');
+                Object.keys(firstCategory).forEach(key => {
+                    showStatus(`   ${key}: ${typeof firstCategory[key]} = ${JSON.stringify(firstCategory[key]).substring(0, 50)}...`, 'info');
+                });
+                
+            } catch (error) {
+                showStatus(`❌ Error analyzing categories: ${error.message}`, 'error');
+            }
+        }
+
+        async function listExistingCategories() {
+            clearStatus();
+            showStatus('📋 Loading existing categories...', 'info');
+            
+            try {
+                const categoriesSnapshot = await db.collection('category').get();
+                
+                if (categoriesSnapshot.empty) {
+                    showStatus('📭 No categories found', 'warning');
+                    return;
+                }
+                
+                showStatus(`📊 Found ${categoriesSnapshot.size} categories:`, 'success');
+                
+                categoriesSnapshot.docs.forEach((doc, index) => {
+                    const category = doc.data();
+                    showStatus(`${index + 1}. "${category.name}" (Color: ${category.color}, ID: ${doc.id})`, 'info');
+                });
+                
+            } catch (error) {
+                showStatus(`❌ Error loading categories: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkProduct() {
+            clearStatus();
+            showStatus('🔍 Checking product...', 'info');
+            
+            try {
+                const productDoc = await db.collection('products').doc(PRODUCT_ID).get();
+                
+                if (!productDoc.exists) {
+                    showStatus(`❌ Product ${PRODUCT_ID} not found!`, 'error');
+                    return;
+                }
+                
+                const productData = productDoc.data();
+                showStatus(`✅ Product found: "${productData.name}"`, 'success');
+                
+                if (productData.categories && Array.isArray(productData.categories)) {
+                    showStatus(`📂 Current categories: [${productData.categories.join(', ')}]`, 'info');
+                } else {
+                    showStatus(`⚠️ Product has no categories array`, 'warning');
+                }
+                
+            } catch (error) {
+                showStatus(`❌ Error checking product: ${error.message}`, 'error');
+            }
+        }
+
+        async function testQuery() {
+            showStatus('🧪 Testing the Today\'s Offers query...', 'info');
+            
+            try {
+                // Test the exact query used by loadTodaysOffers()
+                const productsQuery = await db.collection('products')
+                    .where('categories', 'array-contains', 'today offer')
+                    .get();
+                
+                if (productsQuery.empty) {
+                    showStatus('❌ Query returned no results', 'error');
+                    showStatus('🔧 This means no products have "today offer" in their categories array', 'info');
+                } else {
+                    showStatus(`✅ Query successful! Found ${productsQuery.size} product(s):`, 'success');
+                    
+                    productsQuery.docs.forEach((doc, index) => {
+                        const product = doc.data();
+                        showStatus(`   ${index + 1}. ${product.name} (${doc.id})`, 'info');
+                    });
+                    
+                    showStatus('🎯 These products will appear in Today\'s Offers on your main page!', 'success');
+                }
+                
+            } catch (error) {
+                showStatus(`❌ Query test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTodayOffersCategory() {
+            try {
+                // Check if Today's Offers category already exists
+                const existingQuery = await db.collection("category")
+                    .where("name", "==", "Today's Offers")
+                    .get();
+                
+                if (!existingQuery.empty) {
+                    showStatus('✅ "Today\'s Offers" category already exists', 'success');
+                    return true;
+                }
+                
+                // Create category with exact same structure as your existing ones
+                const categoryData = {
+                    color: "#6c757d",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    description: "",
+                    image: "https://i.ibb.co/d6YzJH9/offer-placeholder.png", // Gray placeholder
+                    name: "Today's Offers"
+                };
+                
+                const docRef = await db.collection("category").add(categoryData);
+                showStatus(`✅ "Today's Offers" category created! Document ID: ${docRef.id}`, 'success');
+                showStatus(`🎨 Color: ${categoryData.color}, Image: Placeholder`, 'info');
+                
+                return true;
+                
+            } catch (error) {
+                showStatus(`❌ Failed to create category: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function assignProductToCategory() {
+            try {
+                // Get the current product data
+                const productDoc = await db.collection('products').doc(PRODUCT_ID).get();
+                
+                if (!productDoc.exists) {
+                    showStatus(`❌ Product ${PRODUCT_ID} not found`, 'error');
+                    return false;
+                }
+                
+                const productData = productDoc.data();
+                let categories = productData.categories || [];
+                
+                // Add "today offer" to categories if not already present
+                if (!categories.includes('today offer')) {
+                    categories.push('today offer');
+                    
+                    // Update the product with new categories
+                    await db.collection('products').doc(PRODUCT_ID).update({
+                        categories: categories
+                    });
+                    
+                    showStatus(`✅ Product "${productData.name}" added to Today's Offers`, 'success');
+                    showStatus(`📂 Updated categories: [${categories.join(', ')}]`, 'info');
+                } else {
+                    showStatus(`✅ Product "${productData.name}" already in Today's Offers`, 'success');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                showStatus(`❌ Failed to assign product: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Auto-check existing categories on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            showStatus('🎯 Ready to create Today\'s Offers category matching your Firebase structure!', 'info');
+            
+            setTimeout(() => {
+                listExistingCategories();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

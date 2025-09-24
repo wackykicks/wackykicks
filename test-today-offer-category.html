@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Today's Offers Category</title>
+    <style>
+        body {
+            font-family: 'Lucida Console', monospace;
+            margin: 40px;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Lucida Console', monospace;
+            font-size: 14px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Today's Offers Category</h1>
+        <p>Use these buttons to test the Today's Offers category creation:</p>
+        
+        <button class="btn" onclick="checkCategory()">Check Category</button>
+        <button class="btn" onclick="createCategory()">Create Category</button>
+        <button class="btn" onclick="listAllCategories()">List All Categories</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script>
+        // Firebase configuration (replace with your config)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGdGh5VvTmwpqaXojrKqZUhctFjIKOyJs",
+            authDomain: "wackykicks-59e50.firebaseapp.com",
+            projectId: "wackykicks-59e50",
+            storageBucket: "wackykicks-59e50.appspot.com",
+            messagingSenderId: "46712635171",
+            appId: "1:46712635171:web:1f9a5b7b1f3d5e2c8f9e10"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkCategory() {
+            showStatus('Checking for Today\'s Offers category...', 'info');
+            
+            try {
+                // Check by name
+                const nameQuery = await db.collection("category").where("name", "==", "Today's Offers").get();
+                
+                // Check by id
+                const idQuery = await db.collection("category").where("id", "==", "today offer").get();
+                
+                if (!nameQuery.empty) {
+                    const category = nameQuery.docs[0].data();
+                    showStatus(`✅ Found category: "${category.name}" with color: ${category.color}`, 'success');
+                } else if (!idQuery.empty) {
+                    const category = idQuery.docs[0].data();
+                    showStatus(`✅ Found category: "${category.name}" with ID: today offer`, 'success');
+                } else {
+                    showStatus('❌ Today\'s Offers category not found', 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Error checking category: ${error.message}`, 'error');
+            }
+        }
+
+        async function createCategory() {
+            showStatus('Creating Today\'s Offers category...', 'info');
+            
+            try {
+                // Check if it already exists
+                const existingQuery = await db.collection("category").where("name", "==", "Today's Offers").get();
+                
+                if (!existingQuery.empty) {
+                    showStatus('⚠️ Category already exists!', 'info');
+                    return;
+                }
+                
+                // Create the category
+                const categoryData = {
+                    name: "Today's Offers",
+                    id: "today offer",
+                    color: "#6c757d",
+                    image: "https://via.placeholder.com/60x60?text=OFFER",
+                    icon: "https://via.placeholder.com/60x60?text=OFFER",
+                    special: true,
+                    description: "Limited time special offers and exclusive deals",
+                    displayOrder: 1,
+                    isActive: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    categoryType: "special",
+                    isSystemCategory: true,
+                    features: {
+                        animated: true,
+                        priority: true,
+                        showCountdown: true,
+                        gradientBackground: true,
+                        limitedTime: true
+                    }
+                };
+                
+                const docRef = await db.collection("category").add(categoryData);
+                
+                showStatus(`✅ Category created successfully! Document ID: ${docRef.id}`, 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Error creating category: ${error.message}`, 'error');
+            }
+        }
+
+        async function listAllCategories() {
+            showStatus('Loading all categories...', 'info');
+            
+            try {
+                const categoriesSnapshot = await db.collection('category').get();
+                
+                let categoryList = '<h3>All Categories:</h3><ul>';
+                categoriesSnapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    categoryList += `<li><strong>${data.name}</strong> (ID: ${data.id || doc.id}, Color: ${data.color})</li>`;
+                });
+                categoryList += '</ul>';
+                
+                showStatus(categoryList, 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Error loading categories: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-check on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkCategory, 1000);
+        });
+    </script>
+</body>
+</html>

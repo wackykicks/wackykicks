@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Product ID</title>
+    <style>
+        body {
+            font-family: 'Lucida Console', monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .info-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .highlight {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-left: 4px solid #ffc107;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-left: 4px solid #dc3545;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product ID Checker & Fixer</h1>
+    
+    <div class="info-box">
+        <h3>Step 1: Enter Product URL</h3>
+        <p>Paste the URL of your product page (the one where reviews aren't showing):</p>
+        <input type="text" id="productUrl" placeholder="e.g., http://localhost/product.html?id=abc123">
+        <button onclick="extractProductId()">Extract Product ID</button>
+    </div>
+
+    <div class="info-box" id="productIdResult" style="display: none;">
+        <h3>Product ID from URL:</h3>
+        <div id="currentProductId" class="highlight"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Step 2: Check Reviews for This Product</h3>
+        <button onclick="checkReviews()">Check Reviews in Database</button>
+        <div id="reviewsResult"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Step 3: Fix Missing Reviews</h3>
+        <p>If no reviews are found for your product ID, click below to add demo reviews:</p>
+        <button onclick="addReviewsForCurrentProduct()">Add Demo Reviews for This Product</button>
+        <div id="addReviewsResult"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getFirestore, collection, query, where, getDocs, addDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOb0e1UIz_xgNd-n-_YWB7HXRCQFKjvGA",
+            authDomain: "wackykicks-in.firebaseapp.com",
+            projectId: "wackykicks-in",
+            storageBucket: "wackykicks-in.appspot.com",
+            messagingSenderId: "717025532779",
+            appId: "1:717025532779:web:de33d7fe70a6aed7e8b2cd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentProductId = null;
+
+        window.extractProductId = function() {
+            const url = document.getElementById('productUrl').value;
+            if (!url) {
+                alert('Please enter a product URL');
+                return;
+            }
+
+            try {
+                const urlObj = new URL(url);
+                const productId = urlObj.searchParams.get('id');
+                
+                if (productId) {
+                    currentProductId = productId;
+                    document.getElementById('currentProductId').textContent = `Product ID: ${productId}`;
+                    document.getElementById('productIdResult').style.display = 'block';
+                } else {
+                    document.getElementById('currentProductId').textContent = 'No product ID found in URL';
+                    document.getElementById('currentProductId').className = 'error';
+                    document.getElementById('productIdResult').style.display = 'block';
+                }
+            } catch (error) {
+                alert('Invalid URL format');
+            }
+        };
+
+        window.checkReviews = async function() {
+            if (!currentProductId) {
+                alert('Please extract a product ID first');
+                return;
+            }
+
+            const resultDiv = document.getElementById('reviewsResult');
+            resultDiv.innerHTML = '<p>Checking reviews...</p>';
+
+            try {
+                const reviewsQuery = query(
+                    collection(db, "reviews"),
+                    where("productId", "==", currentProductId)
+                );
+                
+                const snapshot = await getDocs(reviewsQuery);
+                
+                if (snapshot.empty) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>No Reviews Found!</h4>
+                            <p>No reviews found for product ID: <strong>${currentProductId}</strong></p>
+                            <p>This explains why reviews aren't showing on your product page.</p>
+                        </div>
+                    `;
+                } else {
+                    let reviewsHTML = `
+                        <div class="success">
+                            <h4>Reviews Found!</h4>
+                            <p>Found ${snapshot.size} review(s) for product ID: <strong>${currentProductId}</strong></p>
+                        </div>
+                        <h4>Review Details:</h4>
+                    `;
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        reviewsHTML += `
+                            <div style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                                <strong>Rating:</strong> ${data.rating}/5<br>
+                                <strong>Review:</strong> ${data.reviewText}<br>
+                                <strong>Reviewer:</strong> ${data.reviewerName}<br>
+                                <strong>Date:</strong> ${data.reviewDate ? data.reviewDate.toDate().toLocaleDateString() : 'N/A'}
+                            </div>
+                        `;
+                    });
+                    
+                    resultDiv.innerHTML = reviewsHTML;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        };
+
+        window.addReviewsForCurrentProduct = async function() {
+            if (!currentProductId) {
+                alert('Please extract a product ID first');
+                return;
+            }
+
+            const resultDiv = document.getElementById('addReviewsResult');
+            resultDiv.innerHTML = '<p>Adding demo reviews...</p>';
+
+            const demoReviews = [
+                {
+                    reviewerName: "Sarah Johnson",
+                    rating: 5,
+                    reviewText: "Amazing quality sneakers! Super comfortable and stylish. Highly recommend!",
+                    reviewDate: Timestamp.fromDate(new Date('2024-01-15')),
+                    productId: currentProductId,
+                    helpful: 12,
+                    verified: true
+                },
+                {
+                    reviewerName: "Mike Chen",
+                    rating: 4,
+                    reviewText: "Great sneakers, love the design. Only minor issue is they run slightly small.",
+                    reviewDate: Timestamp.fromDate(new Date('2024-01-20')),
+                    productId: currentProductId,
+                    helpful: 8,
+                    verified: true
+                },
+                {
+                    reviewerName: "Emma Davis",
+                    rating: 5,
+                    reviewText: "Perfect fit and excellent quality. Fast shipping too!",
+                    reviewDate: Timestamp.fromDate(new Date('2024-01-25')),
+                    productId: currentProductId,
+                    helpful: 6,
+                    verified: false
+                },
+                {
+                    reviewerName: "Alex Kumar",
+                    rating: 3,
+                    reviewText: "Good sneakers but took longer to arrive than expected. Quality is decent.",
+                    reviewDate: Timestamp.fromDate(new Date('2024-02-01')),
+                    productId: currentProductId,
+                    helpful: 3,
+                    verified: true
+                }
+            ];
+
+            try {
+                let addedCount = 0;
+                for (const review of demoReviews) {
+                    await addDoc(collection(db, "reviews"), review);
+                    addedCount++;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>Success!</h4>
+                        <p>Added ${addedCount} demo reviews for product ID: <strong>${currentProductId}</strong></p>
+                        <p>Now go back to your product page and refresh - the reviews should appear!</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error adding reviews: ${error.message}</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

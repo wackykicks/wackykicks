@@ -14,6 +14,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ✅ Calculate discount percentage (robust for string inputs)
+function calculateDiscountPercentage(oldPrice, newPrice) {
+    const o = parseFloat(oldPrice);
+    const n = parseFloat(newPrice);
+    if (!isFinite(o) || !isFinite(n) || o <= n) {
+        return null; // No discount or invalid prices
+    }
+    const discount = ((o - n) / o) * 100;
+    return Math.round(discount); // Round to nearest whole number
+}
+
 const params = new URLSearchParams(window.location.search);
 const query = params.get('q')?.toLowerCase() || "";
 
@@ -59,9 +70,8 @@ async function performSearch(searchTerm = query) {
     const matches = allProducts.filter(product => {
         const name = product.name?.toLowerCase() || "";
         const desc = product.description?.toLowerCase() || "";
-        const tag = product.tag?.toLowerCase() || "";
 
-        return name.includes(searchTerm) || desc.includes(searchTerm) || tag.includes(searchTerm);
+        return name.includes(searchTerm) || desc.includes(searchTerm);
     });
 
     renderResults(matches, searchTerm);
@@ -80,11 +90,14 @@ function renderResults(products, searchTerm = query) {
     products.forEach(product => {
         const img = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
         const price = product.newPrice || product.price;
+        
+        // Calculate discount percentage
+        const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
 
         const card = document.createElement("div");
         card.className = "product-card";
         card.innerHTML = `
-            ${product.tag ? `<span class=\"tag\">${product.tag}</span>` : ''}
+            ${discountPercentage ? `<span class=\"tag discount-tag\">${discountPercentage}% OFF</span>` : ''}
             <a href="product.html?id=${product.id}">
                 <div class="img-wrapper">
                     <img src="${img}" alt="${product.name}">

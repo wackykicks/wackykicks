@@ -459,3 +459,94 @@
         transform: translateY(-4px);
     }
 }
+
+/* Special styling for Today's Offers category card */
+.special-offer-card {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    animation: pulse-glow 2s infinite;
+    border: 2px solid #fff !important;
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4) !important;
+}
+
+.special-offer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 8px 35px rgba(108, 117, 125, 0.6);
+        transform: scale(1.02);
+    }
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.special-offer-card .category-image {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.special-offer-card .offer-icon {
+    font-size: 2rem;
+    line-height: 1;
+    animation: bounce-fire 1.5s infinite;
+}
+
+@keyframes bounce-fire {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.special-offer-card .category-name {
+    color: white !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.special-offer-card .offer-badge {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    color: #495057;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: blink-badge 2s infinite;
+}
+
+@keyframes blink-badge {
+    0%, 50% { opacity: 1; }
+    25%, 75% { opacity: 0.7; }
+}
+
+.special-offer-card:hover {
+    transform: translateY(-8px) scale(1.05) !important;
+    box-shadow: 0 15px 40px rgba(108, 117, 125, 0.6) !important;
+}
+
+.special-offer-card.selected {
+    background: linear-gradient(135deg, #495057 0%, #343a40 100%) !important;
+    box-shadow: 0 8px 25px rgba(73, 80, 87, 0.6) !important;
+}
