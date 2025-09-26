@@ -244,6 +244,17 @@
     width: fit-content;
 }
 
+.item-color {
+    color: #8b5cf6;
+    font-weight: 600;
+    background: rgba(139, 92, 246, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    width: fit-content;
+    margin-left: 8px;
+}
+
 .item-price {
     font-size: 1.2rem;
     font-weight: 700;
@@ -513,6 +524,12 @@
         padding: 3px 10px;
     }
 
+    .item-color {
+        font-size: 0.9rem;
+        padding: 3px 10px;
+        margin-left: 6px;
+    }
+
     .item-price {
         font-size: 1.1rem;
         margin-top: 8px;
@@ -655,6 +672,12 @@
     .item-size {
         font-size: 0.8rem;
         padding: 2px 8px;
+    }
+
+    .item-color {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        margin-left: 4px;
     }
 
     .item-price {

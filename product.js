@@ -56,6 +56,7 @@ function loadProduct() {
         const images = product.imgUrl || [];
 
         const sizes = product.sizes || [];
+        const colors = product.colors || [];
 
         // ✅ Build gallery HTML
         let galleryHTML = `
@@ -93,6 +94,23 @@ function loadProduct() {
             `;
         }
 
+        let colorsHTML = '';
+        if (colors.length) {
+            colorsHTML = `
+                <div class="colors">
+                    <h4>Available Colors:</h4>
+                    <select id="colorDropdown" class="color-dropdown" onchange="selectColor(this.value)">
+                        <option value="">Select Color</option>
+            `;
+            colors.forEach(color => {
+                colorsHTML += `<option value="${color}">${color}</option>`;
+            });
+            colorsHTML += `
+                    </select>
+                </div>
+            `;
+        }
+
         // Calculate discount percentage
         const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
         
@@ -106,17 +124,18 @@ function loadProduct() {
             <div class="product-container">
                 <div class="product-gallery">
                     ${galleryHTML}
-                    ${discountPercentage && !isOutOfStock ? `<div class="discount-badge">${discountPercentage}% OFF</div>` : ''}
-                    ${isOutOfStock ? `<div class="discount-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626);top:55px;">Out of Stock</div>` : ''}
                 </div>
                 <div class="product-info">
                     <h2>${product.name}</h2>
                     <div class="price">
                         ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
                         <span class="new-price">₹${product.newPrice || product.price}</span>
+                        ${discountPercentage && !isOutOfStock ? `<span class="discount-tag-price">${discountPercentage}% OFF</span>` : ''}
+                        ${isOutOfStock ? `<span class="out-stock-tag-price">Out of Stock</span>` : ''}
                     </div>
                     <p class="description">${product.description || 'No description available.'}</p>
                     ${sizesHTML}
+                    ${colorsHTML}
                     <div class="quantity-container">
                         <span>Quantity:</span>
                         <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled' : ''}>
@@ -170,34 +189,39 @@ function loadProduct() {
 
 // ✅ Custom Size Alert
 function showSizeAlert() {
-    // Remove any existing alert
-    const oldAlert = document.getElementById('sizeAlert');
-    if (oldAlert) oldAlert.remove();
-
-    // Create alert container
-    const alertDiv = document.createElement('div');
-    alertDiv.id = 'sizeAlert';
-    alertDiv.className = 'custom-size-alert';
-    alertDiv.innerHTML = `
-        <span class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
-        <span class="alert-text">Please select a size before buying.</span>
-        <button class="alert-close" onclick="document.getElementById('sizeAlert').remove()">&times;</button>
-    `;
-
-    // Insert alert above Buy Now button
-    const productInfo = document.querySelector('.product-info');
-    const buyBtn = productInfo ? productInfo.querySelector('.buy-now') : null;
-    if (buyBtn && productInfo) {
-        productInfo.insertBefore(alertDiv, buyBtn);
+    if (window.FloatingAlertManager) {
+        window.FloatingAlertManager.pleaseSelectSize();
     } else {
-        // fallback: top of productDetails
-        document.getElementById('productDetails').prepend(alertDiv);
-    }
+        // Fallback to original alert system
+        // Remove any existing alert
+        const oldAlert = document.getElementById('sizeAlert');
+        if (oldAlert) oldAlert.remove();
 
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) alertDiv.remove();
-    }, 3000);
+        // Create alert container
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'sizeAlert';
+        alertDiv.className = 'custom-size-alert';
+        alertDiv.innerHTML = `
+            <span class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+            <span class="alert-text">Please select a size before buying.</span>
+            <button class="alert-close" onclick="document.getElementById('sizeAlert').remove()">&times;</button>
+        `;
+
+        // Insert alert above Buy Now button
+        const productInfo = document.querySelector('.product-info');
+        const buyBtn = productInfo ? productInfo.querySelector('.buy-now') : null;
+        if (buyBtn && productInfo) {
+            productInfo.insertBefore(alertDiv, buyBtn);
+        } else {
+            // fallback: top of productDetails
+            document.getElementById('productDetails').prepend(alertDiv);
+        }
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) alertDiv.remove();
+        }, 3000);
+    }
 }
 
 // ✅ WhatsApp Buy Now
@@ -205,11 +229,12 @@ function copyToWhatsApp(productName, productPrice) {
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-    // Size selection is now optional, so no alert
+    // Size and color selection is now optional, so no alert
     let sizeMsg = (typeof selectedSize !== 'undefined' && selectedSize) ? `\nSize: ${selectedSize}` : '';
+    let colorMsg = (typeof selectedColor !== 'undefined' && selectedColor) ? `\nColor: ${selectedColor}` : '';
     const qtyMsg = `\nQuantity: ${quantity}`;
     
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${qtyMsg}`;
+    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}`;
     
     window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
 }
@@ -219,8 +244,9 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
     
-    // Get selected size if available
+    // Get selected size and color if available
     const selectedSize = window.selectedSize || null;
+    const selectedColor = window.selectedColor || null;
     
     // Create product object
     const product = {
@@ -233,10 +259,10 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
     
     // Add to cart using the global cart object
     if (typeof window.cart !== 'undefined') {
-        window.cart.addToCart(product, quantity, selectedSize);
+        window.cart.addToCart(product, quantity, selectedSize, selectedColor);
     } else {
         // Fallback: use the addToCart function from cart.js
-        addToCart(product, quantity, selectedSize);
+        addToCart(product, quantity, selectedSize, selectedColor);
     }
 }
 
@@ -257,18 +283,10 @@ window.addEventListener('DOMContentLoaded', () => {
         const isOutOfStock = productAddBtn && productAddBtn.hasAttribute('disabled');
         
         if (isOutOfStock) {
-            // Disable and style the fixed buttons
-            if (addBtn) {
-                addBtn.disabled = true;
-                addBtn.style.opacity = '0.5';
-                addBtn.style.cursor = 'not-allowed';
-                addBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Out of Stock';
-            }
-            if (buyBtn) {
-                buyBtn.disabled = true;
-                buyBtn.style.opacity = '0.5';
-                buyBtn.style.cursor = 'not-allowed';
-                buyBtn.textContent = 'Out of Stock';
+            // Hide the entire fixed product bar when out of stock
+            const fixedBar = document.querySelector('.fixed-product-bar');
+            if (fixedBar) {
+                fixedBar.style.display = 'none';
             }
         } else {
             // Enable buttons with click handlers
@@ -300,39 +318,164 @@ window.addEventListener('scroll', () => {
 });
 
 // ✅ Load Related Products
-function loadRelatedProducts() {
+async function loadRelatedProducts() {
     const relatedContainer = document.getElementById('relatedCarousel');
+    
+    if (!productId) {
+        console.error('No product ID available for loading related products');
+        return;
+    }
 
-    db.collection("products")
-        .limit(6) // Load max 6 products; adjust as needed
-        .get()
-        .then(snapshot => {
-            snapshot.forEach(doc => {
-                const product = doc.data();
-                const productId = doc.id;
-                const relatedDiscountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
-
-                const relatedCard = document.createElement('div');
-                relatedCard.className = 'related-card';
-                relatedCard.innerHTML = `
-                    <a href="product.html?id=${productId}">
-                        ${relatedDiscountPercentage ? `<span class="discount-tag">${relatedDiscountPercentage}% OFF</span>` : ''}
-                        <img src="${(Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl) || ''}" alt="${product.name}">
-                        <h4>${product.name}</h4>
-                        <div class="price">
-                            ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
-                            <span class="new-price">₹${product.newPrice || product.price}</span>
-                        </div>
-                    </a>
-                `;
-
-                relatedContainer.appendChild(relatedCard);
-            });
-        })
-        .catch(error => {
-            console.error("Error loading related products:", error);
-            relatedContainer.innerHTML = `<p>Unable to load related products.</p>`;
+    try {
+        // First, get the current product to understand its categories and name
+        const currentProductDoc = await db.collection("products").doc(productId).get();
+        if (!currentProductDoc.exists) {
+            console.error('Current product not found');
+            return;
+        }
+        
+        const currentProduct = currentProductDoc.data();
+        const currentCategories = currentProduct.categories || [];
+        const currentName = currentProduct.name || '';
+        
+        console.log('🔍 Finding related products for:', currentName);
+        console.log('📂 Current product categories:', currentCategories);
+        
+        // Extract brand name from product name (common patterns)
+        const brandKeywords = ['nike', 'adidas', 'puma', 'reebok', 'converse', 'vans', 'jordan', 'under armour', 'new balance', 'fossil', 'casio', 'apple', 'samsung', 'boat', 'noise', 'fire-boltt'];
+        let detectedBrand = null;
+        
+        brandKeywords.forEach(brand => {
+            if (currentName.toLowerCase().includes(brand)) {
+                detectedBrand = brand;
+            }
         });
+        
+        console.log('🏷️ Detected brand:', detectedBrand);
+        
+        // Load all products to filter for related ones
+        const allProductsSnapshot = await db.collection("products").get();
+        const allProducts = [];
+        
+        allProductsSnapshot.forEach(doc => {
+            const product = doc.data();
+            const docId = doc.id;
+            
+            // Skip the current product
+            if (docId === productId) return;
+            
+            allProducts.push({
+                id: docId,
+                ...product
+            });
+        });
+        
+        console.log('📦 Total products loaded:', allProducts.length);
+        
+        // Score products based on similarity
+        const scoredProducts = allProducts.map(product => {
+            let score = 0;
+            const productCategories = product.categories || [];
+            const productName = product.name || '';
+            
+            // Brand matching (highest priority) - 50 points
+            if (detectedBrand) {
+                if (productName.toLowerCase().includes(detectedBrand)) {
+                    score += 50;
+                }
+            }
+            
+            // Category matching - 20 points per matching category
+            const matchingCategories = currentCategories.filter(cat => 
+                productCategories.some(pCat => 
+                    pCat.toLowerCase() === cat.toLowerCase() ||
+                    pCat.toLowerCase().includes(cat.toLowerCase()) ||
+                    cat.toLowerCase().includes(pCat.toLowerCase())
+                )
+            );
+            
+            score += matchingCategories.length * 20;
+            
+            // Similar product type keywords - 15 points each
+            const typeKeywords = ['shoe', 'shoes', 'sneaker', 'sneakers', 'boot', 'boots', 'watch', 'watches', 'glass', 'glasses', 'sunglass', 'sunglasses', 'headphone', 'headphones', 'earphone', 'earphones'];
+            const currentTypeKeywords = typeKeywords.filter(keyword => currentName.toLowerCase().includes(keyword));
+            const productTypeKeywords = typeKeywords.filter(keyword => productName.toLowerCase().includes(keyword));
+            
+            const matchingTypeKeywords = currentTypeKeywords.filter(keyword => productTypeKeywords.includes(keyword));
+            score += matchingTypeKeywords.length * 15;
+            
+            // Price range similarity - 10 points
+            const currentPrice = currentProduct.newPrice || currentProduct.price || 0;
+            const productPrice = product.newPrice || product.price || 0;
+            const priceDifference = Math.abs(currentPrice - productPrice);
+            const priceRange = Math.max(currentPrice, productPrice) * 0.3; // 30% price range tolerance
+            
+            if (priceDifference <= priceRange) {
+                score += 10;
+            }
+            
+            // Color similarity - 5 points
+            if (currentProduct.colors && product.colors) {
+                const matchingColors = currentProduct.colors.filter(color => 
+                    product.colors.some(pColor => pColor.toLowerCase() === color.toLowerCase())
+                );
+                score += matchingColors.length * 5;
+            }
+            
+            return { ...product, score };
+        });
+        
+        // Sort by score (highest first) and take top 8
+        let relatedProducts = scoredProducts
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 8);
+        
+        console.log('🏆 Top related products:', relatedProducts.slice(0, 6).map(p => `${p.name} (Score: ${p.score})`));
+        
+        // If we don't have enough highly scored products (score > 0), fill with random ones
+        if (relatedProducts.filter(p => p.score > 0).length < 6) {
+            const randomProducts = scoredProducts
+                .filter(p => p.score === 0)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 6 - relatedProducts.filter(p => p.score > 0).length);
+            relatedProducts = [...relatedProducts.filter(p => p.score > 0), ...randomProducts];
+        }
+        
+        // Take only first 6 for display
+        relatedProducts = relatedProducts.slice(0, 6);
+        
+        // Clear container and render related products
+        relatedContainer.innerHTML = '';
+        relatedProducts.forEach(product => {
+            const relatedDiscountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
+            
+            // Check if product is out of stock
+            const isOutOfStock = product.categories && product.categories.includes('out-of-stock');
+
+            const relatedCard = document.createElement('div');
+            relatedCard.className = 'related-card';
+            relatedCard.innerHTML = `
+                <a href="product.html?id=${product.id}">
+                    ${relatedDiscountPercentage && !isOutOfStock ? `<span class="discount-tag">${relatedDiscountPercentage}% OFF</span>` : ''}
+                    ${isOutOfStock ? `<span class="discount-tag" style="background: linear-gradient(135deg, #ef4444, #dc2626);">Out of Stock</span>` : ''}
+                    <img src="${(Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl) || 'Logo/1000163691.jpg'}" alt="${product.name}" onerror="this.src='Logo/1000163691.jpg'">
+                    <h4>${product.name}</h4>
+                    <div class="price">
+                        ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                        <span class="new-price">₹${product.newPrice || product.price}</span>
+                    </div>
+                </a>
+            `;
+
+            relatedContainer.appendChild(relatedCard);
+        });
+        
+        console.log('✅ Related products loaded successfully');
+        
+    } catch (error) {
+        console.error("Error loading related products:", error);
+        relatedContainer.innerHTML = `<p>Unable to load related products.</p>`;
+    }
 }
 
 function scrollCarousel(direction) {
@@ -383,6 +526,14 @@ window.selectSize = function(size) {
     }
 };
 
+window.selectColor = function(color) {
+    selectedColor = color;
+    const dropdown = document.getElementById('colorDropdown');
+    if (dropdown) {
+        dropdown.value = color;
+    }
+};
+
 function shareProduct(name, price, url) {
     const message = `Check out this product on WackyKicks!\n${name}\nPrice: ₹${price}\n${url}`;
 
@@ -394,11 +545,19 @@ function shareProduct(name, price, url) {
         }).then(() => {
             // Optionally show a toast or message
         }).catch(error => {
-            alert("Sharing failed or was cancelled.");
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.operationError('Sharing', 'was cancelled');
+            } else {
+                alert("Sharing failed or was cancelled.");
+            }
         });
     } else if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
-            alert("Link copied! You can share it anywhere.");
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.linkCopied();
+            } else {
+                alert("Link copied! You can share it anywhere.");
+            }
         });
     } else {
         // Fallback for very old browsers
@@ -725,12 +884,20 @@ function highlightStars(rating) {
 
 async function submitReview() {
     if (!productId) {
-        alert('Product ID not found.');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.operationError('Review submission', 'Product ID not found');
+        } else {
+            alert('Product ID not found.');
+        }
         return;
     }
     
     if (selectedRating === 0) {
-        alert('Please select a rating.');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.pleaseSelectRating();
+        } else {
+            alert('Please select a rating.');
+        }
         return;
     }
     
@@ -738,7 +905,11 @@ async function submitReview() {
     const reviewText = document.getElementById('reviewText').value.trim();
     
     if (!reviewerName || !reviewText) {
-        alert('Please fill in all fields.');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.pleaseFillAllFields();
+        } else {
+            alert('Please fill in all fields.');
+        }
         return;
     }
     
@@ -751,7 +922,11 @@ async function submitReview() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        alert('Review submitted successfully!');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.reviewSubmitted();
+        } else {
+            alert('Review submitted successfully!');
+        }
         
         // Reset form
         document.getElementById('reviewForm').reset();
@@ -768,6 +943,10 @@ async function submitReview() {
         
     } catch (error) {
         console.error("Error submitting review:", error);
-        alert('Error submitting review. Please try again.');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.reviewError();
+        } else {
+            alert('Error submitting review. Please try again.');
+        }
     }
 }

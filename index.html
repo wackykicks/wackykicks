@@ -8,6 +8,7 @@
     <title>Wackykicks.in</title>
     <link rel="stylesheet" href="styles.css?v=1.2">
     <link rel="stylesheet" href="categories.css">
+    <link rel="stylesheet" href="floating-alerts.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
@@ -55,7 +56,7 @@
 <!-- First Promotional Banner (after categories) -->
 <section class="promotional-banners full-width" id="promotional-banners-1">
     <!-- Smartwatch Banner -->
-    <div class="promo-banner smartwatch-banner image-only" onclick="redirectToCategory('smartwatch')">
+    <div class="promo-banner smartwatch-banner image-only" onclick="redirectToCategoryEnhanced('smartwatch')">
         <img src="./Smartwatch (1).png" alt="Smartwatch Collection" loading="lazy">
     </div>
 </section>
@@ -74,14 +75,14 @@
 <!-- Second Promotional Banner (after today's offers) -->
 <section class="promotional-banners full-width" id="promotional-banners-2">
     <!-- Smart Gadgets Banner -->
-    <div class="promo-banner gadgets-banner image-only" onclick="redirectToCategory('gadgets')">
+    <div class="promo-banner gadgets-banner image-only" onclick="redirectToCategoryEnhanced('gadgets')">
         <img src="./Smart Gadget.png" alt="Smart Gadgets Collection" loading="lazy">
     </div>
 </section>
 
 <!-- Product Grid Section -->
 <section class="product-grid-section" id="product-grid">
-    <h2>Trending Collection</h2>
+    <h2>products</h2>
     <div class="product-grid" id="productList">
         <!-- Products will be dynamically injected here -->
     </div>
@@ -151,6 +152,7 @@ const db = firebase.firestore();
 console.log('Firebase initialized for main page');
 </script>
 
+<script src="floating-alerts.js"></script>
 <script src="categories.js"></script>
 <script src="cart.js"></script>
 <script src="products.js"></script>

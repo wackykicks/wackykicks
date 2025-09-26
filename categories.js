@@ -161,8 +161,26 @@ class CategoryManager {
 
     // Filter products by selected categories
     filterProductsByCategory() {
+        console.log('🏷️ CategoryManager filtering by categories:', this.selectedCategories);
+        
         if (typeof window.filterProducts === 'function') {
-            window.filterProducts(this.selectedCategories);
+            // Get the actual category data to pass more information
+            const selectedCategoryData = this.selectedCategories.map(categoryId => {
+                const category = this.categories.find(cat => cat.id === categoryId);
+                return {
+                    id: categoryId,
+                    name: category ? category.name : categoryId,
+                    // Also pass the original category name from the data
+                    originalName: category ? (category.originalName || category.name) : categoryId
+                };
+            });
+            
+            console.log('🏷️ Sending category data to filterProducts:', selectedCategoryData);
+            
+            // Pass both the simple IDs and the full category data
+            window.filterProducts(this.selectedCategories, selectedCategoryData);
+        } else {
+            console.error('❌ window.filterProducts function not available');
         }
     }
 

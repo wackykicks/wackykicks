@@ -36,6 +36,11 @@ function loadProduct() {
         const product = doc.data();
         const images = product.imgUrl || [];
 
+        // Check if product is out of stock via category assignment or stock field
+        const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+        const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
+        const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+
         let galleryHTML = '<div class="slider">';
         images.forEach(url => {
             galleryHTML += `
@@ -48,7 +53,7 @@ function loadProduct() {
 
         // Generate sizes HTML if available
         let sizesHTML = '';
-        if (product.sizes && product.sizes.length > 0) {
+        if (product.sizes && product.sizes.length > 0 && !outOfStock) {
             sizesHTML = `
                 <div class="sizes">
                     <label>Size:</label>
@@ -56,6 +61,23 @@ function loadProduct() {
                         ${product.sizes.map(size => `<span class="size-option">${size}</span>`).join('')}
                     </div>
                 </div>
+            `;
+        }
+
+        // Generate buttons HTML based on stock status
+        let buttonsHTML = '';
+        if (outOfStock) {
+            buttonsHTML = `
+                <div class="out-of-stock-notice">
+                    <span class="out-of-stock-badge">Out of Stock</span>
+                    <p class="out-of-stock-text">This product is currently unavailable</p>
+                </div>
+                <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
+            `;
+        } else {
+            buttonsHTML = `
+                <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')">Buy Now</button>
+                <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
             `;
         }
 
@@ -73,11 +95,18 @@ function loadProduct() {
                     </div>
                     <p class="description">${product.description || 'No description available.'}</p>
                     ${sizesHTML}
-                    <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')">Buy Now</button>
-                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
+                    ${buttonsHTML}
                 </div>
             </div>
         `;
+
+        // Hide fixed product bar if product is out of stock
+        if (outOfStock) {
+            const fixedBar = document.querySelector('.fixed-product-bar');
+            if (fixedBar) {
+                fixedBar.style.display = 'none';
+            }
+        }
 
         // ✅ Setup Slider Dots
         setupSlider();
@@ -124,8 +153,17 @@ let isSearching = false;
 let selectedCategories = [];
 
 // Filter products by categories (single category selection)
-function filterProducts(categories = []) {
+function filterProducts(categories = [], categoryData = null) {
     console.log('🔍 filterProducts called with categories:', categories);
+    console.log('🔍 filterProducts called with categoryData:', categoryData);
+    
+    // Check if products are loaded
+    if (!window.productsLoaded || allProducts.length === 0) {
+        console.log('⏳ Products not loaded yet, storing filter for later:', categories);
+        window.pendingCategoryFilter = categories;
+        return;
+    }
+    
     selectedCategories = categories;
     
     if (categories.length === 0) {
@@ -143,31 +181,106 @@ function filterProducts(categories = []) {
     const categoryId = categories[0]; // Only one category can be selected
     console.log('🎯 Filtering by category:', categoryId);
     
+    // Get additional category information if available
+    const categoryInfo = categoryData && categoryData[0] ? categoryData[0] : null;
+    console.log('🎯 Category info:', categoryInfo);
+    
     const categoryFilteredProducts = allProducts.filter(product => {
-        if (!product.categories || product.categories.length === 0) {
+        if (!product.categories || !Array.isArray(product.categories) || product.categories.length === 0) {
             console.log('❌ Product has no categories:', product.name);
             return false;
         }
         
-        // Check for exact match, case-insensitive match, and partial match
+        console.log(`🔍 Checking product "${product.name}" with categories:`, product.categories);
+        
+        // Simplified category matching - check multiple common variations
         const hasCategory = product.categories.some(cat => {
-            const exactMatch = cat === categoryId;
-            const caseInsensitiveMatch = cat.toLowerCase() === categoryId.toLowerCase();
-            const partialMatch = cat.toLowerCase().includes(categoryId.toLowerCase()) || 
-                               categoryId.toLowerCase().includes(cat.toLowerCase());
+            if (!cat || typeof cat !== 'string') return false;
             
-            console.log(`🔍 Checking product "${product.name}" category "${cat}" against "${categoryId}":`, {
-                exactMatch, caseInsensitiveMatch, partialMatch
+            // Convert both to lowercase for comparison
+            const productCategory = cat.toLowerCase().trim();
+            const filterCategory = categoryId.toLowerCase().trim();
+            
+            // Also check against category name if available
+            const categoryName = categoryInfo ? categoryInfo.name.toLowerCase().trim() : null;
+            
+            console.log(`  🔍 Comparing "${productCategory}" with filter "${filterCategory}"${categoryName ? ` and name "${categoryName}"` : ''}`);
+            
+            // Check for exact match after normalization
+            const exactMatch = productCategory === filterCategory;
+            const nameMatch = categoryName && productCategory === categoryName;
+            
+            // Handle special category mappings
+            const specialMatches = {
+                'shoes': ['shoe', 'sneakers', 'footwear'],
+                'watches': ['watch', 'timepiece'],
+                'accessories': ['accessory', 'acc'],
+                'nike': ['nike shoes', 'nike sneakers'],
+                'adidas': ['adidas shoes', 'adidas sneakers'],
+                'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
+                'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
+                'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
+                'smartwatch': ['smart watch', 'watches', 'watch'],
+                'gadgets': ['gadget', 'electronics', 'electronic']
+            };
+            
+            // Check if filterCategory has special matches
+            let specialMatch = false;
+            if (specialMatches[filterCategory]) {
+                specialMatch = specialMatches[filterCategory].includes(productCategory);
+            }
+            
+            // Check if categoryName has special matches
+            let nameSpecialMatch = false;
+            if (categoryName && specialMatches[categoryName]) {
+                nameSpecialMatch = specialMatches[categoryName].includes(productCategory);
+            }
+            
+            // Check reverse mapping (if product category has special matches)
+            let reverseSpecialMatch = false;
+            Object.keys(specialMatches).forEach(key => {
+                if (specialMatches[key].includes(productCategory)) {
+                    if (key === filterCategory || (categoryName && key === categoryName)) {
+                        reverseSpecialMatch = true;
+                    }
+                }
             });
             
-            return exactMatch || caseInsensitiveMatch || partialMatch;
+            const isMatch = exactMatch || nameMatch || specialMatch || nameSpecialMatch || reverseSpecialMatch;
+            
+            if (isMatch) {
+                console.log(`    ✅ Match found: "${cat}" matches filter "${categoryId}"${categoryName ? ` or name "${categoryInfo.name}"` : ''}`);
+            }
+            
+            return isMatch;
         });
         
         return hasCategory;
     });
     
     console.log('✅ Filtered products found:', categoryFilteredProducts.length);
-    categoryFilteredProducts.forEach(p => console.log('  - ', p.name, 'categories:', p.categories));
+    if (categoryFilteredProducts.length > 0) {
+        console.log('📦 Products in category:');
+        categoryFilteredProducts.forEach(p => console.log(`  - ${p.name} (categories: ${p.categories.join(', ')})`));
+    } else {
+        console.log('❌ No products found for category:', categoryId);
+        console.log('📊 All products and their categories:');
+        allProducts.forEach(p => {
+            if (p.categories && Array.isArray(p.categories)) {
+                console.log(`  - ${p.name}: [${p.categories.join(', ')}]`);
+            } else {
+                console.log(`  - ${p.name}: NO CATEGORIES`);
+            }
+        });
+        console.log('📊 Available categories in all products:');
+        const allCategories = new Set();
+        allProducts.forEach(p => {
+            if (p.categories && Array.isArray(p.categories)) {
+                p.categories.forEach(cat => allCategories.add(cat));
+            }
+        });
+        console.log('Available categories:', Array.from(allCategories).sort());
+    }
     
     if (isSearching) {
         // Apply search filter to category-filtered products
@@ -235,7 +348,10 @@ function renderProducts(productsToShow = allProducts) {
                     <span class="new-price">₹${product.newPrice || product.price}</span>
                 </div>
             </a>
-            <button class="buy-now" ${outOfStock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''} onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}')">Buy Now</button>
+            ${outOfStock ? 
+                '<div class="out-of-stock-message">Currently Unavailable</div>' : 
+                `<button class="buy-now" onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}')">Buy Now</button>`
+            }
         `;
         productList.appendChild(productCard);
     });
@@ -285,15 +401,45 @@ function searchProducts() {
         if (selectedCategories.length > 0) {
             const categoryId = selectedCategories[0]; // Only one category selected
             productsToFilter = allProducts.filter(product => {
-                if (!product.categories || product.categories.length === 0) return false;
+                if (!product.categories || !Array.isArray(product.categories) || product.categories.length === 0) return false;
                 
-                // Check for exact match, case-insensitive match, and partial match
+                // Use the same improved category matching logic
                 return product.categories.some(cat => {
-                    const exactMatch = cat === categoryId;
-                    const caseInsensitiveMatch = cat.toLowerCase() === categoryId.toLowerCase();
-                    const partialMatch = cat.toLowerCase().includes(categoryId.toLowerCase()) || 
-                                       categoryId.toLowerCase().includes(cat.toLowerCase());
-                    return exactMatch || caseInsensitiveMatch || partialMatch;
+                    if (!cat || typeof cat !== 'string') return false;
+                    
+                    const productCategory = cat.toLowerCase().trim();
+                    const filterCategory = categoryId.toLowerCase().trim();
+                    
+                    // Exact match
+                    const exactMatch = productCategory === filterCategory;
+                    
+                    // Handle special category mappings
+                    const specialMatches = {
+                        'shoes': ['shoe', 'sneakers', 'footwear'],
+                        'watches': ['watch', 'timepiece'],
+                        'accessories': ['accessory', 'acc'],
+                        'nike': ['nike shoes', 'nike sneakers'],
+                        'adidas': ['adidas shoes', 'adidas sneakers'],
+                        'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
+                        'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
+                        'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
+                        'smartwatch': ['smart watch', 'watches', 'watch'],
+                        'gadgets': ['gadget', 'electronics', 'electronic']
+                    };
+                    
+                    let specialMatch = false;
+                    if (specialMatches[filterCategory]) {
+                        specialMatch = specialMatches[filterCategory].includes(productCategory);
+                    }
+                    
+                    let reverseSpecialMatch = false;
+                    Object.keys(specialMatches).forEach(key => {
+                        if (specialMatches[key].includes(productCategory) && key === filterCategory) {
+                            reverseSpecialMatch = true;
+                        }
+                    });
+                    
+                    return exactMatch || specialMatch || reverseSpecialMatch;
                 });
             });
         }
@@ -320,7 +466,8 @@ function loadProducts() {
         return;
     }
 
-    db.collection("products").get().then(snapshot => {
+    // Force fresh query from server (bypass cache)
+    db.collection("products").get({ source: 'server' }).then(snapshot => {
         console.log('✅ Connected to Firebase successfully');
         console.log('📦 Number of products found:', snapshot.size);
         
@@ -329,6 +476,12 @@ function loadProducts() {
             const product = doc.data();
             const productId = doc.id;
             const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
+            
+            console.log(`📦 Loading product: ${product.name}`);
+            console.log(`   - ID: ${productId}`);
+            console.log(`   - Categories: ${product.categories ? JSON.stringify(product.categories) : 'NONE'}`);
+            console.log(`   - Image: ${firstImage}`);
+            
             allProducts.push({ 
                 ...product, 
                 id: productId, 
@@ -338,8 +491,23 @@ function loadProducts() {
         });
         
         console.log('🎯 Products loaded:', allProducts.length);
-        console.log('📋 First product:', allProducts[0]);
+        console.log('📋 All products with categories:');
+        allProducts.forEach(p => {
+            console.log(`  - ${p.name}: [${p.categories.join(', ')}]`);
+        });
+        
+        // Render products
         renderProducts(allProducts);
+        
+        // Notify category system that products are loaded
+        window.productsLoaded = true;
+        
+        // Trigger any pending category filters
+        if (window.pendingCategoryFilter) {
+            console.log('🔄 Applying pending category filter:', window.pendingCategoryFilter);
+            filterProducts(window.pendingCategoryFilter);
+            delete window.pendingCategoryFilter;
+        }
     }).catch(error => {
         console.error("❌ Error fetching products: ", error);
         console.log('🔄 Loading fallback demo data...');
@@ -420,14 +588,42 @@ window.addEventListener('DOMContentLoaded', () => {
             // local filter over loaded products
             const base = (selectedCategories && selectedCategories.length)
                 ? allProducts.filter(p => {
-                    if (!Array.isArray(p.categories)) return false;
+                    if (!p.categories || !Array.isArray(p.categories)) return false;
                     const categoryId = selectedCategories[0];
                     return p.categories.some(cat => {
-                        const exactMatch = cat === categoryId;
-                        const caseInsensitiveMatch = cat.toLowerCase() === categoryId.toLowerCase();
-                        const partialMatch = cat.toLowerCase().includes(categoryId.toLowerCase()) || 
-                                           categoryId.toLowerCase().includes(cat.toLowerCase());
-                        return exactMatch || caseInsensitiveMatch || partialMatch;
+                        if (!cat || typeof cat !== 'string') return false;
+                        
+                        const productCategory = cat.toLowerCase().trim();
+                        const filterCategory = categoryId.toLowerCase().trim();
+                        
+                        const exactMatch = productCategory === filterCategory;
+                        
+                        const specialMatches = {
+                            'shoes': ['shoe', 'sneakers', 'footwear'],
+                            'watches': ['watch', 'timepiece'],
+                            'accessories': ['accessory', 'acc'],
+                            'nike': ['nike shoes', 'nike sneakers'],
+                            'adidas': ['adidas shoes', 'adidas sneakers'],
+                            'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
+                            'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
+                            'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
+                            'smartwatch': ['smart watch', 'watches', 'watch'],
+                            'gadgets': ['gadget', 'electronics', 'electronic']
+                        };
+                        
+                        let specialMatch = false;
+                        if (specialMatches[filterCategory]) {
+                            specialMatch = specialMatches[filterCategory].includes(productCategory);
+                        }
+                        
+                        let reverseSpecialMatch = false;
+                        Object.keys(specialMatches).forEach(key => {
+                            if (specialMatches[key].includes(productCategory) && key === filterCategory) {
+                                reverseSpecialMatch = true;
+                            }
+                        });
+                        
+                        return exactMatch || specialMatch || reverseSpecialMatch;
                     });
                 })
                 : allProducts;
@@ -443,7 +639,18 @@ window.addEventListener('DOMContentLoaded', () => {
             const q = input.value.trim().toLowerCase();
             if (!q) return;
             const base = (selectedCategories && selectedCategories.length)
-                ? allProducts.filter(p => Array.isArray(p.categories) && p.categories.includes(selectedCategories[0]))
+                ? allProducts.filter(p => {
+                    if (!p.categories || !Array.isArray(p.categories)) return false;
+                    const categoryId = selectedCategories[0];
+                    return p.categories.some(cat => {
+                        if (!cat || typeof cat !== 'string') return false;
+                        
+                        const productCategory = cat.toLowerCase().trim();
+                        const filterCategory = categoryId.toLowerCase().trim();
+                        
+                        return productCategory === filterCategory;
+                    });
+                })
                 : allProducts;
             const matches = base.filter(p =>
                 (p.name && p.name.toLowerCase().includes(q)) ||
@@ -503,7 +710,6 @@ function loadTodaysOffers() {
     // Query products from "today offer" category
     db.collection("products")
         .where("categories", "array-contains", "today offer")
-        .limit(6) // Show max 6 products in offer section
         .get()
         .then(snapshot => {
             if (snapshot.empty) {
@@ -521,36 +727,69 @@ function loadTodaysOffers() {
                 return;
             }
 
-            let offerHTML = '';
+            // Convert to array and limit to 2 products
+            const allProducts = [];
             snapshot.forEach(doc => {
-                const product = doc.data();
-                const productId = doc.id;
-                const firstImage = (product.imgUrl && product.imgUrl[0]) || 'https://via.placeholder.com/200x150?text=No+Image';
+                allProducts.push({ id: doc.id, ...doc.data() });
+            });
+
+            const displayProducts = allProducts.slice(0, 2); // Only show first 2 products
+            const hasMoreProducts = allProducts.length > 2;
+
+            let offerHTML = '';
+            displayProducts.forEach(product => {
+                const firstImage = (product.imgUrl && product.imgUrl[0]) || 'https://via.placeholder.com/200x200?text=No+Image';
                 
                 // Calculate discount percentage
                 const discount = calculateDiscountPercentage(product.oldPrice, product.newPrice);
                 
-                // Generate offer product card
+                // Check if product is out of stock
+                const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+                const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
+                const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+                
+                // Generate offer product card with 1:1 ratio image
                 offerHTML += `
-                    <div class="offer-product-card" onclick="window.location.href='product.html?id=${productId}'">
-                        <img src="${firstImage}" alt="${product.name}" loading="lazy">
+                    <div class="offer-product-card" onclick="window.location.href='product.html?id=${product.id}'">
+                        <div class="offer-image-container">
+                            <img src="${firstImage}" alt="${product.name}" loading="lazy">
+                            ${outOfStock ? '<div class="offer-out-of-stock-badge">Out of Stock</div>' : ''}
+                        </div>
                         <h3 style="font-size: 1.1rem; margin: 10px 0; font-weight: 600; line-height: 1.3;">${product.name}</h3>
                         <div class="offer-price">
                             ${product.oldPrice ? `<span class="offer-old-price">₹${product.oldPrice}</span>` : ''}
                             <span class="offer-new-price">₹${product.newPrice}</span>
                             ${discount ? `<span class="offer-discount">${discount}% OFF</span>` : ''}
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}')" 
-                                    style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                                <i class="fab fa-whatsapp"></i> Buy Now
-                            </button>
-                        </div>
+                        ${outOfStock ? 
+                            '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
+                            `<div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}')" 
+                                        style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                                    <i class="fab fa-whatsapp"></i> Buy Now
+                                </button>
+                            </div>`
+                        }
                     </div>
                 `;
             });
 
+            // Add "View More" button if there are more than 2 products
+            if (hasMoreProducts) {
+                offerHTML += `
+                    <div class="offer-view-more-card" onclick="showAllTodaysOffers()">
+                        <div class="offer-view-more-content">
+                            <i class="fas fa-plus" style="font-size: 0.9rem; margin-bottom: 2px; color: rgba(255,255,255,0.8);"></i>
+                            <h3 style="margin: 2px 0 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.9); font-weight: 600;">View More</h3>
+                        </div>
+                    </div>
+                `;
+            }
+
             todaysOfferGrid.innerHTML = offerHTML;
+            
+            // Store all products for "View More" functionality
+            window.allTodaysOffers = allProducts;
             
             // Start countdown timer
             startOfferCountdown();
@@ -612,6 +851,120 @@ function startOfferCountdown() {
     updateCountdown();
     setInterval(updateCountdown, 1000);
 }
+
+// ✅ Show all today's offers function
+function showAllTodaysOffers() {
+    const todaysOfferGrid = document.getElementById('todaysOfferGrid');
+    if (!todaysOfferGrid || !window.allTodaysOffers) return;
+
+    let offerHTML = '';
+    window.allTodaysOffers.forEach(product => {
+        const firstImage = (product.imgUrl && product.imgUrl[0]) || 'https://via.placeholder.com/200x200?text=No+Image';
+        
+        // Calculate discount percentage
+        const discount = calculateDiscountPercentage(product.oldPrice, product.newPrice);
+        
+        // Check if product is out of stock
+        const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+        const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
+        const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+        
+        // Generate offer product card with 1:1 ratio image
+        offerHTML += `
+            <div class="offer-product-card" onclick="window.location.href='product.html?id=${product.id}'">
+                <div class="offer-image-container">
+                    <img src="${firstImage}" alt="${product.name}" loading="lazy">
+                    ${outOfStock ? '<div class="offer-out-of-stock-badge">Out of Stock</div>' : ''}
+                </div>
+                <h3 style="font-size: 1.1rem; margin: 10px 0; font-weight: 600; line-height: 1.3;">${product.name}</h3>
+                <div class="offer-price">
+                    ${product.oldPrice ? `<span class="offer-old-price">₹${product.oldPrice}</span>` : ''}
+                    <span class="offer-new-price">₹${product.newPrice}</span>
+                    ${discount ? `<span class="offer-discount">${discount}% OFF</span>` : ''}
+                </div>
+                ${outOfStock ? 
+                    '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
+                    `<div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}')" 
+                                style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                            <i class="fab fa-whatsapp"></i> Buy Now
+                        </button>
+                    </div>`
+                }
+            </div>
+        `;
+    });
+
+    // Add "Show Less" button
+    offerHTML += `
+        <div class="offer-view-more-card" onclick="loadTodaysOffers()">
+            <div class="offer-view-more-content">
+                <i class="fas fa-minus" style="font-size: 0.9rem; margin-bottom: 2px; color: rgba(255,255,255,0.8);"></i>
+                <h3 style="margin: 2px 0 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.9); font-weight: 600;">Show Less</h3>
+            </div>
+        </div>
+    `;
+
+    todaysOfferGrid.innerHTML = offerHTML;
+
+    todaysOfferGrid.innerHTML = offerHTML;
+}
+
+// Make filterProducts available globally for banner redirects
+window.filterProducts = filterProducts;
+
+// Debug function to test category filtering
+window.debugCategoryFilter = function(categoryId) {
+    console.log('🐛 DEBUG: Testing category filter for:', categoryId);
+    console.log('🐛 Total products loaded:', allProducts.length);
+    
+    if (allProducts.length === 0) {
+        console.log('❌ No products loaded yet');
+        return;
+    }
+    
+    // Show what categories exist in products
+    const allCategories = new Set();
+    allProducts.forEach(p => {
+        if (p.categories && Array.isArray(p.categories)) {
+            p.categories.forEach(cat => allCategories.add(cat));
+        }
+    });
+    console.log('🏷️ Available categories in products:', Array.from(allCategories).sort());
+    
+    // Test the filter
+    filterProducts([categoryId]);
+};
+
+// Force refresh products from Firebase
+window.refreshProducts = function() {
+    console.log('🔄 Force refreshing products from Firebase...');
+    loadProducts();
+};
+
+// Check products in specific category
+window.checkCategoryProducts = function(categoryName) {
+    console.log('🔍 Checking products in category:', categoryName);
+    
+    if (allProducts.length === 0) {
+        console.log('❌ No products loaded. Try window.refreshProducts() first');
+        return;
+    }
+    
+    const matchingProducts = allProducts.filter(product => {
+        return product.categories && product.categories.some(cat => 
+            cat.toLowerCase().includes(categoryName.toLowerCase()) ||
+            categoryName.toLowerCase().includes(cat.toLowerCase())
+        );
+    });
+    
+    console.log(`📦 Found ${matchingProducts.length} products matching "${categoryName}":`);
+    matchingProducts.forEach(p => {
+        console.log(`  - ${p.name} [${p.categories.join(', ')}]`);
+    });
+    
+    return matchingProducts;
+};
 
 // ✅ Initialize Today's Offers when page loads
 document.addEventListener('DOMContentLoaded', () => {

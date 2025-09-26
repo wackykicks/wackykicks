@@ -1,0 +1,269 @@
+/* 🎯 Floating Alerts System */
+
+/* Alert Container */
+.alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 400px;
+    width: 100%;
+    pointer-events: none;
+}
+
+/* Base Alert Styles */
+.floating-alert {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-left: 4px solid #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(100%);
+    animation: slideInAlert 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Alert Types */
+.floating-alert.success {
+    border-left-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+}
+
+.floating-alert.error {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2 0%, #fef1f1 100%);
+}
+
+.floating-alert.warning {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+}
+
+.floating-alert.info {
+    border-left-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+}
+
+/* Alert Icon */
+.alert-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.floating-alert.success .alert-icon {
+    color: #10b981;
+}
+
+.floating-alert.error .alert-icon {
+    color: #ef4444;
+}
+
+.floating-alert.warning .alert-icon {
+    color: #f59e0b;
+}
+
+.floating-alert.info .alert-icon {
+    color: #3b82f6;
+}
+
+/* Alert Content */
+.alert-content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: #111827;
+}
+
+.alert-message {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* Close Button */
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.alert-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #374151;
+}
+
+/* Progress Bar */
+.alert-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 0 0 12px 12px;
+    animation: progressBar 4s linear forwards;
+}
+
+.floating-alert.success .alert-progress {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.floating-alert.error .alert-progress {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.floating-alert.warning .alert-progress {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.floating-alert.info .alert-progress {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+/* Animations */
+@keyframes slideInAlert {
+    0% {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutAlert {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+@keyframes progressBar {
+    0% {
+        width: 100%;
+    }
+    100% {
+        width: 0%;
+    }
+}
+
+.floating-alert.closing {
+    animation: slideOutAlert 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+    .alert-container {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+    
+    .floating-alert {
+        padding: 14px 16px;
+        margin-bottom: 10px;
+    }
+    
+    .alert-content {
+        font-size: 13px;
+    }
+    
+    .alert-title {
+        font-size: 14px;
+    }
+}
+
+/* Multiple alerts stacking */
+.floating-alert:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.floating-alert:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.floating-alert:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+/* Hover effects */
+.floating-alert:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-alert:hover .alert-progress {
+    animation-play-state: paused;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    .floating-alert {
+        background: rgba(31, 41, 55, 0.95);
+        border: 1px solid rgba(75, 85, 99, 0.3);
+    }
+    
+    .floating-alert.success {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+    }
+    
+    .floating-alert.error {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    }
+    
+    .floating-alert.warning {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    }
+    
+    .floating-alert.info {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    }
+    
+    .alert-content,
+    .alert-title {
+        color: #f9fafb;
+    }
+    
+    .alert-message {
+        color: #d1d5db;
+    }
+    
+    .alert-close {
+        color: #9ca3af;
+    }
+    
+    .alert-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f3f4f6;
+    }
+}

@@ -19,102 +19,55 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Promotional Banner Category Redirection
-function redirectToCategory(categoryName) {
+async function redirectToCategory(categoryName) {
     console.log('🎯 Redirecting to category:', categoryName);
     
-    // Check if categoryManager is available
-    if (typeof categoryManager !== 'undefined' && categoryManager.selectCategory) {
-        // Use the category manager to filter products
+    try {
+        // Wait for both categoryManager and filterProducts to be available
+        await waitForCategorySystem();
+        
         const categoryId = getCategoryId(categoryName);
         console.log('📋 Mapped category ID:', categoryId);
         
-        if (categoryId) {
-            // Wait a moment for categories to load if needed
-            setTimeout(() => {
-                console.log('🔄 Calling categoryManager.selectCategory with:', categoryId);
-                categoryManager.selectCategory(categoryId);
-                
-                // Scroll to products section
-                const productSection = document.getElementById('product-grid');
-                if (productSection) {
-                    productSection.scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            }, 300);
-        }
-    } else {
-        console.warn('⚠️ CategoryManager not available, using direct product filtering');
-        
-        // Direct fallback - call filterProducts directly
-        const categoryId = getCategoryId(categoryName);
-        if (typeof window.filterProducts === 'function') {
-            console.log('🔄 Using direct filterProducts with category:', categoryId);
-            window.filterProducts([categoryId]);
-        }
-        
-        // Scroll to products section
-        const productSection = document.getElementById('product-grid');
-        if (productSection) {
-            productSection.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    }
-}
-
-// Map banner category names to actual category IDs
-function getCategoryId(categoryName) {
-    const categoryMapping = {
-        'smartwatch': 'Smartwatch',   // Map to Smartwatch category (exact match)
-        'gadgets': 'Gadgets',         // Map to Gadgets category (exact match)
-        'smart gadgets': 'Gadgets',   // Alternative mapping
-        'watches': 'Smartwatch'       // Alternative mapping
-    };
-    
-    return categoryMapping[categoryName.toLowerCase()] || categoryName;
-}
-
-// Enhanced redirection with category creation fallback
-async function redirectToCategoryEnhanced(categoryName) {
-    console.log('Enhanced redirect to category:', categoryName);
-    
-    try {
-        // Wait for categories to load if not already loaded
-        await waitForCategories();
-        
-        const categoryId = getCategoryId(categoryName);
-        
-        // Try to find the category
-        if (typeof categoryManager !== 'undefined' && categoryManager.categories) {
-            const categoryExists = categoryManager.categories.some(cat => 
-                cat.id === categoryId || 
-                cat.name === categoryId ||
-                cat.name.toLowerCase() === categoryId.toLowerCase() ||
-                cat.name.toLowerCase().includes(categoryName.toLowerCase())
-            );
+        // Try categoryManager first
+        if (typeof categoryManager !== 'undefined' && categoryManager.selectCategory) {
+            console.log('🔄 Using categoryManager.selectCategory with:', categoryId);
             
-            if (categoryExists) {
-                // Use the exact category name/id for selection
-                const exactCategory = categoryManager.categories.find(cat => 
+            // Wait a bit more for categories to be fully loaded
+            await waitForCategories(3000);
+            
+            // Check if the category exists
+            if (categoryManager.categories && categoryManager.categories.length > 0) {
+                const categoryExists = categoryManager.categories.some(cat => 
                     cat.id === categoryId || 
                     cat.name === categoryId ||
-                    cat.name.toLowerCase() === categoryId.toLowerCase()
+                    cat.name.toLowerCase() === categoryId.toLowerCase() ||
+                    cat.name.toLowerCase().includes(categoryName.toLowerCase())
                 );
                 
-                if (exactCategory) {
-                    categoryManager.selectCategory(exactCategory.id);
-                } else {
+                if (categoryExists) {
                     categoryManager.selectCategory(categoryId);
+                } else {
+                    console.warn(`⚠️ Category "${categoryId}" not found, trying alternative approaches`);
+                    // Try with original name
+                    categoryManager.selectCategory(categoryName);
                 }
             } else {
-                console.warn(`Category ${categoryName} not found, showing all products`);
-                categoryManager.selectCategory('all');
+                console.warn('⚠️ Categories not loaded yet, using direct filtering');
+                if (typeof window.filterProducts === 'function') {
+                    window.filterProducts([categoryId]);
+                }
             }
-            
-            // Scroll to products
+        } else if (typeof window.filterProducts === 'function') {
+            console.log('🔄 Using direct filterProducts with category:', categoryId);
+            window.filterProducts([categoryId]);
+        } else {
+            console.error('❌ Neither categoryManager nor filterProducts available');
+            return;
+        }
+        
+        // Scroll to products section after a short delay
+        setTimeout(() => {
             const productSection = document.getElementById('product-grid');
             if (productSection) {
                 productSection.scrollIntoView({ 
@@ -122,11 +75,124 @@ async function redirectToCategoryEnhanced(categoryName) {
                     block: 'start'
                 });
             }
-        }
+        }, 500);
+        
     } catch (error) {
-        console.error('Error in enhanced redirection:', error);
-        // Fallback to simple redirection
-        redirectToCategory(categoryName);
+        console.error('❌ Error in redirectToCategory:', error);
+        // Fallback to direct filtering
+        if (typeof window.filterProducts === 'function') {
+            const categoryId = getCategoryId(categoryName);
+            window.filterProducts([categoryId]);
+        }
+    }
+}
+
+// Map banner category names to actual category IDs
+function getCategoryId(categoryName) {
+    const categoryMapping = {
+        // Smartwatch variations
+        'smartwatch': 'Smartwatch',
+        'smart watch': 'Smartwatch',
+        'watches': 'Smartwatch',
+        'watch': 'Smartwatch',
+        
+        // Gadgets variations
+        'gadgets': 'Gadgets',
+        'gadget': 'Gadgets',
+        'smart gadgets': 'Gadgets',
+        'smart gadget': 'Gadgets',
+        'electronics': 'Gadgets',
+        'electronic': 'Gadgets',
+        
+        // Other possible mappings
+        'accessories': 'Accessories',
+        'shoes': 'Shoes',
+        'sneakers': 'Shoes',
+        'footwear': 'Shoes'
+    };
+    
+    const normalizedName = categoryName.toLowerCase().trim();
+    const mappedCategory = categoryMapping[normalizedName];
+    
+    console.log(`🗺️ Mapping "${categoryName}" -> "${mappedCategory || categoryName}"`);
+    
+    return mappedCategory || categoryName;
+}
+
+// Enhanced redirection with category creation fallback
+async function redirectToCategoryEnhanced(categoryName) {
+    console.log('🚀 Enhanced redirect to category:', categoryName);
+    
+    try {
+        // Wait for the entire category system to be ready
+        await waitForCategorySystem();
+        await waitForCategories(3000);
+        
+        const categoryId = getCategoryId(categoryName);
+        
+        // Try to find the category with multiple matching strategies
+        if (typeof categoryManager !== 'undefined' && categoryManager.categories && categoryManager.categories.length > 0) {
+            console.log('🔍 Searching in categories:', categoryManager.categories.map(c => c.name));
+            
+            // Strategy 1: Exact ID match
+            let exactCategory = categoryManager.categories.find(cat => cat.id === categoryId);
+            
+            // Strategy 2: Exact name match
+            if (!exactCategory) {
+                exactCategory = categoryManager.categories.find(cat => cat.name === categoryId);
+            }
+            
+            // Strategy 3: Case-insensitive name match
+            if (!exactCategory) {
+                exactCategory = categoryManager.categories.find(cat => 
+                    cat.name.toLowerCase() === categoryId.toLowerCase()
+                );
+            }
+            
+            // Strategy 4: Partial name match
+            if (!exactCategory) {
+                exactCategory = categoryManager.categories.find(cat => 
+                    cat.name.toLowerCase().includes(categoryName.toLowerCase()) ||
+                    categoryName.toLowerCase().includes(cat.name.toLowerCase())
+                );
+            }
+            
+            if (exactCategory) {
+                console.log('✅ Found category:', exactCategory.name, 'ID:', exactCategory.id);
+                categoryManager.selectCategory(exactCategory.id);
+            } else {
+                console.warn(`⚠️ Category ${categoryName} not found in:`, categoryManager.categories.map(c => c.name));
+                console.log('🔄 Trying direct filter instead');
+                
+                // Fallback to direct filtering
+                if (typeof window.filterProducts === 'function') {
+                    window.filterProducts([categoryId]);
+                } else {
+                    console.error('❌ No filtering method available');
+                }
+            }
+        } else {
+            console.warn('⚠️ CategoryManager or categories not ready, using direct filtering');
+            if (typeof window.filterProducts === 'function') {
+                window.filterProducts([categoryId]);
+            }
+        }
+        
+        // Scroll to products section
+        setTimeout(() => {
+            const productSection = document.getElementById('product-grid');
+            if (productSection) {
+                productSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ Error in enhanced redirection:', error);
+        // Final fallback to simple redirection
+        await redirectToCategory(categoryName);
     }
 }
 
@@ -135,6 +201,7 @@ function waitForCategories(maxWait = 5000) {
     return new Promise((resolve) => {
         const checkCategories = () => {
             if (typeof categoryManager !== 'undefined' && categoryManager.categories && categoryManager.categories.length > 0) {
+                console.log('✅ Categories loaded:', categoryManager.categories.length);
                 resolve();
             } else {
                 setTimeout(checkCategories, 100);
@@ -145,6 +212,32 @@ function waitForCategories(maxWait = 5000) {
         
         // Timeout fallback
         setTimeout(() => {
+            console.log('⏰ Categories wait timeout');
+            resolve();
+        }, maxWait);
+    });
+}
+
+// Wait for the entire category system to be ready
+function waitForCategorySystem(maxWait = 8000) {
+    return new Promise((resolve) => {
+        const checkSystem = () => {
+            const categoryManagerReady = typeof categoryManager !== 'undefined';
+            const filterProductsReady = typeof window.filterProducts === 'function';
+            
+            if (categoryManagerReady || filterProductsReady) {
+                console.log('✅ Category system ready - CategoryManager:', categoryManagerReady, 'FilterProducts:', filterProductsReady);
+                resolve();
+            } else {
+                setTimeout(checkSystem, 100);
+            }
+        };
+        
+        checkSystem();
+        
+        // Timeout fallback
+        setTimeout(() => {
+            console.log('⏰ Category system wait timeout');
             resolve();
         }, maxWait);
     });

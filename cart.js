@@ -18,9 +18,19 @@ class ShoppingCart {
 
     // Initialize cart
     init() {
-        this.updateCartCount();
-        if (window.location.pathname.includes('cart.html')) {
-            this.renderCart();
+        // Ensure DOM is ready before updating cart count
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.updateCartCount();
+                if (window.location.pathname.includes('cart.html')) {
+                    this.renderCart();
+                }
+            });
+        } else {
+            this.updateCartCount();
+            if (window.location.pathname.includes('cart.html')) {
+                this.renderCart();
+            }
         }
     }
 
@@ -46,9 +56,16 @@ class ShoppingCart {
     }
 
     // Add item to cart
-    addToCart(product, quantity = 1, size = null) {
-        // Create unique item ID based on product ID and size
-        const itemId = size ? `${product.id}_${size}` : product.id;
+    addToCart(product, quantity = 1, size = null, color = null) {
+        // Create unique item ID based on product ID, size, and color
+        let itemId = product.id;
+        if (size && color) {
+            itemId = `${product.id}_${size}_${color}`;
+        } else if (size) {
+            itemId = `${product.id}_${size}`;
+        } else if (color) {
+            itemId = `${product.id}_${color}`;
+        }
         
         // Check if item already exists in cart
         const existingItem = this.cart.find(item => item.itemId === itemId);
@@ -66,6 +83,7 @@ class ShoppingCart {
                 oldPrice: product.oldPrice || null,
                 image: product.img || product.imgUrl?.[0],
                 size: size,
+                color: color,
                 quantity: quantity,
                 addedAt: new Date().toISOString()
             };
@@ -73,7 +91,11 @@ class ShoppingCart {
         }
 
         this.saveCart();
-        this.showSuccessMessage(`${product.name} added to cart!`);
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.addedToCart(product.name);
+        } else {
+            this.showSuccessMessage(`${product.name} added to cart!`);
+        }
         
         // Update cart display if on cart page
         if (window.location.pathname.includes('cart.html')) {
@@ -119,32 +141,55 @@ class ShoppingCart {
 
     // Get total items count
     getTotalItems() {
-        return this.cart.reduce((total, item) => total + item.quantity, 0);
+        if (!this.cart || !Array.isArray(this.cart)) {
+            return 0;
+        }
+        
+        return this.cart.reduce((total, item) => {
+            const quantity = parseInt(item.quantity) || 0;
+            return total + quantity;
+        }, 0);
     }
 
     // Update cart count in navigation
     updateCartCount() {
-        const countElements = document.querySelectorAll('.cart-count, #navCartCount');
         const count = this.getTotalItems();
         
-        countElements.forEach(element => {
-            if (element) {
-                const oldCount = parseInt(element.textContent) || 0;
-                element.textContent = count;
-                
-                if (count === 0) {
-                    element.classList.add('hidden');
-                } else {
-                    element.classList.remove('hidden');
+        // Find all cart count elements with multiple selectors
+        const selectors = [
+            '.cart-count',
+            '#cartCount',
+            '#navCartCount',
+            '[data-cart-count]'
+        ];
+        
+        selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                if (element) {
+                    const oldCount = parseInt(element.textContent) || 0;
+                    element.textContent = count;
                     
-                    // Add pulse animation if count increased
-                    if (count > oldCount) {
-                        element.classList.add('updated');
-                        setTimeout(() => element.classList.remove('updated'), 500);
+                    // Update visibility based on count
+                    if (count === 0) {
+                        element.classList.add('hidden');
+                        element.style.display = 'none';
+                    } else {
+                        element.classList.remove('hidden');
+                        element.style.display = '';
+                        
+                        // Add pulse animation if count increased
+                        if (count > oldCount) {
+                            element.classList.add('updated');
+                            setTimeout(() => element.classList.remove('updated'), 500);
+                        }
                     }
                 }
-            }
+            });
         });
+        
+        // Log for debugging
+        console.log(`Cart count updated: ${count} items`);
     }
 
     // Render cart page
@@ -175,6 +220,7 @@ class ShoppingCart {
                     </a>
                     <div class="item-info">
                         ${item.size ? `<div class="item-size">Size: ${item.size}</div>` : ''}
+                        ${item.color ? `<div class="item-color">Color: ${item.color}</div>` : ''}
                         <div class="item-price">
                             ${item.oldPrice ? `<span class="old-price">₹${item.oldPrice}</span>` : ''}
                             <span class="new-price">₹${item.price}</span>
@@ -266,6 +312,7 @@ class ShoppingCart {
         return this.cart.map(item => {
             let itemText = `${item.name} - ₹${item.price}`;
             if (item.size) itemText += ` (Size: ${item.size})`;
+            if (item.color) itemText += ` (Color: ${item.color})`;
             itemText += ` x ${item.quantity}`;
             return itemText;
         }).join('\n');
@@ -278,7 +325,11 @@ const cart = new ShoppingCart();
 // WhatsApp Checkout Function
 function checkoutViaWhatsApp() {
     if (cart.cart.length === 0) {
-        alert('Your cart is empty!');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.cartEmpty();
+        } else {
+            alert('Your cart is empty!');
+        }
         return;
     }
 
@@ -302,8 +353,8 @@ Please confirm the order and provide payment details.`;
 }
 
 // Add to cart function for product pages
-function addToCart(productData, quantity = 1, size = null) {
-    return cart.addToCart(productData, quantity, size);
+function addToCart(productData, quantity = 1, size = null, color = null) {
+    return cart.addToCart(productData, quantity, size, color);
 }
 
 // Quick add to cart function (for product cards)
@@ -322,6 +373,16 @@ function quickAddToCart(productId, productName, productPrice, productImage, prod
 // Initialize cart on page load
 document.addEventListener('DOMContentLoaded', () => {
     cart.init();
+    
+    // Additional safety check - update cart count after a short delay
+    setTimeout(() => {
+        cart.updateCartCount();
+    }, 500);
+    
+    // Set up periodic cart count sync (every 30 seconds)
+    setInterval(() => {
+        cart.updateCartCount();
+    }, 30000);
 });
 
 // Export for global use
