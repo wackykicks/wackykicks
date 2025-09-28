@@ -563,6 +563,179 @@
     border-radius: 1px;
 }
 
+/* Modern Color Selection Styles */
+.modern-color-selection {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.color-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.color-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.color-circles-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.product-color-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-color-circle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-color: rgba(107, 114, 128, 0.3);
+}
+
+.product-color-circle.selected {
+    border-color: #3b82f6;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3), 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.product-color-circle.selected::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    z-index: 1;
+}
+
+/* Special styling for white color circle */
+.product-color-circle[data-color="White"],
+.product-color-circle[data-color="white"] {
+    border: 3px solid #e5e7eb;
+}
+
+.product-color-circle[data-color="White"]:hover,
+.product-color-circle[data-color="white"]:hover {
+    border-color: #9ca3af;
+}
+
+.product-color-circle[data-color="White"].selected,
+.product-color-circle[data-color="white"].selected {
+    border-color: #3b82f6;
+}
+
+.product-color-circle[data-color="White"].selected::after,
+.product-color-circle[data-color="white"].selected::after {
+    color: #3b82f6;
+    text-shadow: none;
+    font-size: 20px;
+}
+
+/* Color name display */
+.selected-color-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-left: 8px;
+    padding: 8px 16px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    transition: all 0.3s ease;
+}
+
+.selected-color-name.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Quantity and Colors section styling */
+.product-options-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 30px;
+    margin: 25px 0;
+    flex-wrap: wrap;
+}
+
+.quantity-section, .colors {
+    flex: 1;
+    min-width: 200px;
+}
+
+.quantity-section h4, .colors h4 {
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .product-options-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .color-circles-container {
+        gap: 10px;
+    }
+    
+    .product-color-circle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .product-color-circle.selected::after {
+        font-size: 16px;
+    }
+    
+    .selected-color-name {
+        font-size: 13px;
+        padding: 6px 12px;
+        margin-left: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .color-circles-container {
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .product-color-circle {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .selected-color-name {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+}
+
 /* Modern pill-style alternative (commented out for now)
 .size-pills {
     display: flex;

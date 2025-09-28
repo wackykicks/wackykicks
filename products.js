@@ -210,21 +210,19 @@ function filterProducts(categories = [], categoryData = null) {
             const exactMatch = productCategory === filterCategory;
             const nameMatch = categoryName && productCategory === categoryName;
             
-            // Handle special category mappings
-            const specialMatches = {
-                'shoes': ['shoe', 'sneakers', 'footwear'],
-                'watches': ['watch', 'timepiece'],
-                'accessories': ['accessory', 'acc'],
-                'nike': ['nike shoes', 'nike sneakers'],
-                'adidas': ['adidas shoes', 'adidas sneakers'],
-                'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
-                'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
-                'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
-                'smartwatch': ['smart watch', 'watches', 'watch'],
-                'gadgets': ['gadget', 'electronics', 'electronic']
-            };
-            
-            // Check if filterCategory has special matches
+                    // Handle special category mappings
+                    const specialMatches = {
+                        'shoes': ['shoe', 'sneakers', 'footwear'],
+                        'watches': ['watch', 'timepiece', 'analog', 'digital', 'mechanical', 'quartz'],
+                        'accessories': ['accessory', 'acc'],
+                        'nike': ['nike shoes', 'nike sneakers'],
+                        'adidas': ['adidas shoes', 'adidas sneakers'],
+                        'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
+                        'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
+                        'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
+                        'smartwatch': ['smart watch', 'smartwatches', 'apple watch', 'fitness watch', 'wearable'],
+                        'gadgets': ['gadget', 'electronics', 'electronic']
+                    };            // Check if filterCategory has special matches
             let specialMatch = false;
             if (specialMatches[filterCategory]) {
                 specialMatch = specialMatches[filterCategory].includes(productCategory);
@@ -246,10 +244,49 @@ function filterProducts(categories = [], categoryData = null) {
                 }
             });
             
-            const isMatch = exactMatch || nameMatch || specialMatch || nameSpecialMatch || reverseSpecialMatch;
+            // Special exclusion rules to prevent wrong categorization
+            let isExcluded = false;
+            
+            // If filtering for smartwatch, exclude analog/traditional watches
+            if (filterCategory === 'smartwatch' || (categoryName && categoryName.toLowerCase() === 'smartwatch')) {
+                const analogWatchKeywords = ['analog', 'mechanical', 'quartz', 'fossil', 'casio', 'traditional', 'classic', 'vintage'];
+                const isAnalogWatch = analogWatchKeywords.some(keyword => 
+                    productCategory.includes(keyword) || 
+                    (product.name && product.name.toLowerCase().includes(keyword))
+                );
+                
+                // Only allow if it's specifically marked as smartwatch-related
+                const isSmartWatch = productCategory.includes('smart') || 
+                                   productCategory.includes('apple') ||
+                                   productCategory.includes('fitness') ||
+                                   productCategory.includes('wearable') ||
+                                   (product.name && (
+                                       product.name.toLowerCase().includes('smart') ||
+                                       product.name.toLowerCase().includes('apple watch') ||
+                                       product.name.toLowerCase().includes('fitness') ||
+                                       product.name.toLowerCase().includes('digital')
+                                   ));
+                
+                if (isAnalogWatch && !isSmartWatch) {
+                    isExcluded = true;
+                }
+            }
+            
+            // If filtering for watches, exclude smartwatches unless they're also tagged as watch
+            if (filterCategory === 'watches' || (categoryName && categoryName.toLowerCase() === 'watches')) {
+                const isSmartWatch = productCategory.includes('smart') || 
+                                   (product.name && product.name.toLowerCase().includes('smart'));
+                
+                // Don't exclude smartwatches from watches category, let them appear in both
+                // This allows users to find smartwatches in both categories if appropriately tagged
+            }
+            
+            const isMatch = (exactMatch || nameMatch || specialMatch || nameSpecialMatch || reverseSpecialMatch) && !isExcluded;
             
             if (isMatch) {
                 console.log(`    ✅ Match found: "${cat}" matches filter "${categoryId}"${categoryName ? ` or name "${categoryInfo.name}"` : ''}`);
+            } else if (isExcluded) {
+                console.log(`    ❌ Excluded: "${cat}" excluded from "${categoryId}" due to exclusion rules`);
             }
             
             return isMatch;
@@ -416,14 +453,14 @@ function searchProducts() {
                     // Handle special category mappings
                     const specialMatches = {
                         'shoes': ['shoe', 'sneakers', 'footwear'],
-                        'watches': ['watch', 'timepiece'],
+                        'watches': ['watch', 'timepiece', 'analog', 'digital', 'mechanical', 'quartz'],
                         'accessories': ['accessory', 'acc'],
                         'nike': ['nike shoes', 'nike sneakers'],
                         'adidas': ['adidas shoes', 'adidas sneakers'],
                         'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
                         'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
                         'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
-                        'smartwatch': ['smart watch', 'watches', 'watch'],
+                        'smartwatch': ['smart watch', 'smartwatches', 'apple watch', 'fitness watch', 'wearable'],
                         'gadgets': ['gadget', 'electronics', 'electronic']
                     };
                     
@@ -439,7 +476,32 @@ function searchProducts() {
                         }
                     });
                     
-                    return exactMatch || specialMatch || reverseSpecialMatch;
+                    // Apply same exclusion rules for search
+                    let isExcluded = false;
+                    if (filterCategory === 'smartwatch') {
+                        const analogWatchKeywords = ['analog', 'mechanical', 'quartz', 'fossil', 'casio', 'traditional', 'classic', 'vintage'];
+                        const isAnalogWatch = analogWatchKeywords.some(keyword => 
+                            productCategory.includes(keyword) || 
+                            (product.name && product.name.toLowerCase().includes(keyword))
+                        );
+                        
+                        const isSmartWatch = productCategory.includes('smart') || 
+                                           productCategory.includes('apple') ||
+                                           productCategory.includes('fitness') ||
+                                           productCategory.includes('wearable') ||
+                                           (product.name && (
+                                               product.name.toLowerCase().includes('smart') ||
+                                               product.name.toLowerCase().includes('apple watch') ||
+                                               product.name.toLowerCase().includes('fitness') ||
+                                               product.name.toLowerCase().includes('digital')
+                                           ));
+                        
+                        if (isAnalogWatch && !isSmartWatch) {
+                            isExcluded = true;
+                        }
+                    }
+                    
+                    return (exactMatch || specialMatch || reverseSpecialMatch) && !isExcluded;
                 });
             });
         }
@@ -600,14 +662,14 @@ window.addEventListener('DOMContentLoaded', () => {
                         
                         const specialMatches = {
                             'shoes': ['shoe', 'sneakers', 'footwear'],
-                            'watches': ['watch', 'timepiece'],
+                            'watches': ['watch', 'timepiece', 'analog', 'digital', 'mechanical', 'quartz'],
                             'accessories': ['accessory', 'acc'],
                             'nike': ['nike shoes', 'nike sneakers'],
                             'adidas': ['adidas shoes', 'adidas sneakers'],
                             'today offer': ['todays offer', 'today\'s offer', 'todays offers', 'today\'s offers', 'special offer'],
                             'out-of-stock': ['out of stock', 'outofstock', 'sold out'],
                             'sunglasses': ['sunglass', 'sun glasses', 'sun glass', 'eyewear', 'glasses'],
-                            'smartwatch': ['smart watch', 'watches', 'watch'],
+                            'smartwatch': ['smart watch', 'smartwatches', 'apple watch', 'fitness watch', 'wearable'],
                             'gadgets': ['gadget', 'electronics', 'electronic']
                         };
                         
@@ -623,7 +685,32 @@ window.addEventListener('DOMContentLoaded', () => {
                             }
                         });
                         
-                        return exactMatch || specialMatch || reverseSpecialMatch;
+                        // Apply exclusion rules here too
+                        let isExcluded = false;
+                        if (filterCategory === 'smartwatch') {
+                            const analogWatchKeywords = ['analog', 'mechanical', 'quartz', 'fossil', 'casio', 'traditional', 'classic', 'vintage'];
+                            const isAnalogWatch = analogWatchKeywords.some(keyword => 
+                                productCategory.includes(keyword) || 
+                                (p.name && p.name.toLowerCase().includes(keyword))
+                            );
+                            
+                            const isSmartWatch = productCategory.includes('smart') || 
+                                               productCategory.includes('apple') ||
+                                               productCategory.includes('fitness') ||
+                                               productCategory.includes('wearable') ||
+                                               (p.name && (
+                                                   p.name.toLowerCase().includes('smart') ||
+                                                   p.name.toLowerCase().includes('apple watch') ||
+                                                   p.name.toLowerCase().includes('fitness') ||
+                                                   p.name.toLowerCase().includes('digital')
+                                               ));
+                            
+                            if (isAnalogWatch && !isSmartWatch) {
+                                isExcluded = true;
+                            }
+                        }
+                        
+                        return (exactMatch || specialMatch || reverseSpecialMatch) && !isExcluded;
                     });
                 })
                 : allProducts;
@@ -964,6 +1051,85 @@ window.checkCategoryProducts = function(categoryName) {
     });
     
     return matchingProducts;
+};
+
+// Debug function to check smartwatch filtering specifically
+window.debugSmartwatchFilter = function() {
+    console.log('🔍 SMARTWATCH DEBUG: Checking all products for smartwatch categorization');
+    
+    if (allProducts.length === 0) {
+        console.log('❌ No products loaded. Try window.refreshProducts() first');
+        return;
+    }
+    
+    console.log('📱 Checking each product for smartwatch eligibility:');
+    
+    allProducts.forEach(product => {
+        if (!product.categories || !Array.isArray(product.categories)) {
+            console.log(`❌ ${product.name}: No categories`);
+            return;
+        }
+        
+        let shouldBeInSmartwatch = false;
+        let reasons = [];
+        
+        product.categories.forEach(cat => {
+            const productCategory = cat.toLowerCase().trim();
+            
+            // Check if it matches smartwatch patterns
+            const smartwatchPatterns = ['smart watch', 'smartwatch', 'smartwatches', 'apple watch', 'fitness watch', 'wearable'];
+            const matchesSmartwatch = smartwatchPatterns.some(pattern => productCategory.includes(pattern));
+            
+            if (matchesSmartwatch) {
+                shouldBeInSmartwatch = true;
+                reasons.push(`category "${cat}" matches smartwatch pattern`);
+            }
+            
+            // Check exclusions (analog watch indicators)
+            const analogWatchKeywords = ['analog', 'mechanical', 'quartz', 'fossil', 'casio', 'traditional', 'classic', 'vintage'];
+            const isAnalogWatch = analogWatchKeywords.some(keyword => 
+                productCategory.includes(keyword) || 
+                (product.name && product.name.toLowerCase().includes(keyword))
+            );
+            
+            if (isAnalogWatch) {
+                const isSmartWatch = productCategory.includes('smart') || 
+                                   productCategory.includes('apple') ||
+                                   productCategory.includes('fitness') ||
+                                   productCategory.includes('wearable') ||
+                                   (product.name && (
+                                       product.name.toLowerCase().includes('smart') ||
+                                       product.name.toLowerCase().includes('apple watch') ||
+                                       product.name.toLowerCase().includes('fitness') ||
+                                       product.name.toLowerCase().includes('digital')
+                                   ));
+                
+                if (!isSmartWatch) {
+                    shouldBeInSmartwatch = false;
+                    reasons.push(`excluded because it's analog/traditional watch`);
+                }
+            }
+        });
+        
+        // Check product name for additional clues
+        if (product.name) {
+            const nameMatches = product.name.toLowerCase().includes('smart') ||
+                               product.name.toLowerCase().includes('apple watch') ||
+                               product.name.toLowerCase().includes('fitness');
+            if (nameMatches) {
+                shouldBeInSmartwatch = true;
+                reasons.push(`product name "${product.name}" indicates smartwatch`);
+            }
+        }
+        
+        const status = shouldBeInSmartwatch ? '✅ SHOULD BE' : '❌ SHOULD NOT BE';
+        console.log(`${status} in smartwatch: ${product.name}`);
+        console.log(`   Categories: [${product.categories.join(', ')}]`);
+        if (reasons.length > 0) {
+            console.log(`   Reasons: ${reasons.join(', ')}`);
+        }
+        console.log('');
+    });
 };
 
 // ✅ Initialize Today's Offers when page loads

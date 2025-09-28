@@ -56,7 +56,27 @@ function loadProduct() {
         const images = product.imgUrl || [];
 
         const sizes = product.sizes || [];
-        const colors = product.colors || [];
+        const rawColors = product.colors || [];
+        
+        // Parse colors to handle both old and new formats
+        const colors = rawColors.map(colorData => {
+            if (typeof colorData === 'string') {
+                if (colorData.includes(':')) {
+                    // New format "ColorName:HexValue"
+                    const [name, hex] = colorData.split(':');
+                    return {name: name.trim(), hex: hex.trim()};
+                } else {
+                    // Old format - just color name
+                    return {name: colorData, hex: getColorHex(colorData)};
+                }
+            } else if (colorData && colorData.name && colorData.hex) {
+                // Already an object
+                return colorData;
+            } else {
+                // Fallback
+                return {name: 'Unknown', hex: '#6b7280'};
+            }
+        });
 
         // ✅ Build gallery HTML
         let galleryHTML = `
@@ -98,15 +118,35 @@ function loadProduct() {
         if (colors.length) {
             colorsHTML = `
                 <div class="colors">
-                    <h4>Available Colors:</h4>
-                    <select id="colorDropdown" class="color-dropdown" onchange="selectColor(this.value)">
-                        <option value="">Select Color</option>
+                    <div class="modern-color-selection">
+                        <div class="color-section-header">
+                            <h4 class="color-section-title">Colors</h4>
+                        </div>
+                        <div class="color-circles-container">
             `;
-            colors.forEach(color => {
-                colorsHTML += `<option value="${color}">${color}</option>`;
+            
+            // Generate color circles
+            colors.forEach((colorObj, index) => {
+                const colorName = colorObj.name;
+                const hexColor = colorObj.hex;
+                const isFirstColor = index === 0;
+                console.log(`Color: ${colorName} -> Hex: ${hexColor}`); // Debug logging
+                colorsHTML += `
+                    <div class="product-color-circle${isFirstColor ? ' selected' : ''}" 
+                         data-color="${colorName}" 
+                         data-hex="${hexColor}"
+                         style="background: ${hexColor};"
+                         onclick="selectProductColor('${colorName}', '${hexColor}', this)">
+                    </div>
+                `;
             });
+            
             colorsHTML += `
-                    </select>
+                            <div class="selected-color-name${colors.length > 0 ? ' active' : ''}" id="selectedColorDisplay">
+                                ${colors.length > 0 ? colors[0].name : 'Select Color'}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -180,6 +220,13 @@ function loadProduct() {
 
         // ✅ Auto-adjust layout based on image size
         adjustLayoutToImageSize();
+        
+        // ✅ Initialize color selection if colors are available
+        if (colors.length > 0) {
+            // Set the first color as selected by default
+            selectedColor = colors[0].name;
+            console.log('Auto-selected first color:', selectedColor);
+        }
 
     }).catch(error => {
         console.error("Error loading product: ", error);
@@ -532,6 +579,231 @@ window.selectColor = function(color) {
     if (dropdown) {
         dropdown.value = color;
     }
+};
+
+// Enhanced Color mapping function with custom color support
+function getColorHex(colorName) {
+    // If colorName is already a hex value, return it
+    if (colorName.startsWith('#') && /^#[0-9A-Fa-f]{6}$/.test(colorName)) {
+        return colorName;
+    }
+    
+    // If colorName looks like a CSS color value, return it
+    if (colorName.startsWith('rgb') || colorName.startsWith('hsl')) {
+        return colorName;
+    }
+    
+    const colorMap = {
+        // Basic colors
+        'Red': '#ef4444',
+        'Pink': '#ec4899',
+        'Rose': '#f43f5e',
+        'Orange': '#f97316',
+        'Yellow': '#eab308',
+        'Green': '#22c55e',
+        'Blue': '#3b82f6',
+        'Purple': '#8b5cf6',
+        'Violet': '#7c3aed',
+        'Indigo': '#6366f1',
+        'Black': '#000000',
+        'White': '#ffffff',
+        'Gray': '#6b7280',
+        'Grey': '#6b7280',
+        'Brown': '#a3744c',
+        'Navy': '#1e3a8a',
+        'Maroon': '#991b1b',
+        'Teal': '#14b8a6',
+        'Turquoise': '#06b6d4',
+        'Gold': '#ffd700',
+        'Silver': '#c0c0c0',
+        'Lime': '#84cc16',
+        'Coral': '#ff6b6b',
+        'Tan': '#d2b48c',
+        'Beige': '#f5f5dc',
+        'Crimson': '#dc2626',
+        'Burgundy': '#7f1d1d',
+        
+        // Additional common colors
+        'Sky Blue': '#87ceeb',
+        'Royal Blue': '#4169e1',
+        'Light Blue': '#add8e6',
+        'Dark Blue': '#00008b',
+        'Forest Green': '#228b22',
+        'Olive': '#808000',
+        'Mint': '#98fb98',
+        'Mint Green': '#98fb98',
+        'Lavender': '#e6e6fa',
+        'Salmon': '#fa8072',
+        'Khaki': '#f0e68c',
+        'Cyan': '#00ffff',
+        'Magenta': '#ff00ff',
+        'Ivory': '#fffff0',
+        'Cream': '#fffdd0',
+        'Rose Gold': '#e8b4b8',
+        'Champagne': '#f7e7ce',
+        'Emerald': '#50c878',
+        'Sapphire': '#0f52ba',
+        'Ruby': '#e0115f',
+        'Amber': '#ffbf00',
+        'Jade': '#00a86b',
+        'Aqua': '#00ffff',
+        'Fuchsia': '#ff00ff',
+        'Peach': '#ffcba4',
+        'Mint': '#3eb489',
+        'Dusty Rose': '#dcae96',
+        'Sage': '#9caf88',
+        'Slate': '#708090',
+        'Copper': '#b87333',
+        'Bronze': '#cd7f32',
+        
+        // Common shoe/fashion colors
+        'Off White': '#faf0e6',
+        'Cream White': '#fffdd0',
+        'Bone': '#f9f6ee',
+        'Antique White': '#faebd7',
+        'Pearl': '#eae0c8',
+        'Platinum': '#e5e4e2',
+        'Charcoal': '#36454f',
+        'Jet Black': '#0a0a0a',
+        'Midnight': '#191970',
+        'Steel': '#71797e',
+        'Gunmetal': '#2a3439',
+        'Mahogany': '#c04000',
+        'Chestnut': '#954535',
+        'Caramel': '#af6f09',
+        'Espresso': '#6f4e37',
+        'Mocha': '#967117',
+        'Taupe': '#483c32',
+        'Mushroom': '#adaba8',
+        'Stone': '#928e85',
+        'Sand': '#c2b280',
+        'Desert': '#c19a6b',
+        'Clay': '#b66a50'
+    };
+    
+    // Try exact match first
+    if (colorMap[colorName]) {
+        return colorMap[colorName];
+    }
+    
+    // Try case-insensitive match
+    const lowerColorName = colorName.toLowerCase();
+    for (const [key, value] of Object.entries(colorMap)) {
+        if (key.toLowerCase() === lowerColorName) {
+            return value;
+        }
+    }
+    
+    // Try partial matching for custom colors (more comprehensive)
+    for (const [key, value] of Object.entries(colorMap)) {
+        const keyLower = key.toLowerCase();
+        // Check if the color name contains any of the mapped color names
+        if (lowerColorName.includes(keyLower) || keyLower.includes(lowerColorName)) {
+            return value;
+        }
+        // Also check for common variations like "light blue", "dark red", etc.
+        if (lowerColorName.includes(keyLower.split(' ')[0]) || keyLower.includes(lowerColorName.split(' ')[0])) {
+            return value;
+        }
+    }
+    
+    // Try to match common color prefixes/suffixes
+    const colorVariations = {
+        'light': (color) => lightenColor(color, 20),
+        'dark': (color) => darkenColor(color, 20),
+        'bright': (color) => saturateColor(color, 20),
+        'pale': (color) => lightenColor(color, 30),
+        'deep': (color) => darkenColor(color, 30)
+    };
+    
+    for (const [variation, modifier] of Object.entries(colorVariations)) {
+        if (lowerColorName.includes(variation)) {
+            const baseColorName = lowerColorName.replace(variation, '').trim();
+            for (const [key, value] of Object.entries(colorMap)) {
+                if (key.toLowerCase().includes(baseColorName) || baseColorName.includes(key.toLowerCase())) {
+                    return modifier(value);
+                }
+            }
+        }
+    }
+    
+    // Generate a color based on the color name hash for custom colors
+    return generateColorFromName(colorName);
+}
+
+// Generate a consistent color from a color name for custom colors
+function generateColorFromName(colorName) {
+    // Simple hash function to generate consistent colors for custom names
+    let hash = 0;
+    for (let i = 0; i < colorName.length; i++) {
+        const char = colorName.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Make colors more appealing by using a better palette
+    const colorPalette = [
+        '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', 
+        '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b',
+        '#10b981', '#6366f1', '#8b5cf6', '#f43f5e', '#84cc16',
+        '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899', '#f97316'
+    ];
+    
+    // Use hash to pick from the predefined palette for more appealing colors
+    const colorIndex = Math.abs(hash) % colorPalette.length;
+    return colorPalette[colorIndex];
+}
+
+// Helper functions for color manipulation
+function lightenColor(hex, percent) {
+    if (hex.startsWith('hsl')) return hex; // Return as-is for HSL colors
+    const num = parseInt(hex.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+}
+
+function darkenColor(hex, percent) {
+    if (hex.startsWith('hsl')) return hex; // Return as-is for HSL colors
+    const num = parseInt(hex.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) - amt;
+    const G = (num >> 8 & 0x00FF) - amt;
+    const B = (num & 0x0000FF) - amt;
+    return "#" + (0x1000000 + (R > 255 ? 255 : R < 0 ? 0 : R) * 0x10000 +
+        (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
+        (B > 255 ? 255 : B < 0 ? 0 : B)).toString(16).slice(1);
+}
+
+function saturateColor(hex, percent) {
+    if (hex.startsWith('hsl')) return hex; // Return as-is for HSL colors
+    // For simplicity, just return the original color with slight brightness adjustment
+    return lightenColor(hex, percent / 2);
+}
+
+// Modern color selection function
+window.selectProductColor = function(colorName, hexValue, element) {
+    selectedColor = colorName;
+    
+    // Update visual selection
+    document.querySelectorAll('.product-color-circle').forEach(circle => {
+        circle.classList.remove('selected');
+    });
+    
+    element.classList.add('selected');
+    
+    // Update selected color display
+    const colorDisplay = document.getElementById('selectedColorDisplay');
+    if (colorDisplay) {
+        colorDisplay.textContent = colorName;
+        colorDisplay.classList.add('active');
+    }
+    
+    console.log('Selected color:', colorName, hexValue);
 };
 
 function shareProduct(name, price, url) {
