@@ -118,32 +118,38 @@ body {
 
 /* Suggestions dropdown */
 .search-suggestions {
-    position: absolute;
-    top: calc(100% + 6px);
+    position: fixed;
+    top: 60px;
     left: 0;
     right: 0;
+    width: 100vw;
     background: #fff;
-    border-radius: 10px;
+    border-radius: 0;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     overflow: hidden;
     z-index: 1200;
     max-height: 380px;
     overflow-y: auto;
+    margin: 0;
+    padding: 10px 0;
 }
 
 .search-suggestion {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 15px;
+    padding: 15px 20px;
     border-bottom: 1px solid #f1f1f1;
     cursor: pointer;
+    max-width: 1200px;
+    margin: 0 auto;
+    transition: background 0.2s ease;
 }
 .search-suggestion:hover { background: #fafafa; }
 .search-suggestion:last-child { border-bottom: none; }
-.search-suggestion .title { font-weight: 700; color: #222; }
-.search-suggestion .subtitle { color: #666; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.search-suggestion .go { margin-left: auto; color: #777; }
+.search-suggestion .title { font-weight: 700; color: #222; font-size: 1rem; }
+.search-suggestion .subtitle { color: #666; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.search-suggestion .go { margin-left: auto; color: #777; font-size: 0.9rem; }
 
 /* Cart Container Styles */
 .cart-container {
@@ -208,6 +214,33 @@ body {
         padding: 10px 16px;
         flex-wrap: wrap;
         gap: 8px;
+    }
+
+    /* Full width search suggestions on mobile */
+    .search-suggestions {
+        top: 50px;
+        border-radius: 0;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        max-height: 300px;
+        padding: 5px 0;
+    }
+
+    .search-suggestion {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .search-suggestion .title {
+        font-size: 0.95rem;
+    }
+
+    .search-suggestion .subtitle {
+        font-size: 0.85rem;
+        max-width: 50%;
+    }
+
+    .search-suggestion .go {
+        font-size: 0.85rem;
     }
 
     .logo {
@@ -305,6 +338,31 @@ body {
 
     .logo {
         font-size: 1.1rem;
+    }
+
+    /* Compact search suggestions for small screens */
+    .search-suggestions {
+        top: 45px;
+        max-height: 250px;
+        padding: 3px 0;
+    }
+
+    .search-suggestion {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .search-suggestion .title {
+        font-size: 0.9rem;
+    }
+
+    .search-suggestion .subtitle {
+        font-size: 0.8rem;
+        max-width: 45%;
+    }
+
+    .search-suggestion .go {
+        font-size: 0.8rem;
     }
 
     .search-container {
