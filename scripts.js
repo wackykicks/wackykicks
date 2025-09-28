@@ -66,14 +66,20 @@ async function redirectToCategory(categoryName) {
             return;
         }
         
-        // Scroll to products section after a short delay
+        // Scroll to products section after a short delay (use categoryManager's scroll method if available)
         setTimeout(() => {
-            const productSection = document.getElementById('product-grid');
-            if (productSection) {
-                productSection.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            if (typeof categoryManager !== 'undefined' && categoryManager.scrollToProducts) {
+                categoryManager.scrollToProducts();
+            } else {
+                // Fallback scrolling
+                const productSection = document.getElementById('product-grid');
+                if (productSection) {
+                    productSection.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start',
+                        inline: 'nearest'
+                    });
+                }
             }
         }, 500);
         
@@ -178,14 +184,20 @@ async function redirectToCategoryEnhanced(categoryName) {
             }
         }
         
-        // Scroll to products section
+        // Scroll to products section (use categoryManager's scroll method if available)
         setTimeout(() => {
-            const productSection = document.getElementById('product-grid');
-            if (productSection) {
-                productSection.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            if (typeof categoryManager !== 'undefined' && categoryManager.scrollToProducts) {
+                categoryManager.scrollToProducts();
+            } else {
+                // Fallback scrolling
+                const productSection = document.getElementById('product-grid');
+                if (productSection) {
+                    productSection.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start',
+                        inline: 'nearest'
+                    });
+                }
             }
         }, 500);
         

@@ -141,6 +141,8 @@ class CategoryManager {
 
     // Select/deselect category (single selection only)
     selectCategory(categoryId) {
+        console.log('🎯 Category selected:', categoryId);
+        
         if (categoryId === 'all') {
             // Clear all selections when "All" is clicked
             this.selectedCategories = [];
@@ -157,6 +159,9 @@ class CategoryManager {
 
         this.renderCategories();
         this.filterProductsByCategory();
+        
+        // Auto-scroll to products section after category selection
+        this.scrollToProducts();
     }
 
     // Filter products by selected categories
@@ -182,6 +187,43 @@ class CategoryManager {
         } else {
             console.error('❌ window.filterProducts function not available');
         }
+    }
+
+    // Auto-scroll to products section
+    scrollToProducts() {
+        console.log('🔽 Auto-scrolling to products section...');
+        
+        // Wait a short moment for the products to be filtered and rendered
+        setTimeout(() => {
+            const productSection = document.getElementById('product-grid');
+            if (productSection) {
+                console.log('✅ Product section found, scrolling...');
+                productSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            } else {
+                // Fallback: try other common product section IDs
+                const alternateSelectors = ['#productList', '.product-grid-section', '.products-section'];
+                for (const selector of alternateSelectors) {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        console.log('✅ Found product section with selector:', selector);
+                        element.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start',
+                            inline: 'nearest'
+                        });
+                        break;
+                    }
+                }
+                
+                if (!document.querySelector('#product-grid, #productList, .product-grid-section, .products-section')) {
+                    console.warn('⚠️ Product section not found for auto-scroll');
+                }
+            }
+        }, 300); // Give time for products to render
     }
 
     // Add new category (for admin)
