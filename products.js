@@ -628,9 +628,9 @@ window.addEventListener('DOMContentLoaded', () => {
             return `
                 <div class="search-suggestion" role="option" data-id="${p.id}">
                     <i class="fas fa-search" aria-hidden="true"></i>
-                    <div>
+                    <div class="text-content">
                         <div class="title">${p.name || 'Product'}</div>
-                        <div class="subtitle">${(p.description || '').slice(0, 60)}</div>
+                        <div class="subtitle">${(p.description || '').slice(0, 80)}</div>
                     </div>
                     <i class="fas fa-arrow-up-right-from-square go" aria-hidden="true"></i>
                 </div>`;

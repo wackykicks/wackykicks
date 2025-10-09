@@ -271,20 +271,142 @@ function showSizeAlert() {
     }
 }
 
-// ✅ WhatsApp Buy Now
+// ✅ WhatsApp Buy Now with Address Modal
 function copyToWhatsApp(productName, productPrice) {
+    // Show address modal instead of directly proceeding
+    showAddressModal(productName, productPrice);
+}
+
+// ✅ Address Modal Functions
+let currentPurchaseData = null;
+
+function showAddressModal(productName, productPrice) {
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+    
+    // Store purchase data for later use
+    currentPurchaseData = {
+        productName,
+        productPrice,
+        quantity,
+        selectedSize: window.selectedSize || null,
+        selectedColor: window.selectedColor || null
+    };
+    
+    const modal = document.getElementById('addressModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        
+        // Clear form fields
+        const form = document.getElementById('addressForm');
+        if (form) {
+            form.reset();
+        }
+    }
+}
 
-    // Size and color selection is now optional, so no alert
-    let sizeMsg = (typeof selectedSize !== 'undefined' && selectedSize) ? `\nSize: ${selectedSize}` : '';
-    let colorMsg = (typeof selectedColor !== 'undefined' && selectedColor) ? `\nColor: ${selectedColor}` : '';
+function closeAddressModal() {
+    const modal = document.getElementById('addressModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+    currentPurchaseData = null;
+}
+
+function proceedWithoutAddress() {
+    if (!currentPurchaseData) return;
+    
+    // Close modal
+    closeAddressModal();
+    
+    // Proceed with WhatsApp message without address
+    const { productName, productPrice, quantity, selectedSize, selectedColor } = currentPurchaseData;
+    
+    let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
+    let colorMsg = selectedColor ? `\nColor: ${selectedColor}` : '';
     const qtyMsg = `\nQuantity: ${quantity}`;
     
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}`;
     
     window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
 }
+
+function proceedWithAddress() {
+    if (!currentPurchaseData) return;
+    
+    // Get address data
+    const addressData = getAddressFormData();
+    
+    // Close modal
+    closeAddressModal();
+    
+    // Proceed with WhatsApp message including address
+    const { productName, productPrice, quantity, selectedSize, selectedColor } = currentPurchaseData;
+    
+    let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
+    let colorMsg = selectedColor ? `\nColor: ${selectedColor}` : '';
+    const qtyMsg = `\nQuantity: ${quantity}`;
+    
+    // Add address to message if provided
+    let addressMsg = '';
+    if (addressData.hasData) {
+        addressMsg = `\n\n📍 Delivery Address:`;
+        if (addressData.fullName) addressMsg += `\nName: ${addressData.fullName}`;
+        if (addressData.phoneNumber) addressMsg += `\nPhone: ${addressData.phoneNumber}`;
+        if (addressData.addressLine1) addressMsg += `\nAddress: ${addressData.addressLine1}`;
+        if (addressData.addressLine2) addressMsg += `, ${addressData.addressLine2}`;
+        if (addressData.city) addressMsg += `\nCity: ${addressData.city}`;
+        if (addressData.state) addressMsg += `\nState: ${addressData.state}`;
+        if (addressData.pincode) addressMsg += `\nPincode: ${addressData.pincode}`;
+        if (addressData.landmark) addressMsg += `\nLandmark: ${addressData.landmark}`;
+    }
+    
+    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}${addressMsg}`;
+    
+    window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+function getAddressFormData() {
+    const fullName = document.getElementById('fullName')?.value.trim() || '';
+    const phoneNumber = document.getElementById('phoneNumber')?.value.trim() || '';
+    const addressLine1 = document.getElementById('addressLine1')?.value.trim() || '';
+    const addressLine2 = document.getElementById('addressLine2')?.value.trim() || '';
+    const city = document.getElementById('city')?.value.trim() || '';
+    const state = document.getElementById('state')?.value.trim() || '';
+    const pincode = document.getElementById('pincode')?.value.trim() || '';
+    const landmark = document.getElementById('landmark')?.value.trim() || '';
+    
+    const hasData = fullName || phoneNumber || addressLine1 || city || state || pincode;
+    
+    return {
+        fullName,
+        phoneNumber,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        pincode,
+        landmark,
+        hasData
+    };
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('addressModal');
+    if (event.target === modal) {
+        closeAddressModal();
+    }
+});
+
+// Close modal on Escape key
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeAddressModal();
+    }
+});
 
 // ✅ Add Product to Cart
 function addProductToCart(productName, productPrice, productOldPrice, productImage) {
