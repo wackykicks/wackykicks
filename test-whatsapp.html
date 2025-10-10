@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Redirect Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #128C7E;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>WhatsApp Redirect Test</h1>
+        <p>This page tests different WhatsApp redirect methods to identify the issue.</p>
+        
+        <button onclick="testSimpleRedirect()">Test Simple Redirect</button>
+        <button onclick="testWindowOpen()">Test Window Open</button>
+        <button onclick="testLocationHref()">Test Location Href</button>
+        <button onclick="testLocationAssign()">Test Location Assign</button>
+        <button onclick="testEmergencyMethod()">Test Emergency Method</button>
+        
+        <div class="log" id="testLog">Test logs will appear here...\n</div>
+        
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function testSimpleRedirect() {
+            log('Testing simple redirect...');
+            const message = "Test message from simple redirect";
+            const whatsappUrl = `https://wa.me/918138999550?text=${encodeURIComponent(message)}`;
+            log(`URL: ${whatsappUrl}`);
+            
+            try {
+                window.location.href = whatsappUrl;
+                log('Simple redirect executed successfully');
+            } catch (error) {
+                log(`Simple redirect failed: ${error.message}`);
+            }
+        }
+
+        function testWindowOpen() {
+            log('Testing window.open...');
+            const message = "Test message from window.open";
+            const whatsappUrl = `https://wa.me/918138999550?text=${encodeURIComponent(message)}`;
+            log(`URL: ${whatsappUrl}`);
+            
+            try {
+                const newWindow = window.open(whatsappUrl, '_blank');
+                if (newWindow) {
+                    log('Window.open executed successfully');
+                } else {
+                    log('Window.open was blocked by popup blocker');
+                }
+            } catch (error) {
+                log(`Window.open failed: ${error.message}`);
+            }
+        }
+
+        function testLocationHref() {
+            log('Testing location.href...');
+            const message = "Test message from location.href";
+            const whatsappUrl = `https://wa.me/918138999550?text=${encodeURIComponent(message)}`;
+            log(`URL: ${whatsappUrl}`);
+            
+            try {
+                window.location.href = whatsappUrl;
+                log('Location.href executed successfully');
+            } catch (error) {
+                log(`Location.href failed: ${error.message}`);
+            }
+        }
+
+        function testLocationAssign() {
+            log('Testing location.assign...');
+            const message = "Test message from location.assign";
+            const whatsappUrl = `https://wa.me/918138999550?text=${encodeURIComponent(message)}`;
+            log(`URL: ${whatsappUrl}`);
+            
+            try {
+                window.location.assign(whatsappUrl);
+                log('Location.assign executed successfully');
+            } catch (error) {
+                log(`Location.assign failed: ${error.message}`);
+            }
+        }
+
+        function testEmergencyMethod() {
+            log('Testing emergency method...');
+            const message = "Test message from emergency method";
+            const whatsappUrl = `https://wa.me/918138999550?text=${encodeURIComponent(message)}`;
+            log(`URL: ${whatsappUrl}`);
+            
+            try {
+                // Create temporary link and click it
+                const link = document.createElement('a');
+                link.href = whatsappUrl;
+                link.target = '_blank';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                log('Emergency method executed successfully');
+            } catch (error) {
+                log(`Emergency method failed: ${error.message}`);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').textContent = 'Test logs will appear here...\n';
+        }
+
+        // Initialize
+        log('WhatsApp redirect test page loaded');
+        log('User Agent: ' + navigator.userAgent);
+        log('Platform: ' + navigator.platform);
+    </script>
+</body>
+</html>

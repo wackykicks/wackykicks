@@ -9,11 +9,541 @@ function calculateDiscountPercentage(oldPrice, newPrice) {
     return Math.round(discount); // Round to nearest whole number
 }
 
-// ✅ WhatsApp Buy Now
+// ✅ WhatsApp Buy Now with Address Modal
 function copyToWhatsApp(productName, productPrice) {
+    // Directly redirect to WhatsApp with product details
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}`;
-    window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
+    simpleRedirectToWhatsApp(message);
 }
+
+// ✅ Address Modal Functions for Products Page
+let currentPurchaseData = null;
+
+function showAddressModal(productName, productPrice) {
+    console.log('🔍 showAddressModal called with:', { productName, productPrice });
+    
+    // Store purchase data for later use (no size/color for products list)
+    currentPurchaseData = {
+        productName,
+        productPrice,
+        quantity: 1, // Default quantity for products list
+        selectedSize: null,
+        selectedColor: null
+    };
+    
+    console.log('💾 Stored currentPurchaseData:', currentPurchaseData);
+    
+    const modal = document.getElementById('addressModal');
+    console.log('🎭 Modal element found:', !!modal);
+    
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        
+        // Load saved address if available
+        loadSavedAddress();
+        
+        // Clear form fields if no saved address
+        const form = document.getElementById('addressForm');
+        if (form && !hasSavedAddress()) {
+            form.reset();
+        }
+        
+        console.log('✅ Address modal opened successfully');
+    } else {
+        console.error('❌ Address modal not found in DOM');
+    }
+}
+
+function closeAddressModal() {
+    const modal = document.getElementById('addressModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+    currentPurchaseData = null;
+}
+
+// ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
+function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
+    console.log('🚀 Starting WhatsApp redirect with message:', message);
+    
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
+    
+    // Method 1: Try window.open (most reliable for mobile)
+    try {
+        const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        if (newWindow) {
+            console.log('✅ WhatsApp opened using window.open');
+            return;
+        }
+    } catch (error) {
+        console.warn('⚠️ window.open failed:', error);
+    }
+    
+    // Method 2: Direct navigation for mobile devices
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        console.log('📱 Mobile device detected, using direct navigation');
+        window.location.href = whatsappUrl;
+        return;
+    }
+    
+    // Method 3: Link click simulation (fallback)
+    try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('✅ WhatsApp redirect using link click');
+    } catch (error) {
+        console.error('❌ All redirect methods failed:', error);
+        // Last resort: show the URL to user
+        alert(`Please open this link manually: ${whatsappUrl}`);
+    }
+}
+
+function proceedWithoutAddress() {
+    console.log('🚀 proceedWithoutAddress called');
+    if (!currentPurchaseData) {
+        console.error('❌ No currentPurchaseData found');
+        return;
+    }
+    
+    console.log('📦 Current purchase data:', currentPurchaseData);
+    
+    // Close modal first
+    closeAddressModal();
+    
+    // Proceed with WhatsApp message without address
+    const { productName, productPrice, quantity } = currentPurchaseData;
+    
+    const qtyMsg = quantity > 1 ? `\nQuantity: ${quantity}` : '';
+    
+    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${qtyMsg}`;
+    
+    console.log('📱 Using simple redirect with message:', message);
+    
+    // Use simple redirect directly
+    simpleRedirectToWhatsApp(message);
+}
+
+function proceedWithAddress() {
+    console.log('🚀 proceedWithAddress called');
+    if (!currentPurchaseData) {
+        console.error('❌ No currentPurchaseData found');
+        return;
+    }
+    
+    console.log('📦 Current purchase data:', currentPurchaseData);
+    
+    // Get address data
+    const addressData = getAddressFormData();
+    console.log('📍 Address data:', addressData);
+    
+    // Save address to localStorage for future use
+    if (addressData.hasData) {
+        saveAddressToStorage(addressData);
+    }
+    
+    // Close modal first
+    closeAddressModal();
+    
+    // Proceed with WhatsApp message including address
+    const { productName, productPrice, quantity } = currentPurchaseData;
+    
+    const qtyMsg = quantity > 1 ? `\nQuantity: ${quantity}` : '';
+    
+    // Add address to message if provided
+    let addressMsg = '';
+    if (addressData.hasData) {
+        addressMsg = `\n\n📍 Delivery Address:`;
+        if (addressData.fullName) addressMsg += `\nName: ${addressData.fullName}`;
+        if (addressData.phoneNumber) addressMsg += `\nPhone: ${addressData.phoneNumber}`;
+        if (addressData.addressLine1) addressMsg += `\nAddress: ${addressData.addressLine1}`;
+        if (addressData.addressLine2) addressMsg += `, ${addressData.addressLine2}`;
+        if (addressData.city) addressMsg += `\nCity: ${addressData.city}`;
+        if (addressData.state) addressMsg += `\nState: ${addressData.state}`;
+        if (addressData.pincode) addressMsg += `\nPincode: ${addressData.pincode}`;
+        if (addressData.landmark) addressMsg += `\nLandmark: ${addressData.landmark}`;
+    }
+    
+    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${qtyMsg}${addressMsg}`;
+    
+    console.log('📱 Using simple redirect with message:', message);
+    
+    // Use simple redirect directly
+    simpleRedirectToWhatsApp(message);
+}
+
+// ✅ Enhanced WhatsApp Redirect/Forward Function
+function redirectToWhatsApp(message, phoneNumber = '918138999550') {
+    console.log('🔄 redirectToWhatsApp called with:', { message, phoneNumber });
+    
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
+    
+    // Validate message and phone number
+    if (!message || !phoneNumber) {
+        console.error('❌ Missing message or phone number for WhatsApp redirect');
+        return;
+    }
+    
+    try {
+        console.log('📱 Starting WhatsApp redirect process...');
+        
+        // Show loading/forwarding indicator
+        showForwardingIndicator();
+        
+        // Safety timeout to always hide indicator
+        const safetyTimeout = setTimeout(() => {
+            console.log('⏰ Safety timeout reached, hiding indicator');
+            hideForwardingIndicator();
+        }, 3000);
+        
+        // Simplified and more reliable approach
+        if (isMobileDevice()) {
+            console.log('📱 Mobile device detected');
+            // On mobile devices - try app first, then web
+            const whatsappAppUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+            console.log('📱 Mobile WhatsApp URL:', whatsappAppUrl);
+            
+            // Create a more reliable redirect mechanism
+            setTimeout(() => {
+                let redirected = false;
+                
+                // Try to detect if app opens by checking page visibility
+                const visibilityHandler = () => {
+                    if (document.hidden) {
+                        console.log('👁️ Page hidden - app likely opened');
+                        redirected = true;
+                        clearTimeout(safetyTimeout);
+                        hideForwardingIndicator();
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                    }
+                };
+                
+                document.addEventListener('visibilitychange', visibilityHandler);
+                
+                // Try to open WhatsApp app
+                try {
+                    console.log('🚀 Attempting to open WhatsApp app');
+                    window.location.href = whatsappAppUrl;
+                } catch (error) {
+                    console.log('❌ App redirect failed:', error);
+                }
+                
+                // Fallback to web version after delay
+                setTimeout(() => {
+                    if (!redirected && !document.hidden) {
+                        console.log('🌐 Opening web WhatsApp as fallback');
+                        // App didn't open, use web version
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                        window.open(whatsappUrl, '_blank');
+                    }
+                    clearTimeout(safetyTimeout);
+                    hideForwardingIndicator();
+                }, 1200);
+                
+            }, 300);
+            
+        } else {
+            console.log('💻 Desktop device detected');
+            // On desktop - directly open web WhatsApp
+            setTimeout(() => {
+                console.log('🌐 Opening web WhatsApp');
+                window.open(whatsappUrl, '_blank');
+                clearTimeout(safetyTimeout);
+                hideForwardingIndicator();
+            }, 500);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error in WhatsApp redirect:', error);
+        hideForwardingIndicator();
+        // Use emergency fallback
+        console.log('� Using emergency fallback redirect');
+        emergencyWhatsAppRedirect(message, phoneNumber);
+    }
+}
+
+// ✅ Simple WhatsApp Redirect Fallback Function
+function simpleWhatsAppRedirect(message, phoneNumber = '918138999550') {
+    console.log('🔄 simpleWhatsAppRedirect called');
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    console.log('🔗 Simple redirect URL:', whatsappUrl);
+    window.open(whatsappUrl, '_blank');
+}
+
+// ✅ Emergency WhatsApp redirect (for testing)
+function emergencyWhatsAppRedirect(message, phoneNumber = '918138999550') {
+    console.log('🚨 Emergency WhatsApp redirect called');
+    console.log('📱 Message:', message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    console.log('🔗 URL:', whatsappUrl);
+    
+    // Create invisible link and click it
+    try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.position = 'absolute';
+        link.style.left = '-9999px';
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            if (document.body.contains(link)) {
+                document.body.removeChild(link);
+            }
+        }, 100);
+        
+        console.log('✅ Emergency link click executed');
+        
+    } catch (error) {
+        console.error('❌ Emergency link method failed:', error);
+        
+        // Last resort fallbacks
+        try {
+            window.open(whatsappUrl, '_blank');
+            console.log('✅ window.open executed');
+        } catch (error) {
+            console.error('❌ window.open failed:', error);
+            try {
+                window.location.href = whatsappUrl;
+                console.log('✅ window.location.href executed');
+            } catch (error2) {
+                console.error('❌ All redirect methods failed:', error2);
+                alert(`Unable to open WhatsApp automatically. Please copy this URL: ${whatsappUrl}`);
+            }
+        }
+    }
+}
+
+// ✅ Device Detection Function
+function isMobileDevice() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Check for mobile patterns
+    const mobilePatterns = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i,
+        /Mobile/i
+    ];
+    
+    return mobilePatterns.some(pattern => userAgent.match(pattern)) || 
+           window.innerWidth <= 768 ||
+           ('ontouchstart' in window);
+}
+
+// ✅ Forwarding Indicator Functions
+function showForwardingIndicator() {
+    // Remove existing indicator
+    hideForwardingIndicator();
+    
+    // Create forwarding indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'whatsappForwardingIndicator';
+    indicator.innerHTML = `
+        <div class="forwarding-content">
+            <div class="forwarding-spinner">
+                <i class="fab fa-whatsapp"></i>
+            </div>
+            <div class="forwarding-text">
+                <h3>Forwarding to WhatsApp...</h3>
+                <p>Please wait while we redirect you</p>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS styles
+    indicator.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-out;
+    `;
+    
+    // Add styles for content
+    const style = document.createElement('style');
+    style.textContent = `
+        .forwarding-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 300px;
+            width: 90%;
+        }
+        .forwarding-spinner {
+            font-size: 3rem;
+            color: #25D366;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        .forwarding-text h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.3rem;
+        }
+        .forwarding-text p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(indicator);
+}
+
+function hideForwardingIndicator() {
+    const indicator = document.getElementById('whatsappForwardingIndicator');
+    if (indicator) {
+        // Add fadeOut animation if not already defined
+        const existingStyle = document.querySelector('style[data-forwarding-style]');
+        if (!existingStyle) {
+            const fadeOutStyle = document.createElement('style');
+            fadeOutStyle.setAttribute('data-forwarding-style', 'true');
+            fadeOutStyle.textContent = `
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(fadeOutStyle);
+        }
+        
+        indicator.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+            // Remove the style elements
+            const styles = document.querySelectorAll('style');
+            styles.forEach(style => {
+                if (style.textContent.includes('forwarding-content') || style.getAttribute('data-forwarding-style')) {
+                    style.remove();
+                }
+            });
+        }, 300);
+    }
+}
+
+function getAddressFormData() {
+    const fullName = document.getElementById('fullName')?.value.trim() || '';
+    const phoneNumber = document.getElementById('phoneNumber')?.value.trim() || '';
+    const addressLine1 = document.getElementById('addressLine1')?.value.trim() || '';
+    const addressLine2 = document.getElementById('addressLine2')?.value.trim() || '';
+    const city = document.getElementById('city')?.value.trim() || '';
+    const state = document.getElementById('state')?.value.trim() || '';
+    const pincode = document.getElementById('pincode')?.value.trim() || '';
+    const landmark = document.getElementById('landmark')?.value.trim() || '';
+    
+    const hasData = fullName || phoneNumber || addressLine1 || city || state || pincode;
+    
+    return {
+        fullName,
+        phoneNumber,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        pincode,
+        landmark,
+        hasData
+    };
+}
+
+// ✅ Address Storage Functions
+function saveAddressToStorage(addressData) {
+    try {
+        localStorage.setItem('wackykicks_saved_address', JSON.stringify(addressData));
+        console.log('Address saved to localStorage');
+    } catch (error) {
+        console.error('Error saving address:', error);
+    }
+}
+
+function loadSavedAddress() {
+    try {
+        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        if (savedAddress) {
+            const addressData = JSON.parse(savedAddress);
+            
+            // Fill form fields with saved data
+            if (addressData.fullName) document.getElementById('fullName').value = addressData.fullName;
+            if (addressData.phoneNumber) document.getElementById('phoneNumber').value = addressData.phoneNumber;
+            if (addressData.addressLine1) document.getElementById('addressLine1').value = addressData.addressLine1;
+            if (addressData.addressLine2) document.getElementById('addressLine2').value = addressData.addressLine2;
+            if (addressData.city) document.getElementById('city').value = addressData.city;
+            if (addressData.state) document.getElementById('state').value = addressData.state;
+            if (addressData.pincode) document.getElementById('pincode').value = addressData.pincode;
+            if (addressData.landmark) document.getElementById('landmark').value = addressData.landmark;
+            
+            console.log('Address loaded from localStorage');
+            return addressData;
+        }
+    } catch (error) {
+        console.error('Error loading saved address:', error);
+    }
+    return null;
+}
+
+function hasSavedAddress() {
+    try {
+        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        return savedAddress !== null;
+    } catch (error) {
+        console.error('Error checking saved address:', error);
+        return false;
+    }
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('addressModal');
+    if (event.target === modal) {
+        closeAddressModal();
+    }
+});
+
+// Close modal on Escape key
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeAddressModal();
+    }
+});
 
 // ✅ Get Product ID from URL
 const urlParams = new URLSearchParams(window.location.search);

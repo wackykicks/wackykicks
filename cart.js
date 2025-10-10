@@ -322,34 +322,276 @@ class ShoppingCart {
 // Initialize cart
 const cart = new ShoppingCart();
 
-// WhatsApp Checkout Function
+// ✅ Enhanced WhatsApp Checkout Function (Direct, No Address)
 function checkoutViaWhatsApp() {
-    if (cart.cart.length === 0) {
+    console.log('🛒 Checkout via WhatsApp clicked');
+    
+    // Check if cart object exists
+    if (!cart) {
+        console.error('❌ Cart object not found');
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.operationError('Checkout', 'Cart system not initialized');
+        } else {
+            alert('Cart system error. Please refresh the page.');
+        }
+        return;
+    }
+    
+    // Check if cart is empty
+    if (!cart.cart || cart.cart.length === 0) {
+        console.log('❌ Cart is empty');
         if (window.FloatingAlertManager) {
             window.FloatingAlertManager.cartEmpty();
         } else {
-            alert('Your cart is empty!');
+            alert('Your cart is empty! Please add some items before checkout.');
         }
         return;
     }
 
-    const cartItems = cart.getCartForWhatsApp();
-    const total = cart.getCartTotal();
-    const shipping = total >= 999 ? 0 : 99;
-    const finalTotal = total + shipping;
+    try {
+        // Check if required methods exist
+        if (typeof cart.getCartForWhatsApp !== 'function') {
+            throw new Error('getCartForWhatsApp method not found');
+        }
+        if (typeof cart.getCartTotal !== 'function') {
+            throw new Error('getCartTotal method not found');
+        }
+        
+        // Gather cart details
+        const cartItems = cart.getCartForWhatsApp();
+        const total = cart.getCartTotal();
+        const shipping = total >= 999 ? 0 : 99;
+        const finalTotal = total + shipping;
 
-    const message = `Hello WackyKicks! I'd like to place an order:
+        console.log('📊 Cart details:', { total, shipping, finalTotal, itemCount: cart.cart.length });
 
-${cartItems}
+        // Create formatted WhatsApp message
+        let message = `🛍️ *hi WackyKicks*\n\n`;
+        message += `📋 *Order Details:*\n${cartItems}\n\n`;
+        message += `💰 *Order Summary:*\n`;
+        message += `• Subtotal: ₹${total}\n`;
+        message += `• Shipping: ${shipping === 0 ? 'FREE ✅' : `₹${shipping}`}\n`;
+        message += `• *Total: ₹${finalTotal}*\n\n`;
+        message += `📞 Please confirm this order and provide payment details.\n`;
+        message += `🙏 Thank you for choosing WackyKicks!`;
 
-Subtotal: ₹${total}
-Shipping: ${shipping === 0 ? 'FREE' : `₹${shipping}`}
-Total: ₹${finalTotal}
+        console.log('📱 Sending to WhatsApp:', message);
+        
+        // Show success feedback
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.operationSuccess('WhatsApp redirect');
+        } else if (window.alerts) {
+            window.alerts.success('Redirecting to WhatsApp...', 'Please wait');
+        }
 
-Please confirm the order and provide payment details.`;
+        // Redirect to WhatsApp
+        simpleRedirectToWhatsApp(message);
+        
+    } catch (error) {
+        console.error('❌ Error during checkout:', error);
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.operationError('Checkout', error.message || 'Please try again');
+        } else {
+            alert('Checkout failed. Please try again.');
+        }
+    }
+}
 
-    const whatsappUrl = `https://wa.me/918138999550?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+// ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
+function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
+    console.log('🚀 Starting WhatsApp redirect with message:', message);
+    
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
+    
+    // Method 1: Try window.open (most reliable for mobile)
+    try {
+        const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        if (newWindow) {
+            console.log('✅ WhatsApp opened using window.open');
+            return;
+        }
+    } catch (error) {
+        console.warn('⚠️ window.open failed:', error);
+    }
+    
+    // Method 2: Direct navigation for mobile devices
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        console.log('📱 Mobile device detected, using direct navigation');
+        window.location.href = whatsappUrl;
+        return;
+    }
+    
+    // Method 3: Link click simulation (fallback)
+    try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('✅ WhatsApp redirect using link click');
+    } catch (error) {
+        console.error('❌ All redirect methods failed:', error);
+        // Last resort: show the URL to user
+        if (window.alerts) {
+            window.alerts.info('Please open WhatsApp manually', `Copy this link: ${whatsappUrl}`);
+        } else {
+            alert(`Please open this link manually: ${whatsappUrl}`);
+        }
+    }
+}
+
+// ✅ Enhanced WhatsApp Redirect/Forward Function (shared with product)
+function redirectToWhatsApp(message, phoneNumber = '918138999550') {
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    
+    // Show loading/forwarding indicator
+    showForwardingIndicator();
+    
+    // Multiple fallback methods for maximum compatibility
+    if (isMobileDevice()) {
+        // On mobile devices, try to open WhatsApp app directly
+        setTimeout(() => {
+            hideForwardingIndicator();
+            // Try WhatsApp app first
+            window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+            
+            // Fallback to web WhatsApp after a delay
+            setTimeout(() => {
+                window.open(whatsappUrl, '_blank');
+            }, 2000);
+        }, 500);
+    } else {
+        // On desktop, open web WhatsApp in new tab
+        setTimeout(() => {
+            hideForwardingIndicator();
+            window.open(whatsappUrl, '_blank');
+        }, 800);
+    }
+}
+
+// ✅ Device Detection Function
+function isMobileDevice() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Check for mobile patterns
+    const mobilePatterns = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i,
+        /Mobile/i
+    ];
+    
+    return mobilePatterns.some(pattern => userAgent.match(pattern)) || 
+           window.innerWidth <= 768 ||
+           ('ontouchstart' in window);
+}
+
+// ✅ Forwarding Indicator Functions
+function showForwardingIndicator() {
+    // Remove existing indicator
+    hideForwardingIndicator();
+    
+    // Create forwarding indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'whatsappForwardingIndicator';
+    indicator.innerHTML = `
+        <div class="forwarding-content">
+            <div class="forwarding-spinner">
+                <i class="fab fa-whatsapp"></i>
+            </div>
+            <div class="forwarding-text">
+                <h3>Forwarding to WhatsApp...</h3>
+                <p>Please wait while we redirect you</p>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS styles
+    indicator.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-out;
+    `;
+    
+    // Add styles for content
+    const style = document.createElement('style');
+    style.textContent = `
+        .forwarding-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 300px;
+            width: 90%;
+        }
+        .forwarding-spinner {
+            font-size: 3rem;
+            color: #25D366;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        .forwarding-text h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.3rem;
+        }
+        .forwarding-text p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(indicator);
+}
+
+function hideForwardingIndicator() {
+    const indicator = document.getElementById('whatsappForwardingIndicator');
+    if (indicator) {
+        indicator.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => {
+            indicator.remove();
+            // Remove the style element
+            const styles = document.querySelectorAll('style');
+            styles.forEach(style => {
+                if (style.textContent.includes('forwarding-content')) {
+                    style.remove();
+                }
+            });
+        }, 300);
+    }
 }
 
 // Add to cart function for product pages
@@ -390,3 +632,20 @@ window.cart = cart;
 window.addToCart = addToCart;
 window.quickAddToCart = quickAddToCart;
 window.checkoutViaWhatsApp = checkoutViaWhatsApp;
+
+// ✅ Test function to debug cart status
+window.testCart = function() {
+    console.log('🧪 Cart Debug Test:');
+    console.log('Cart object:', cart);
+    console.log('Cart items:', cart ? cart.cart : 'NO CART');
+    console.log('Cart methods available:', {
+        getCartTotal: typeof cart?.getCartTotal,
+        getCartForWhatsApp: typeof cart?.getCartForWhatsApp
+    });
+    console.log('Alert systems available:', {
+        FloatingAlertManager: typeof window.FloatingAlertManager,
+        alerts: typeof window.alerts,
+        operationSuccess: typeof window.FloatingAlertManager?.operationSuccess,
+        success: typeof window.alerts?.success
+    });
+};

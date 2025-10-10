@@ -27,6 +27,10 @@ function calculateDiscountPercentage(oldPrice, newPrice) {
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('id');
 
+// ✅ Global variables for selected options
+let selectedSize = null;
+let selectedColor = null;
+
 // ✅ Make scrollPhotoSlider global
 function scrollPhotoSlider(direction) {
     const slider = document.querySelector('.slider');
@@ -180,6 +184,24 @@ function loadProduct() {
                         <span>Quantity:</span>
                         <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled' : ''}>
                     </div>
+                    <div class="address-container">
+                        <span>Delivery Address (Optional):</span>
+                        <div class="address-input-group">
+                            <input type="text" id="customerName" placeholder="Full Name" class="address-input">
+                            <input type="text" id="customerPhone" placeholder="Phone Number" class="address-input">
+                        </div>
+                        <div class="address-input-group">
+                            <input type="text" id="customerAddress" placeholder="Complete Address" class="address-input">
+                            <input type="text" id="customerPincode" placeholder="Pincode" class="address-input">
+                        </div>
+                        <div class="address-toggle">
+                            <label>
+                                <input type="checkbox" id="saveAddress" ${isOutOfStock ? 'disabled' : ''}>
+                                <span class="checkmark"></span>
+                                Save address for faster checkout
+                            </label>
+                        </div>
+                    </div>
                     <div class="product-buttons">
                         <button class="add-to-cart-btn" onclick="addProductToCart('${product.name}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] || ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
                             <i class="fas fa-shopping-cart"></i>
@@ -225,6 +247,7 @@ function loadProduct() {
         if (colors.length > 0) {
             // Set the first color as selected by default
             selectedColor = colors[0].name;
+            window.selectedColor = selectedColor; // Also set on window for backward compatibility
             console.log('Auto-selected first color:', selectedColor);
         }
 
@@ -273,52 +296,87 @@ function showSizeAlert() {
 
 // ✅ WhatsApp Buy Now with Address Modal
 function copyToWhatsApp(productName, productPrice) {
-    // Show address modal instead of directly proceeding
-    showAddressModal(productName, productPrice);
+    // Directly redirect to WhatsApp with product details and address (if present)
+    const quantityInput = document.getElementById('quantity');
+    const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+    const size = window.selectedSize || '';
+    const color = window.selectedColor || '';
+    const name = document.getElementById('customerName')?.value || '';
+    const phone = document.getElementById('customerPhone')?.value || '';
+    const address = document.getElementById('customerAddress')?.value || '';
+    const pincode = document.getElementById('customerPincode')?.value || '';
+
+    let message = `Hi, I want to buy *${productName}*\nPrice: ₹${productPrice}\nQuantity: ${quantity}`;
+    if (size) message += `\nSize: ${size}`;
+    if (color) message += `\nColor: ${color}`;
+    if (name || phone || address || pincode) {
+        message += `\n---\nDelivery Details:`;
+        if (name) message += `\nName: ${name}`;
+        if (phone) message += `\nPhone: ${phone}`;
+        if (address) message += `\nAddress: ${address}`;
+        if (pincode) message += `\nPincode: ${pincode}`;
+    }
+    simpleRedirectToWhatsApp(message);
 }
 
 // ✅ Address Modal Functions
 let currentPurchaseData = null;
 
-function showAddressModal(productName, productPrice) {
-    const quantityInput = document.getElementById('quantity');
-    const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-    
-    // Store purchase data for later use
-    currentPurchaseData = {
-        productName,
-        productPrice,
-        quantity,
-        selectedSize: window.selectedSize || null,
-        selectedColor: window.selectedColor || null
-    };
-    
-    const modal = document.getElementById('addressModal');
-    if (modal) {
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        
-        // Clear form fields
-        const form = document.getElementById('addressForm');
-        if (form) {
-            form.reset();
-        }
-    }
-}
 
-function closeAddressModal() {
-    const modal = document.getElementById('addressModal');
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Restore scrolling
+
+
+
+// ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
+function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
+    console.log('🚀 Starting WhatsApp redirect with message:', message);
+    
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
+    
+    // Method 1: Try window.open (most reliable for mobile)
+    try {
+        const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        if (newWindow) {
+            console.log('✅ WhatsApp opened using window.open');
+            return;
+        }
+    } catch (error) {
+        console.warn('⚠️ window.open failed:', error);
     }
-    currentPurchaseData = null;
+    
+    // Method 2: Direct navigation for mobile devices
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        console.log('📱 Mobile device detected, using direct navigation');
+        window.location.href = whatsappUrl;
+        return;
+    }
+    
+    // Method 3: Link click simulation (fallback)
+    try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('✅ WhatsApp redirect using link click');
+    } catch (error) {
+        console.error('❌ All redirect methods failed:', error);
+        // Last resort: show the URL to user
+        alert(`Please open this link manually: ${whatsappUrl}`);
+    }
 }
 
 function proceedWithoutAddress() {
     if (!currentPurchaseData) return;
     
-    // Close modal
+    console.log('🚀 Product: Proceeding without address');
+    console.log('📦 Current purchase data:', currentPurchaseData);
+    
+    // Close modal first
     closeAddressModal();
     
     // Proceed with WhatsApp message without address
@@ -330,16 +388,28 @@ function proceedWithoutAddress() {
     
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}`;
     
-    window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
+    console.log('📱 Product: Sending message to WhatsApp');
+    
+    // Use simple redirect directly
+    simpleRedirectToWhatsApp(message);
 }
 
 function proceedWithAddress() {
     if (!currentPurchaseData) return;
     
+    console.log('🚀 Product: Proceeding with address');
+    console.log('📦 Current purchase data:', currentPurchaseData);
+    
     // Get address data
     const addressData = getAddressFormData();
+    console.log('📍 Product: Address data:', addressData);
     
-    // Close modal
+    // Save address to localStorage for future use
+    if (addressData.hasData) {
+        saveAddressToStorage(addressData);
+    }
+    
+    // Close modal first
     closeAddressModal();
     
     // Proceed with WhatsApp message including address
@@ -365,7 +435,225 @@ function proceedWithAddress() {
     
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}${addressMsg}`;
     
-    window.open(`https://wa.me/918138999550?text=${encodeURIComponent(message)}`, '_blank');
+    console.log('📱 Product: Sending message to WhatsApp with address');
+    
+    // Use simple redirect directly
+    simpleRedirectToWhatsApp(message);
+}
+
+// ✅ Enhanced WhatsApp Redirect/Forward Function
+function redirectToWhatsApp(message, phoneNumber = '918138999550') {
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    
+    // Validate message and phone number
+    if (!message || !phoneNumber) {
+        console.error('Missing message or phone number for WhatsApp redirect');
+        return;
+    }
+    
+    try {
+        // Show loading/forwarding indicator
+        showForwardingIndicator();
+        
+        // Safety timeout to always hide indicator
+        const safetyTimeout = setTimeout(() => {
+            hideForwardingIndicator();
+        }, 3000);
+        
+        // Simplified and more reliable approach
+        if (isMobileDevice()) {
+            // On mobile devices - try app first, then web
+            const whatsappAppUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+            
+            // Create a more reliable redirect mechanism
+            setTimeout(() => {
+                let redirected = false;
+                
+                // Try to detect if app opens by checking page visibility
+                const visibilityHandler = () => {
+                    if (document.hidden) {
+                        redirected = true;
+                        clearTimeout(safetyTimeout);
+                        hideForwardingIndicator();
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                    }
+                };
+                
+                document.addEventListener('visibilitychange', visibilityHandler);
+                
+                // Try to open WhatsApp app
+                try {
+                    window.location.href = whatsappAppUrl;
+                } catch (error) {
+                    console.log('App redirect failed:', error);
+                }
+                
+                // Fallback to web version after delay
+                setTimeout(() => {
+                    if (!redirected && !document.hidden) {
+                        // App didn't open, use web version
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                        window.open(whatsappUrl, '_blank');
+                    }
+                    clearTimeout(safetyTimeout);
+                    hideForwardingIndicator();
+                }, 1200);
+                
+            }, 300);
+            
+        } else {
+            // On desktop - directly open web WhatsApp
+            setTimeout(() => {
+                window.open(whatsappUrl, '_blank');
+                clearTimeout(safetyTimeout);
+                hideForwardingIndicator();
+            }, 500);
+        }
+        
+    } catch (error) {
+        console.error('Error in WhatsApp redirect:', error);
+        hideForwardingIndicator();
+        // Use simple fallback
+        simpleWhatsAppRedirect(message, phoneNumber);
+    }
+}
+
+// ✅ Simple WhatsApp Redirect Fallback Function
+function simpleWhatsAppRedirect(message, phoneNumber = '918138999550') {
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+// ✅ Device Detection Function
+function isMobileDevice() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Check for mobile patterns
+    const mobilePatterns = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i,
+        /Mobile/i
+    ];
+    
+    return mobilePatterns.some(pattern => userAgent.match(pattern)) || 
+           window.innerWidth <= 768 ||
+           ('ontouchstart' in window);
+}
+
+// ✅ Forwarding Indicator Functions
+function showForwardingIndicator() {
+    // Remove existing indicator
+    hideForwardingIndicator();
+    
+    // Create forwarding indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'whatsappForwardingIndicator';
+    indicator.innerHTML = `
+        <div class="forwarding-content">
+            <div class="forwarding-spinner">
+                <i class="fab fa-whatsapp"></i>
+            </div>
+            <div class="forwarding-text">
+                <h3>Forwarding to WhatsApp...</h3>
+                <p>Please wait while we redirect you</p>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS styles
+    indicator.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-out;
+    `;
+    
+    // Add styles for content
+    const style = document.createElement('style');
+    style.textContent = `
+        .forwarding-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 300px;
+            width: 90%;
+        }
+        .forwarding-spinner {
+            font-size: 3rem;
+            color: #25D366;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        .forwarding-text h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.3rem;
+        }
+        .forwarding-text p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(indicator);
+}
+
+function hideForwardingIndicator() {
+    const indicator = document.getElementById('whatsappForwardingIndicator');
+    if (indicator) {
+        // Add fadeOut animation if not already defined
+        const existingStyle = document.querySelector('style[data-forwarding-style]');
+        if (!existingStyle) {
+            const fadeOutStyle = document.createElement('style');
+            fadeOutStyle.setAttribute('data-forwarding-style', 'true');
+            fadeOutStyle.textContent = `
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(fadeOutStyle);
+        }
+        
+        indicator.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+            // Remove the style elements
+            const styles = document.querySelectorAll('style');
+            styles.forEach(style => {
+                if (style.textContent.includes('forwarding-content') || style.getAttribute('data-forwarding-style')) {
+                    style.remove();
+                }
+            });
+        }, 300);
+    }
 }
 
 function getAddressFormData() {
@@ -393,6 +681,51 @@ function getAddressFormData() {
     };
 }
 
+// ✅ Address Storage Functions
+function saveAddressToStorage(addressData) {
+    try {
+        localStorage.setItem('wackykicks_saved_address', JSON.stringify(addressData));
+        console.log('Address saved to localStorage');
+    } catch (error) {
+        console.error('Error saving address:', error);
+    }
+}
+
+function loadSavedAddress() {
+    try {
+        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        if (savedAddress) {
+            const addressData = JSON.parse(savedAddress);
+            
+            // Fill form fields with saved data
+            if (addressData.fullName) document.getElementById('fullName').value = addressData.fullName;
+            if (addressData.phoneNumber) document.getElementById('phoneNumber').value = addressData.phoneNumber;
+            if (addressData.addressLine1) document.getElementById('addressLine1').value = addressData.addressLine1;
+            if (addressData.addressLine2) document.getElementById('addressLine2').value = addressData.addressLine2;
+            if (addressData.city) document.getElementById('city').value = addressData.city;
+            if (addressData.state) document.getElementById('state').value = addressData.state;
+            if (addressData.pincode) document.getElementById('pincode').value = addressData.pincode;
+            if (addressData.landmark) document.getElementById('landmark').value = addressData.landmark;
+            
+            console.log('Address loaded from localStorage');
+            return addressData;
+        }
+    } catch (error) {
+        console.error('Error loading saved address:', error);
+    }
+    return null;
+}
+
+function hasSavedAddress() {
+    try {
+        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        return savedAddress !== null;
+    } catch (error) {
+        console.error('Error checking saved address:', error);
+        return false;
+    }
+}
+
 // Close modal when clicking outside
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('addressModal');
@@ -414,8 +747,15 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
     
     // Get selected size and color if available
-    const selectedSize = window.selectedSize || null;
-    const selectedColor = window.selectedColor || null;
+    const productSelectedSize = selectedSize || null;
+    const productSelectedColor = selectedColor || null;
+    
+    // Get address information if provided
+    const customerName = document.getElementById('customerName')?.value.trim() || null;
+    const customerPhone = document.getElementById('customerPhone')?.value.trim() || null;
+    const customerAddress = document.getElementById('customerAddress')?.value.trim() || null;
+    const customerPincode = document.getElementById('customerPincode')?.value.trim() || null;
+    const saveAddress = document.getElementById('saveAddress')?.checked || false;
     
     // Create product object
     const product = {
@@ -426,12 +766,74 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
         img: productImage
     };
     
+    // Create address object if any address field is filled
+    const addressInfo = (customerName || customerPhone || customerAddress || customerPincode) ? {
+        name: customerName,
+        phone: customerPhone,
+        address: customerAddress,
+        pincode: customerPincode,
+        saveForLater: saveAddress
+    } : null;
+    
+    // Save address if requested
+    if (addressInfo && saveAddress) {
+        saveAddressToStorage(addressInfo);
+    }
+    
     // Add to cart using the global cart object
     if (typeof window.cart !== 'undefined') {
-        window.cart.addToCart(product, quantity, selectedSize, selectedColor);
+        window.cart.addToCart(product, quantity, productSelectedSize, productSelectedColor, addressInfo);
     } else {
         // Fallback: use the addToCart function from cart.js
-        addToCart(product, quantity, selectedSize, selectedColor);
+        addToCart(product, quantity, productSelectedSize, productSelectedColor, addressInfo);
+    }
+}
+
+// ✅ Address Storage Functions
+function saveAddressToStorage(addressInfo) {
+    try {
+        localStorage.setItem('wackykicks_saved_address', JSON.stringify(addressInfo));
+        console.log('Address saved to localStorage');
+    } catch (error) {
+        console.error('Error saving address:', error);
+    }
+}
+
+function loadSavedAddressFromStorage() {
+    try {
+        const saved = localStorage.getItem('wackykicks_saved_address');
+        return saved ? JSON.parse(saved) : null;
+    } catch (error) {
+        console.error('Error loading saved address:', error);
+        return null;
+    }
+}
+
+function loadAddressIntoForm() {
+    const savedAddress = loadSavedAddressFromStorage();
+    if (savedAddress) {
+        const nameInput = document.getElementById('customerName');
+        const phoneInput = document.getElementById('customerPhone');
+        const addressInput = document.getElementById('customerAddress');
+        const pincodeInput = document.getElementById('customerPincode');
+        const saveCheckbox = document.getElementById('saveAddress');
+        
+        if (nameInput) nameInput.value = savedAddress.name || '';
+        if (phoneInput) phoneInput.value = savedAddress.phone || '';
+        if (addressInput) addressInput.value = savedAddress.address || '';
+        if (pincodeInput) pincodeInput.value = savedAddress.pincode || '';
+        if (saveCheckbox) saveCheckbox.checked = true;
+        
+        console.log('Address loaded from storage');
+    }
+}
+
+function clearSavedAddress() {
+    try {
+        localStorage.removeItem('wackykicks_saved_address');
+        console.log('Saved address cleared');
+    } catch (error) {
+        console.error('Error clearing saved address:', error);
     }
 }
 
@@ -441,6 +843,11 @@ window.addEventListener('DOMContentLoaded', () => {
     loadRelatedProducts(); // ✅ Add this
     loadReviews(); // Load reviews for this product
     setupReviewForm(); // Setup review form functionality
+
+    // Load saved address if available
+    setTimeout(() => {
+        loadAddressIntoForm();
+    }, 1000); // Small delay to ensure form is rendered
 
     // Wire up fixed bar buttons
     setTimeout(() => {
@@ -689,18 +1096,22 @@ function adjustLayoutToImageSize() {
 
 window.selectSize = function(size) {
     selectedSize = size;
+    window.selectedSize = size; // Also set on window for backward compatibility
     const dropdown = document.getElementById('sizeDropdown');
     if (dropdown) {
         dropdown.value = size;
     }
+    console.log('Selected size:', size);
 };
 
 window.selectColor = function(color) {
     selectedColor = color;
+    window.selectedColor = color; // Also set on window for backward compatibility
     const dropdown = document.getElementById('colorDropdown');
     if (dropdown) {
         dropdown.value = color;
     }
+    console.log('Selected color:', color);
 };
 
 // Enhanced Color mapping function with custom color support
@@ -910,6 +1321,7 @@ function saturateColor(hex, percent) {
 // Modern color selection function
 window.selectProductColor = function(colorName, hexValue, element) {
     selectedColor = colorName;
+    window.selectedColor = colorName; // Also set on window for backward compatibility
     
     // Update visual selection
     document.querySelectorAll('.product-color-circle').forEach(circle => {
