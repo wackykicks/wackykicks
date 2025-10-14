@@ -294,29 +294,456 @@ function showSizeAlert() {
     }
 }
 
-// ✅ WhatsApp Buy Now with Address Modal
+// ✅ WhatsApp Buy Now with User Information Modal
 function copyToWhatsApp(productName, productPrice) {
-    // Directly redirect to WhatsApp with product details and address (if present)
+    console.log('🛍️ Buy Now clicked for:', productName);
+    
+    // Get quantity and options
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
     const size = window.selectedSize || '';
     const color = window.selectedColor || '';
-    const name = document.getElementById('customerName')?.value || '';
-    const phone = document.getElementById('customerPhone')?.value || '';
-    const address = document.getElementById('customerAddress')?.value || '';
-    const pincode = document.getElementById('customerPincode')?.value || '';
+    
+    // Show user information modal
+    showUserInfoModal(productName, productPrice, quantity, size, color);
+}
 
-    let message = `Hi, I want to buy *${productName}*\nPrice: ₹${productPrice}\nQuantity: ${quantity}`;
-    if (size) message += `\nSize: ${size}`;
-    if (color) message += `\nColor: ${color}`;
-    if (name || phone || address || pincode) {
-        message += `\n---\nDelivery Details:`;
-        if (name) message += `\nName: ${name}`;
-        if (phone) message += `\nPhone: ${phone}`;
-        if (address) message += `\nAddress: ${address}`;
-        if (pincode) message += `\nPincode: ${pincode}`;
+// ✅ Show User Information Modal
+function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
+    // Remove any existing modal
+    const existingModal = document.getElementById('userInfoModal');
+    if (existingModal) {
+        existingModal.remove();
     }
+    
+    // Create modal HTML
+    const modalHTML = `
+        <div id="userInfoModal" class="user-info-modal">
+            <div class="user-info-modal-content">
+                <div class="modal-header">
+                    <h2>Complete Your Purchase</h2>
+                    <button class="close-modal" onclick="closeUserInfoModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-subtitle">Please provide your information to proceed with WhatsApp order</p>
+                    
+                    <form id="userInfoForm" onsubmit="event.preventDefault(); submitUserInfo('${productName.replace(/'/g, "\\'")}', '${productPrice}', ${quantity}, '${size}', '${color}');">
+                        <!-- Personal Information -->
+                        <div class="form-section">
+                            <h3>Personal Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name <span class="required">*</span></label>
+                                    <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Phone Number <span class="required">*</span></label>
+                                    <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" id="email" name="email" placeholder="Enter your email">
+                                </div>
+                                <div class="form-group">
+                                    <label for="altPhone">Alternate Phone</label>
+                                    <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Address -->
+                        <div class="form-section">
+                            <h3>Delivery Address</h3>
+                            <div class="form-group">
+                                <label for="addressLine1">Address Line 1 <span class="required">*</span></label>
+                                <input type="text" id="addressLine1" name="addressLine1" placeholder="House No., Building Name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressLine2">Address Line 2</label>
+                                <input type="text" id="addressLine2" name="addressLine2" placeholder="Road name, Area, Colony">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="landmark">Landmark</label>
+                                    <input type="text" id="landmark" name="landmark" placeholder="Nearby landmark">
+                                </div>
+                                <div class="form-group">
+                                    <label for="city">City <span class="required">*</span></label>
+                                    <input type="text" id="city" name="city" placeholder="Enter city" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="district">District</label>
+                                    <input type="text" id="district" name="district" placeholder="Enter district">
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">State <span class="required">*</span></label>
+                                    <input type="text" id="state" name="state" placeholder="Enter state" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="country">Country <span class="required">*</span></label>
+                                    <input type="text" id="country" name="country" placeholder="Enter country" value="India" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="zipCode">PIN/ZIP Code <span class="required">*</span></label>
+                                    <input type="text" id="zipCode" name="zipCode" placeholder="Enter PIN code" required pattern="[0-9]{6}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="addressType">Address Type</label>
+                                    <select id="addressType" name="addressType">
+                                        <option value="Home">Home</option>
+                                        <option value="Work">Work</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="form-section">
+                            <h3>Additional Information</h3>
+                            <div class="form-group">
+                                <label for="deliveryInstructions">Delivery Instructions</label>
+                                <textarea id="deliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeUserInfoModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fab fa-whatsapp"></i> Continue to WhatsApp
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add modal styles if not already added
+    if (!document.getElementById('userInfoModalStyles')) {
+        const styles = document.createElement('style');
+        styles.id = 'userInfoModalStyles';
+        styles.textContent = `
+            .user-info-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(5px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                overflow-y: auto;
+            }
+            
+            .user-info-modal-content {
+                background: white;
+                border-radius: 15px;
+                max-width: 700px;
+                width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                animation: modalSlideIn 0.3s ease-out;
+            }
+            
+            @keyframes modalSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .modal-header {
+                padding: 25px 30px;
+                border-bottom: 2px solid #f0f0f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                color: #333;
+            }
+            
+            .close-modal {
+                background: none;
+                border: none;
+                font-size: 2rem;
+                color: #999;
+                cursor: pointer;
+                transition: color 0.3s;
+                padding: 0;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .close-modal:hover {
+                color: #333;
+            }
+            
+            .modal-body {
+                padding: 25px 30px;
+            }
+            
+            .modal-subtitle {
+                color: #666;
+                margin: 0 0 25px 0;
+                font-size: 0.95rem;
+            }
+            
+            .form-section {
+                margin-bottom: 30px;
+            }
+            
+            .form-section h3 {
+                font-size: 1.1rem;
+                color: #333;
+                margin: 0 0 15px 0;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #f0f0f0;
+            }
+            
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #333;
+                font-size: 0.9rem;
+            }
+            
+            .required {
+                color: #e74c3c;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 0.95rem;
+                transition: border-color 0.3s;
+                font-family: inherit;
+            }
+            
+            .form-group input:focus,
+            .form-group select:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #25d366;
+            }
+            
+            .modal-footer {
+                display: flex;
+                gap: 15px;
+                justify-content: flex-end;
+                padding-top: 20px;
+                border-top: 2px solid #f0f0f0;
+            }
+            
+            .btn-secondary,
+            .btn-primary {
+                padding: 12px 30px;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            
+            .btn-secondary {
+                background: #f0f0f0;
+                color: #666;
+            }
+            
+            .btn-secondary:hover {
+                background: #e0e0e0;
+            }
+            
+            .btn-primary {
+                background: #25d366;
+                color: white;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .btn-primary:hover {
+                background: #20b858;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+            }
+            
+            @media (max-width: 768px) {
+                .form-row {
+                    grid-template-columns: 1fr;
+                }
+                
+                .modal-header {
+                    padding: 20px;
+                }
+                
+                .modal-body {
+                    padding: 20px;
+                }
+                
+                .modal-header h2 {
+                    font-size: 1.2rem;
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    // Focus on first input
+    setTimeout(() => {
+        document.getElementById('fullName')?.focus();
+    }, 100);
+}
+
+// ✅ Close User Info Modal
+function closeUserInfoModal() {
+    const modal = document.getElementById('userInfoModal');
+    if (modal) {
+        modal.style.animation = 'modalSlideOut 0.3s ease-out';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// ✅ Submit User Info and Redirect to WhatsApp
+function submitUserInfo(productName, productPrice, quantity, size, color) {
+    console.log('📋 Submitting user info for:', productName);
+    
+    // Collect form data
+    const formData = {
+        fullName: document.getElementById('fullName').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        altPhone: document.getElementById('altPhone').value.trim(),
+        addressLine1: document.getElementById('addressLine1').value.trim(),
+        addressLine2: document.getElementById('addressLine2').value.trim(),
+        landmark: document.getElementById('landmark').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        district: document.getElementById('district').value.trim(),
+        state: document.getElementById('state').value.trim(),
+        country: document.getElementById('country').value.trim(),
+        zipCode: document.getElementById('zipCode').value.trim(),
+        addressType: document.getElementById('addressType').value,
+        deliveryInstructions: document.getElementById('deliveryInstructions').value.trim()
+    };
+    
+    // Validate required fields
+    if (!formData.fullName || !formData.phone || !formData.addressLine1 || 
+        !formData.city || !formData.state || !formData.country || !formData.zipCode) {
+        alert('Please fill in all required fields marked with *');
+        return;
+    }
+    
+    // Validate phone number
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+    }
+    
+    // Validate PIN code
+    if (!/^[0-9]{6}$/.test(formData.zipCode)) {
+        alert('Please enter a valid 6-digit PIN code');
+        return;
+    }
+    
+    console.log('✅ Form data validated:', formData);
+    
+    // Create WhatsApp message
+    let message = `Hey WackyKicks! I'm interested in buying:\n\n`;
+    message += `🛍️ *Product Details*\n`;
+    message += `Product: ${productName}\n`;
+    message += `Price: ₹${productPrice}\n`;
+    if (quantity > 1) message += `Quantity: ${quantity}\n`;
+    if (size) message += `Size: ${size}\n`;
+    if (color) message += `Color: ${color}\n`;
+    message += `\n`;
+    
+    message += `👤 *Customer Information*\n`;
+    message += `Name: ${formData.fullName}\n`;
+    message += `Phone: ${formData.phone}\n`;
+    if (formData.email) message += `Email: ${formData.email}\n`;
+    if (formData.altPhone) message += `Alt Phone: ${formData.altPhone}\n`;
+    message += `\n`;
+    
+    message += `📍 *Delivery Address*\n`;
+    message += `${formData.addressLine1}\n`;
+    if (formData.addressLine2) message += `${formData.addressLine2}\n`;
+    if (formData.landmark) message += `Landmark: ${formData.landmark}\n`;
+    message += `${formData.city}, ${formData.district ? formData.district + ', ' : ''}${formData.state}\n`;
+    message += `${formData.country} - ${formData.zipCode}\n`;
+    message += `Address Type: ${formData.addressType}\n`;
+    if (formData.deliveryInstructions) {
+        message += `\n📝 *Delivery Instructions*\n${formData.deliveryInstructions}\n`;
+    }
+    
+    console.log('📱 WhatsApp message prepared:', message);
+    
+    // Close modal
+    closeUserInfoModal();
+    
+    // Redirect directly to WhatsApp
     simpleRedirectToWhatsApp(message);
+}
+
+// Add modalSlideOut animation
+if (!document.getElementById('modalSlideOutAnimation')) {
+    const slideOutAnimation = document.createElement('style');
+    slideOutAnimation.id = 'modalSlideOutAnimation';
+    slideOutAnimation.textContent = `
+        @keyframes modalSlideOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+    `;
+    document.head.appendChild(slideOutAnimation);
 }
 
 // ✅ Address Modal Functions
@@ -1548,8 +1975,12 @@ function toggleMoreReviews() {
     }
 }
 
-// Make function globally available
+// Make functions globally available
 window.toggleMoreReviews = toggleMoreReviews;
+window.copyToWhatsApp = copyToWhatsApp;
+window.closeUserInfoModal = closeUserInfoModal;
+window.submitUserInfo = submitUserInfo;
+window.showUserInfoModal = showUserInfoModal;
 
 function displayAverageRating(reviews) {
     if (reviews.length === 0) return;

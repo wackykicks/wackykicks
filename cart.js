@@ -322,7 +322,7 @@ class ShoppingCart {
 // Initialize cart
 const cart = new ShoppingCart();
 
-// ✅ Enhanced WhatsApp Checkout Function (Direct, No Address)
+// ✅ Enhanced WhatsApp Checkout Function with User Information Modal
 function checkoutViaWhatsApp() {
     console.log('🛒 Checkout via WhatsApp clicked');
     
@@ -357,35 +357,8 @@ function checkoutViaWhatsApp() {
             throw new Error('getCartTotal method not found');
         }
         
-        // Gather cart details
-        const cartItems = cart.getCartForWhatsApp();
-        const total = cart.getCartTotal();
-        const shipping = total >= 999 ? 0 : 99;
-        const finalTotal = total + shipping;
-
-        console.log('📊 Cart details:', { total, shipping, finalTotal, itemCount: cart.cart.length });
-
-        // Create formatted WhatsApp message
-        let message = `🛍️ *hi WackyKicks*\n\n`;
-        message += `📋 *Order Details:*\n${cartItems}\n\n`;
-        message += `💰 *Order Summary:*\n`;
-        message += `• Subtotal: ₹${total}\n`;
-        message += `• Shipping: ${shipping === 0 ? 'FREE ✅' : `₹${shipping}`}\n`;
-        message += `• *Total: ₹${finalTotal}*\n\n`;
-        message += `📞 Please confirm this order and provide payment details.\n`;
-        message += `🙏 Thank you for choosing WackyKicks!`;
-
-        console.log('📱 Sending to WhatsApp:', message);
-        
-        // Show success feedback
-        if (window.FloatingAlertManager) {
-            window.FloatingAlertManager.operationSuccess('WhatsApp redirect');
-        } else if (window.alerts) {
-            window.alerts.success('Redirecting to WhatsApp...', 'Please wait');
-        }
-
-        // Redirect to WhatsApp
-        simpleRedirectToWhatsApp(message);
+        // Show user information modal for cart checkout
+        showCartUserInfoModal();
         
     } catch (error) {
         console.error('❌ Error during checkout:', error);
@@ -395,6 +368,455 @@ function checkoutViaWhatsApp() {
             alert('Checkout failed. Please try again.');
         }
     }
+}
+
+// ✅ Show User Information Modal for Cart Checkout
+function showCartUserInfoModal() {
+    // Remove any existing modal
+    const existingModal = document.getElementById('cartUserInfoModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Create modal HTML
+    const modalHTML = `
+        <div id="cartUserInfoModal" class="user-info-modal">
+            <div class="user-info-modal-content">
+                <div class="modal-header">
+                    <h2>Complete Your Order</h2>
+                    <button class="close-modal" onclick="closeCartUserInfoModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-subtitle">Please provide your information to proceed with WhatsApp order</p>
+                    
+                    <form id="cartUserInfoForm" onsubmit="event.preventDefault(); submitCartUserInfo();">
+                        <!-- Personal Information -->
+                        <div class="form-section">
+                            <h3>Personal Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartFullName">Full Name <span class="required">*</span></label>
+                                    <input type="text" id="cartFullName" name="fullName" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cartPhone">Phone Number <span class="required">*</span></label>
+                                    <input type="tel" id="cartPhone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartEmail">Email Address</label>
+                                    <input type="email" id="cartEmail" name="email" placeholder="Enter your email">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cartAltPhone">Alternate Phone</label>
+                                    <input type="tel" id="cartAltPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Address -->
+                        <div class="form-section">
+                            <h3>Delivery Address</h3>
+                            <div class="form-group">
+                                <label for="cartAddressLine1">Address Line 1 <span class="required">*</span></label>
+                                <input type="text" id="cartAddressLine1" name="addressLine1" placeholder="House No., Building Name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cartAddressLine2">Address Line 2</label>
+                                <input type="text" id="cartAddressLine2" name="addressLine2" placeholder="Road name, Area, Colony">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartLandmark">Landmark</label>
+                                    <input type="text" id="cartLandmark" name="landmark" placeholder="Nearby landmark">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cartCity">City <span class="required">*</span></label>
+                                    <input type="text" id="cartCity" name="city" placeholder="Enter city" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartDistrict">District</label>
+                                    <input type="text" id="cartDistrict" name="district" placeholder="Enter district">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cartState">State <span class="required">*</span></label>
+                                    <input type="text" id="cartState" name="state" placeholder="Enter state" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartCountry">Country <span class="required">*</span></label>
+                                    <input type="text" id="cartCountry" name="country" placeholder="Enter country" value="India" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cartZipCode">PIN/ZIP Code <span class="required">*</span></label>
+                                    <input type="text" id="cartZipCode" name="zipCode" placeholder="Enter PIN code" required pattern="[0-9]{6}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartAddressType">Address Type</label>
+                                    <select id="cartAddressType" name="addressType">
+                                        <option value="Home">Home</option>
+                                        <option value="Work">Work</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="form-section">
+                            <h3>Additional Information</h3>
+                            <div class="form-group">
+                                <label for="cartDeliveryInstructions">Delivery Instructions</label>
+                                <textarea id="cartDeliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeCartUserInfoModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fab fa-whatsapp"></i> Continue to WhatsApp
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add modal styles if not already added
+    if (!document.getElementById('cartUserInfoModalStyles')) {
+        const styles = document.createElement('style');
+        styles.id = 'cartUserInfoModalStyles';
+        styles.textContent = `
+            .user-info-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(5px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                overflow-y: auto;
+            }
+            
+            .user-info-modal-content {
+                background: white;
+                border-radius: 15px;
+                max-width: 700px;
+                width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                animation: modalSlideIn 0.3s ease-out;
+            }
+            
+            @keyframes modalSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .modal-header {
+                padding: 25px 30px;
+                border-bottom: 2px solid #f0f0f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                color: #333;
+            }
+            
+            .close-modal {
+                background: none;
+                border: none;
+                font-size: 2rem;
+                color: #999;
+                cursor: pointer;
+                transition: color 0.3s;
+                padding: 0;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .close-modal:hover {
+                color: #333;
+            }
+            
+            .modal-body {
+                padding: 25px 30px;
+            }
+            
+            .modal-subtitle {
+                color: #666;
+                margin: 0 0 25px 0;
+                font-size: 0.95rem;
+            }
+            
+            .form-section {
+                margin-bottom: 30px;
+            }
+            
+            .form-section h3 {
+                font-size: 1.1rem;
+                color: #333;
+                margin: 0 0 15px 0;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #f0f0f0;
+            }
+            
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #333;
+                font-size: 0.9rem;
+            }
+            
+            .required {
+                color: #e74c3c;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 0.95rem;
+                transition: border-color 0.3s;
+                font-family: inherit;
+            }
+            
+            .form-group input:focus,
+            .form-group select:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #25d366;
+            }
+            
+            .modal-footer {
+                display: flex;
+                gap: 15px;
+                justify-content: flex-end;
+                padding-top: 20px;
+                border-top: 2px solid #f0f0f0;
+            }
+            
+            .btn-secondary,
+            .btn-primary {
+                padding: 12px 30px;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            
+            .btn-secondary {
+                background: #f0f0f0;
+                color: #666;
+            }
+            
+            .btn-secondary:hover {
+                background: #e0e0e0;
+            }
+            
+            .btn-primary {
+                background: #25d366;
+                color: white;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .btn-primary:hover {
+                background: #20b858;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+            }
+            
+            @media (max-width: 768px) {
+                .form-row {
+                    grid-template-columns: 1fr;
+                }
+                
+                .modal-header {
+                    padding: 20px;
+                }
+                
+                .modal-body {
+                    padding: 20px;
+                }
+                
+                .modal-header h2 {
+                    font-size: 1.2rem;
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    // Focus on first input
+    setTimeout(() => {
+        document.getElementById('cartFullName')?.focus();
+    }, 100);
+}
+
+// ✅ Close Cart User Info Modal
+function closeCartUserInfoModal() {
+    const modal = document.getElementById('cartUserInfoModal');
+    if (modal) {
+        modal.style.animation = 'modalSlideOut 0.3s ease-out';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// ✅ Submit Cart User Info and Redirect to WhatsApp
+function submitCartUserInfo() {
+    console.log('📋 Submitting cart user info');
+    
+    // Collect form data
+    const formData = {
+        fullName: document.getElementById('cartFullName').value.trim(),
+        phone: document.getElementById('cartPhone').value.trim(),
+        email: document.getElementById('cartEmail').value.trim(),
+        altPhone: document.getElementById('cartAltPhone').value.trim(),
+        addressLine1: document.getElementById('cartAddressLine1').value.trim(),
+        addressLine2: document.getElementById('cartAddressLine2').value.trim(),
+        landmark: document.getElementById('cartLandmark').value.trim(),
+        city: document.getElementById('cartCity').value.trim(),
+        district: document.getElementById('cartDistrict').value.trim(),
+        state: document.getElementById('cartState').value.trim(),
+        country: document.getElementById('cartCountry').value.trim(),
+        zipCode: document.getElementById('cartZipCode').value.trim(),
+        addressType: document.getElementById('cartAddressType').value,
+        deliveryInstructions: document.getElementById('cartDeliveryInstructions').value.trim()
+    };
+    
+    // Validate required fields
+    if (!formData.fullName || !formData.phone || !formData.addressLine1 || 
+        !formData.city || !formData.state || !formData.country || !formData.zipCode) {
+        alert('Please fill in all required fields marked with *');
+        return;
+    }
+    
+    // Validate phone number
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+    }
+    
+    // Validate PIN code
+    if (!/^[0-9]{6}$/.test(formData.zipCode)) {
+        alert('Please enter a valid 6-digit PIN code');
+        return;
+    }
+    
+    console.log('✅ Form data validated:', formData);
+    
+    // Gather cart details
+    const cartItems = cart.getCartForWhatsApp();
+    const total = cart.getCartTotal();
+    const shipping = total >= 999 ? 0 : 99;
+    const finalTotal = total + shipping;
+    
+    // Create WhatsApp message
+    let message = `Hey WackyKicks! I'm interested in buying:\n\n`;
+    message += `🛍️ *Order Details*\n${cartItems}\n\n`;
+    message += `💰 *Order Summary*\n`;
+    message += `Subtotal: ₹${total}\n`;
+    message += `Shipping: ${shipping === 0 ? 'FREE ✅' : `₹${shipping}`}\n`;
+    message += `*Total: ₹${finalTotal}*\n\n`;
+    
+    message += `👤 *Customer Information*\n`;
+    message += `Name: ${formData.fullName}\n`;
+    message += `Phone: ${formData.phone}\n`;
+    if (formData.email) message += `Email: ${formData.email}\n`;
+    if (formData.altPhone) message += `Alt Phone: ${formData.altPhone}\n`;
+    message += `\n`;
+    
+    message += `📍 *Delivery Address*\n`;
+    message += `${formData.addressLine1}\n`;
+    if (formData.addressLine2) message += `${formData.addressLine2}\n`;
+    if (formData.landmark) message += `Landmark: ${formData.landmark}\n`;
+    message += `${formData.city}, ${formData.district ? formData.district + ', ' : ''}${formData.state}\n`;
+    message += `${formData.country} - ${formData.zipCode}\n`;
+    message += `Address Type: ${formData.addressType}\n`;
+    if (formData.deliveryInstructions) {
+        message += `\n📝 *Delivery Instructions*\n${formData.deliveryInstructions}\n`;
+    }
+    
+    console.log('📱 WhatsApp message prepared:', message);
+    
+    // Close modal
+    closeCartUserInfoModal();
+    
+    // Show success feedback
+    if (window.FloatingAlertManager) {
+        window.FloatingAlertManager.operationSuccess('WhatsApp redirect');
+    } else if (window.alerts) {
+        window.alerts.success('Redirecting to WhatsApp...', 'Please wait');
+    }
+    
+    // Redirect directly to WhatsApp
+    simpleRedirectToWhatsApp(message);
+}
+
+// Add modalSlideOut animation
+if (!document.getElementById('cartModalSlideOutAnimation')) {
+    const slideOutAnimation = document.createElement('style');
+    slideOutAnimation.id = 'cartModalSlideOutAnimation';
+    slideOutAnimation.textContent = `
+        @keyframes modalSlideOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+    `;
+    document.head.appendChild(slideOutAnimation);
 }
 
 // ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
@@ -632,6 +1054,9 @@ window.cart = cart;
 window.addToCart = addToCart;
 window.quickAddToCart = quickAddToCart;
 window.checkoutViaWhatsApp = checkoutViaWhatsApp;
+window.showCartUserInfoModal = showCartUserInfoModal;
+window.closeCartUserInfoModal = closeCartUserInfoModal;
+window.submitCartUserInfo = submitCartUserInfo;
 
 // ✅ Test function to debug cart status
 window.testCart = function() {
