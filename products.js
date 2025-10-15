@@ -82,9 +82,7 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
 
     // ...rest of the function remains unchanged...
     // (styles, focus management, etc.)
-}
-    
-    // Add modal styles if not already added
+}    // Add modal styles if not already added
     if (!document.getElementById('userInfoModalStyles')) {
         const styles = document.createElement('style');
         styles.id = 'userInfoModalStyles';
@@ -2007,5 +2005,3 @@ window.closeUserInfoModal = closeUserInfoModal;
 window.submitUserInfo = submitUserInfo;
 window.showUserInfoModal = showUserInfoModal;
 window.simpleRedirectToWhatsApp = simpleRedirectToWhatsApp;
-
-
