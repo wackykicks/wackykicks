@@ -341,17 +341,11 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
                                     <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="email">Email Address</label>
-                                    <input type="email" id="email" name="email" placeholder="Enter your email">
-                                </div>
                                 <div class="form-group">
                                     <label for="altPhone">Alternate Phone</label>
                                     <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
                                 </div>
                             </div>
-                        </div>
                         
                         <!-- Delivery Address -->
                         <div class="form-section">
@@ -2186,4 +2180,5 @@ async function submitReview() {
             alert('Error submitting review. Please try again.');
         }
     }
+
 }
