@@ -307,16 +307,15 @@ function copyToWhatsApp(productName, productPrice) {
     // Show user information modal
     showUserInfoModal(productName, productPrice, quantity, size, color);
 }
-
-// ✅ Show User Information Modal
+// ✅ Show User Information Modal (address input removed)
 function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
     // Remove any existing modal
     const existingModal = document.getElementById('userInfoModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
-    // Create modal HTML
+
+    // Create modal HTML (address section removed)
     const modalHTML = `
         <div id="userInfoModal" class="user-info-modal">
             <div class="user-info-modal-content">
@@ -341,62 +340,9 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
                                     <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
                                 </div>
                             </div>
-                                <div class="form-group">
-                                    <label for="altPhone">Alternate Phone</label>
-                                    <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
-                                </div>
-                            </div>
-                        
-                        <!-- Delivery Address -->
-                        <div class="form-section">
-                            <h3>Delivery Address</h3>
                             <div class="form-group">
-                                <label for="addressLine1">Address Line 1 <span class="required">*</span></label>
-                                <input type="text" id="addressLine1" name="addressLine1" placeholder="House No., Building Name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="addressLine2">Address Line 2</label>
-                                <input type="text" id="addressLine2" name="addressLine2" placeholder="Road name, Area, Colony">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="landmark">Landmark</label>
-                                    <input type="text" id="landmark" name="landmark" placeholder="Nearby landmark">
-                                </div>
-                                <div class="form-group">
-                                    <label for="city">City <span class="required">*</span></label>
-                                    <input type="text" id="city" name="city" placeholder="Enter city" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="district">District</label>
-                                    <input type="text" id="district" name="district" placeholder="Enter district">
-                                </div>
-                                <div class="form-group">
-                                    <label for="state">State <span class="required">*</span></label>
-                                    <input type="text" id="state" name="state" placeholder="Enter state" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="country">Country <span class="required">*</span></label>
-                                    <input type="text" id="country" name="country" placeholder="Enter country" value="India" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="zipCode">PIN/ZIP Code <span class="required">*</span></label>
-                                    <input type="text" id="zipCode" name="zipCode" placeholder="Enter PIN code" required pattern="[0-9]{6}">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="addressType">Address Type</label>
-                                    <select id="addressType" name="addressType">
-                                        <option value="Home">Home</option>
-                                        <option value="Work">Work</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
+                                <label for="altPhone">Alternate Phone</label>
+                                <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
                             </div>
                         </div>
                         
@@ -423,6 +369,10 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
     
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // ...rest of the function remains unchanged...
+    // (styles, focus management, etc.)
+}
     
     // Add modal styles if not already added
     if (!document.getElementById('userInfoModalStyles')) {
@@ -2182,3 +2132,4 @@ async function submitReview() {
     }
 
 }
+
