@@ -403,17 +403,11 @@ function showCartUserInfoModal() {
                                     <input type="tel" id="cartPhone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartEmail">Email Address</label>
-                                    <input type="email" id="cartEmail" name="email" placeholder="Enter your email">
-                                </div>
                                 <div class="form-group">
                                     <label for="cartAltPhone">Alternate Phone</label>
                                     <input type="tel" id="cartAltPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
                                 </div>
                             </div>
-                        </div>
                         
                         <!-- Delivery Address -->
                         <div class="form-section">
@@ -1073,4 +1067,5 @@ window.testCart = function() {
         operationSuccess: typeof window.FloatingAlertManager?.operationSuccess,
         success: typeof window.alerts?.success
     });
+
 };
