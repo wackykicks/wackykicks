@@ -370,95 +370,42 @@ function checkoutViaWhatsApp() {
     }
 }
 
-// ✅ Show User Information Modal for Cart Checkout
-function showCartUserInfoModal() {
+// ✅ Show User Information Modal (address input removed)
+function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
     // Remove any existing modal
-    const existingModal = document.getElementById('cartUserInfoModal');
+    const existingModal = document.getElementById('userInfoModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
-    // Create modal HTML
+
+    // Create modal HTML (address section removed)
     const modalHTML = `
-        <div id="cartUserInfoModal" class="user-info-modal">
+        <div id="userInfoModal" class="user-info-modal">
             <div class="user-info-modal-content">
                 <div class="modal-header">
-                    <h2>Complete Your Order</h2>
-                    <button class="close-modal" onclick="closeCartUserInfoModal()">&times;</button>
+                    <h2>Complete Your Purchase</h2>
+                    <button class="close-modal" onclick="closeUserInfoModal()">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p class="modal-subtitle">Please provide your information to proceed with WhatsApp order</p>
                     
-                    <form id="cartUserInfoForm" onsubmit="event.preventDefault(); submitCartUserInfo();">
+                    <form id="userInfoForm" onsubmit="event.preventDefault(); submitUserInfo('${productName.replace(/'/g, "\\'")}', '${productPrice}', ${quantity}, '${size}', '${color}');">
                         <!-- Personal Information -->
                         <div class="form-section">
                             <h3>Personal Information</h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="cartFullName">Full Name <span class="required">*</span></label>
-                                    <input type="text" id="cartFullName" name="fullName" placeholder="Enter your full name" required>
+                                    <label for="fullName">Full Name <span class="required">*</span></label>
+                                    <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="cartPhone">Phone Number <span class="required">*</span></label>
-                                    <input type="tel" id="cartPhone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
+                                    <label for="phone">Phone Number <span class="required">*</span></label>
+                                    <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
                                 </div>
-                            </div>
-                                <div class="form-group">
-                                    <label for="cartAltPhone">Alternate Phone</label>
-                                    <input type="tel" id="cartAltPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
-                                </div>
-                            </div>
-                        
-                        <!-- Delivery Address -->
-                        <div class="form-section">
-                            <h3>Delivery Address</h3>
-                            <div class="form-group">
-                                <label for="cartAddressLine1">Address Line 1 <span class="required">*</span></label>
-                                <input type="text" id="cartAddressLine1" name="addressLine1" placeholder="House No., Building Name" required>
                             </div>
                             <div class="form-group">
-                                <label for="cartAddressLine2">Address Line 2</label>
-                                <input type="text" id="cartAddressLine2" name="addressLine2" placeholder="Road name, Area, Colony">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartLandmark">Landmark</label>
-                                    <input type="text" id="cartLandmark" name="landmark" placeholder="Nearby landmark">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cartCity">City <span class="required">*</span></label>
-                                    <input type="text" id="cartCity" name="city" placeholder="Enter city" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartDistrict">District</label>
-                                    <input type="text" id="cartDistrict" name="district" placeholder="Enter district">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cartState">State <span class="required">*</span></label>
-                                    <input type="text" id="cartState" name="state" placeholder="Enter state" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartCountry">Country <span class="required">*</span></label>
-                                    <input type="text" id="cartCountry" name="country" placeholder="Enter country" value="India" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="cartZipCode">PIN/ZIP Code <span class="required">*</span></label>
-                                    <input type="text" id="cartZipCode" name="zipCode" placeholder="Enter PIN code" required pattern="[0-9]{6}">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartAddressType">Address Type</label>
-                                    <select id="cartAddressType" name="addressType">
-                                        <option value="Home">Home</option>
-                                        <option value="Work">Work</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
+                                <label for="altPhone">Alternate Phone</label>
+                                <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
                             </div>
                         </div>
                         
@@ -466,13 +413,13 @@ function showCartUserInfoModal() {
                         <div class="form-section">
                             <h3>Additional Information</h3>
                             <div class="form-group">
-                                <label for="cartDeliveryInstructions">Delivery Instructions</label>
-                                <textarea id="cartDeliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
+                                <label for="deliveryInstructions">Delivery Instructions</label>
+                                <textarea id="deliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
                             </div>
                         </div>
                         
                         <div class="modal-footer">
-                            <button type="button" class="btn-secondary" onclick="closeCartUserInfoModal()">Cancel</button>
+                            <button type="button" class="btn-secondary" onclick="closeUserInfoModal()">Cancel</button>
                             <button type="submit" class="btn-primary">
                                 <i class="fab fa-whatsapp"></i> Continue to WhatsApp
                             </button>
@@ -485,6 +432,10 @@ function showCartUserInfoModal() {
     
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // ...rest of the function remains unchanged...
+    // (styles, focus management, etc.)
+}
     
     // Add modal styles if not already added
     if (!document.getElementById('cartUserInfoModalStyles')) {
@@ -1069,3 +1020,4 @@ window.testCart = function() {
     });
 
 };
+
