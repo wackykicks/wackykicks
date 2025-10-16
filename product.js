@@ -307,15 +307,16 @@ function copyToWhatsApp(productName, productPrice) {
     // Show user information modal
     showUserInfoModal(productName, productPrice, quantity, size, color);
 }
-// ✅ Show User Information Modal (address input removed)
+
+// ✅ Show User Information Modal
 function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
     // Remove any existing modal
     const existingModal = document.getElementById('userInfoModal');
     if (existingModal) {
         existingModal.remove();
     }
-
-    // Create modal HTML (address section removed)
+    
+    // Create modal HTML
     const modalHTML = `
         <div id="userInfoModal" class="user-info-modal">
             <div class="user-info-modal-content">
@@ -332,17 +333,44 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
                             <h3>Personal Information</h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="fullName">Full Name <span class="required">*</span></label>
-                                    <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                                    <label for="fullName">Name <span class="required">*</span></label>
+                                    <input type="text" id="fullName" name="fullName" placeholder="Enter your name" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="phone">Phone Number <span class="required">*</span></label>
-                                    <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
+                                    <label for="phone">Mobile No. <span class="required">*</span></label>
+                                    <input type="tel" id="phone" name="phone" placeholder="Enter mobile number" required pattern="[0-9]{10}">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="altPhone">Alternate Phone</label>
-                                <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
+                                <label for="altPhone">Alt Mobile No.</label>
+                                <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate mobile number" pattern="[0-9]{10}">
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Address -->
+                        <div class="form-section">
+                            <h3>Delivery Address</h3>
+                            <div class="form-group">
+                                <label for="address">Address Line 1 (Flat/House No.) <span class="required">*</span></label>
+                                <input type="text" id="address" name="address" placeholder="Enter flat/house number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressLine2">Address Line 2</label>
+                                <input type="text" id="addressLine2" name="addressLine2" placeholder="Street, Area, Locality (optional)">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="city">City <span class="required">*</span></label>
+                                    <input type="text" id="city" name="city" placeholder="Enter city" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">State <span class="required">*</span></label>
+                                    <input type="text" id="state" name="state" placeholder="Enter state" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pincode">Pincode <span class="required">*</span></label>
+                                <input type="text" id="pincode" name="pincode" placeholder="Enter 6-digit pincode" required pattern="[0-9]{6}">
                             </div>
                         </div>
                         
@@ -369,10 +397,6 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
     
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // ...rest of the function remains unchanged...
-    // (styles, focus management, etc.)
-}
     
     // Add modal styles if not already added
     if (!document.getElementById('userInfoModalStyles')) {
@@ -599,36 +623,30 @@ function submitUserInfo(productName, productPrice, quantity, size, color) {
     const formData = {
         fullName: document.getElementById('fullName').value.trim(),
         phone: document.getElementById('phone').value.trim(),
-        email: document.getElementById('email').value.trim(),
         altPhone: document.getElementById('altPhone').value.trim(),
-        addressLine1: document.getElementById('addressLine1').value.trim(),
+        address: document.getElementById('address').value.trim(),
         addressLine2: document.getElementById('addressLine2').value.trim(),
-        landmark: document.getElementById('landmark').value.trim(),
         city: document.getElementById('city').value.trim(),
-        district: document.getElementById('district').value.trim(),
         state: document.getElementById('state').value.trim(),
-        country: document.getElementById('country').value.trim(),
-        zipCode: document.getElementById('zipCode').value.trim(),
-        addressType: document.getElementById('addressType').value,
+        pincode: document.getElementById('pincode').value.trim(),
         deliveryInstructions: document.getElementById('deliveryInstructions').value.trim()
     };
     
     // Validate required fields
-    if (!formData.fullName || !formData.phone || !formData.addressLine1 || 
-        !formData.city || !formData.state || !formData.country || !formData.zipCode) {
+    if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.pincode) {
         alert('Please fill in all required fields marked with *');
         return;
     }
     
     // Validate phone number
     if (!/^[0-9]{10}$/.test(formData.phone)) {
-        alert('Please enter a valid 10-digit phone number');
+        alert('Please enter a valid 10-digit mobile number');
         return;
     }
     
-    // Validate PIN code
-    if (!/^[0-9]{6}$/.test(formData.zipCode)) {
-        alert('Please enter a valid 6-digit PIN code');
+    // Validate pincode
+    if (!/^[0-9]{6}$/.test(formData.pincode)) {
+        alert('Please enter a valid 6-digit pincode');
         return;
     }
     
@@ -646,18 +664,14 @@ function submitUserInfo(productName, productPrice, quantity, size, color) {
     
     message += `👤 *Customer Information*\n`;
     message += `Name: ${formData.fullName}\n`;
-    message += `Phone: ${formData.phone}\n`;
-    if (formData.email) message += `Email: ${formData.email}\n`;
-    if (formData.altPhone) message += `Alt Phone: ${formData.altPhone}\n`;
-    message += `\n`;
+    message += `Mobile No.: ${formData.phone}\n`;
+    if (formData.altPhone) message += `Alt Mobile No.: ${formData.altPhone}\n`;
     
-    message += `📍 *Delivery Address*\n`;
-    message += `${formData.addressLine1}\n`;
+    message += `\n📍 *Delivery Address*\n`;
+    message += `${formData.address}\n`;
     if (formData.addressLine2) message += `${formData.addressLine2}\n`;
-    if (formData.landmark) message += `Landmark: ${formData.landmark}\n`;
-    message += `${formData.city}, ${formData.district ? formData.district + ', ' : ''}${formData.state}\n`;
-    message += `${formData.country} - ${formData.zipCode}\n`;
-    message += `Address Type: ${formData.addressType}\n`;
+    message += `${formData.city}, ${formData.state} - ${formData.pincode}\n`;
+    
     if (formData.deliveryInstructions) {
         message += `\n📝 *Delivery Instructions*\n${formData.deliveryInstructions}\n`;
     }
@@ -2130,6 +2144,4 @@ async function submitReview() {
             alert('Error submitting review. Please try again.');
         }
     }
-
 }
-

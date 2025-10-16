@@ -370,42 +370,69 @@ function checkoutViaWhatsApp() {
     }
 }
 
-// ✅ Show User Information Modal (address input removed)
-function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
+// ✅ Show User Information Modal for Cart Checkout
+function showCartUserInfoModal() {
     // Remove any existing modal
-    const existingModal = document.getElementById('userInfoModal');
+    const existingModal = document.getElementById('cartUserInfoModal');
     if (existingModal) {
         existingModal.remove();
     }
-
-    // Create modal HTML (address section removed)
+    
+    // Create modal HTML
     const modalHTML = `
-        <div id="userInfoModal" class="user-info-modal">
+        <div id="cartUserInfoModal" class="user-info-modal">
             <div class="user-info-modal-content">
                 <div class="modal-header">
-                    <h2>Complete Your Purchase</h2>
-                    <button class="close-modal" onclick="closeUserInfoModal()">&times;</button>
+                    <h2>Complete Your Order</h2>
+                    <button class="close-modal" onclick="closeCartUserInfoModal()">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p class="modal-subtitle">Please provide your information to proceed with WhatsApp order</p>
                     
-                    <form id="userInfoForm" onsubmit="event.preventDefault(); submitUserInfo('${productName.replace(/'/g, "\\'")}', '${productPrice}', ${quantity}, '${size}', '${color}');">
+                    <form id="cartUserInfoForm" onsubmit="event.preventDefault(); submitCartUserInfo();">
                         <!-- Personal Information -->
                         <div class="form-section">
                             <h3>Personal Information</h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="fullName">Full Name <span class="required">*</span></label>
-                                    <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                                    <label for="cartFullName">Name <span class="required">*</span></label>
+                                    <input type="text" id="cartFullName" name="fullName" placeholder="Enter your name" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="phone">Phone Number <span class="required">*</span></label>
-                                    <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
+                                    <label for="cartPhone">Mobile No. <span class="required">*</span></label>
+                                    <input type="tel" id="cartPhone" name="phone" placeholder="Enter mobile number" required pattern="[0-9]{10}">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="altPhone">Alternate Phone</label>
-                                <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate contact number" pattern="[0-9]{10}">
+                                <label for="cartAltPhone">Alt Mobile No.</label>
+                                <input type="tel" id="cartAltPhone" name="altPhone" placeholder="Alternate mobile number" pattern="[0-9]{10}">
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Address -->
+                        <div class="form-section">
+                            <h3>Delivery Address</h3>
+                            <div class="form-group">
+                                <label for="cartAddress">Address Line 1 (Flat/House No.) <span class="required">*</span></label>
+                                <input type="text" id="cartAddress" name="address" placeholder="Enter flat/house number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cartAddressLine2">Address Line 2</label>
+                                <input type="text" id="cartAddressLine2" name="addressLine2" placeholder="Street, Area, Locality (optional)">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cartCity">City <span class="required">*</span></label>
+                                    <input type="text" id="cartCity" name="city" placeholder="Enter city" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cartState">State <span class="required">*</span></label>
+                                    <input type="text" id="cartState" name="state" placeholder="Enter state" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="cartPincode">Pincode <span class="required">*</span></label>
+                                <input type="text" id="cartPincode" name="pincode" placeholder="Enter 6-digit pincode" required pattern="[0-9]{6}">
                             </div>
                         </div>
                         
@@ -413,13 +440,13 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
                         <div class="form-section">
                             <h3>Additional Information</h3>
                             <div class="form-group">
-                                <label for="deliveryInstructions">Delivery Instructions</label>
-                                <textarea id="deliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
+                                <label for="cartDeliveryInstructions">Delivery Instructions</label>
+                                <textarea id="cartDeliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
                             </div>
                         </div>
                         
                         <div class="modal-footer">
-                            <button type="button" class="btn-secondary" onclick="closeUserInfoModal()">Cancel</button>
+                            <button type="button" class="btn-secondary" onclick="closeCartUserInfoModal()">Cancel</button>
                             <button type="submit" class="btn-primary">
                                 <i class="fab fa-whatsapp"></i> Continue to WhatsApp
                             </button>
@@ -432,10 +459,6 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
     
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // ...rest of the function remains unchanged...
-    // (styles, focus management, etc.)
-}
     
     // Add modal styles if not already added
     if (!document.getElementById('cartUserInfoModalStyles')) {
@@ -662,36 +685,30 @@ function submitCartUserInfo() {
     const formData = {
         fullName: document.getElementById('cartFullName').value.trim(),
         phone: document.getElementById('cartPhone').value.trim(),
-        email: document.getElementById('cartEmail').value.trim(),
         altPhone: document.getElementById('cartAltPhone').value.trim(),
-        addressLine1: document.getElementById('cartAddressLine1').value.trim(),
+        address: document.getElementById('cartAddress').value.trim(),
         addressLine2: document.getElementById('cartAddressLine2').value.trim(),
-        landmark: document.getElementById('cartLandmark').value.trim(),
         city: document.getElementById('cartCity').value.trim(),
-        district: document.getElementById('cartDistrict').value.trim(),
         state: document.getElementById('cartState').value.trim(),
-        country: document.getElementById('cartCountry').value.trim(),
-        zipCode: document.getElementById('cartZipCode').value.trim(),
-        addressType: document.getElementById('cartAddressType').value,
+        pincode: document.getElementById('cartPincode').value.trim(),
         deliveryInstructions: document.getElementById('cartDeliveryInstructions').value.trim()
     };
     
     // Validate required fields
-    if (!formData.fullName || !formData.phone || !formData.addressLine1 || 
-        !formData.city || !formData.state || !formData.country || !formData.zipCode) {
+    if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.pincode) {
         alert('Please fill in all required fields marked with *');
         return;
     }
     
     // Validate phone number
     if (!/^[0-9]{10}$/.test(formData.phone)) {
-        alert('Please enter a valid 10-digit phone number');
+        alert('Please enter a valid 10-digit mobile number');
         return;
     }
     
-    // Validate PIN code
-    if (!/^[0-9]{6}$/.test(formData.zipCode)) {
-        alert('Please enter a valid 6-digit PIN code');
+    // Validate pincode
+    if (!/^[0-9]{6}$/.test(formData.pincode)) {
+        alert('Please enter a valid 6-digit pincode');
         return;
     }
     
@@ -713,18 +730,14 @@ function submitCartUserInfo() {
     
     message += `👤 *Customer Information*\n`;
     message += `Name: ${formData.fullName}\n`;
-    message += `Phone: ${formData.phone}\n`;
-    if (formData.email) message += `Email: ${formData.email}\n`;
-    if (formData.altPhone) message += `Alt Phone: ${formData.altPhone}\n`;
-    message += `\n`;
+    message += `Mobile No.: ${formData.phone}\n`;
+    if (formData.altPhone) message += `Alt Mobile No.: ${formData.altPhone}\n`;
     
-    message += `📍 *Delivery Address*\n`;
-    message += `${formData.addressLine1}\n`;
+    message += `\n📍 *Delivery Address*\n`;
+    message += `${formData.address}\n`;
     if (formData.addressLine2) message += `${formData.addressLine2}\n`;
-    if (formData.landmark) message += `Landmark: ${formData.landmark}\n`;
-    message += `${formData.city}, ${formData.district ? formData.district + ', ' : ''}${formData.state}\n`;
-    message += `${formData.country} - ${formData.zipCode}\n`;
-    message += `Address Type: ${formData.addressType}\n`;
+    message += `${formData.city}, ${formData.state} - ${formData.pincode}\n`;
+    
     if (formData.deliveryInstructions) {
         message += `\n📝 *Delivery Instructions*\n${formData.deliveryInstructions}\n`;
     }
@@ -1018,6 +1031,4 @@ window.testCart = function() {
         operationSuccess: typeof window.FloatingAlertManager?.operationSuccess,
         success: typeof window.alerts?.success
     });
-
 };
-
