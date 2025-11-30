@@ -61,24 +61,24 @@ function loadProduct() {
 
         const sizes = product.sizes || [];
         const rawColors = product.colors || [];
-        
+
         // Parse colors to handle both old and new formats
         const colors = rawColors.map(colorData => {
             if (typeof colorData === 'string') {
                 if (colorData.includes(':')) {
                     // New format "ColorName:HexValue"
                     const [name, hex] = colorData.split(':');
-                    return {name: name.trim(), hex: hex.trim()};
+                    return { name: name.trim(), hex: hex.trim() };
                 } else {
                     // Old format - just color name
-                    return {name: colorData, hex: getColorHex(colorData)};
+                    return { name: colorData, hex: getColorHex(colorData) };
                 }
             } else if (colorData && colorData.name && colorData.hex) {
                 // Already an object
                 return colorData;
             } else {
                 // Fallback
-                return {name: 'Unknown', hex: '#6b7280'};
+                return { name: 'Unknown', hex: '#6b7280' };
             }
         });
 
@@ -128,7 +128,7 @@ function loadProduct() {
                         </div>
                         <div class="color-circles-container">
             `;
-            
+
             // Generate color circles
             colors.forEach((colorObj, index) => {
                 const colorName = colorObj.name;
@@ -144,7 +144,7 @@ function loadProduct() {
                     </div>
                 `;
             });
-            
+
             colorsHTML += `
                             <div class="selected-color-name${colors.length > 0 ? ' active' : ''}" id="selectedColorDisplay">
                                 ${colors.length > 0 ? colors[0].name : 'Select Color'}
@@ -157,7 +157,7 @@ function loadProduct() {
 
         // Calculate discount percentage
         const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
-        
+
         // Check if product is out of stock via category assignment or stock field
         const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
         const isOutOfStockByStock = typeof product.stock !== 'undefined' && parseInt(product.stock) === 0;
@@ -177,31 +177,14 @@ function loadProduct() {
                         ${discountPercentage && !isOutOfStock ? `<span class="discount-tag-price">${discountPercentage}% OFF</span>` : ''}
                         ${isOutOfStock ? `<span class="out-stock-tag-price">Out of Stock</span>` : ''}
                     </div>
-                    <p class="description">${product.description || 'No description available.'}</p>
-                    ${sizesHTML}
                     ${colorsHTML}
                     <div class="quantity-container">
                         <span>Quantity:</span>
                         <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled' : ''}>
                     </div>
-                    <div class="address-container">
-                        <span>Delivery Address (Optional):</span>
-                        <div class="address-input-group">
-                            <input type="text" id="customerName" placeholder="Full Name" class="address-input">
-                            <input type="text" id="customerPhone" placeholder="Phone Number" class="address-input">
-                        </div>
-                        <div class="address-input-group">
-                            <input type="text" id="customerAddress" placeholder="Complete Address" class="address-input">
-                            <input type="text" id="customerPincode" placeholder="Pincode" class="address-input">
-                        </div>
-                        <div class="address-toggle">
-                            <label>
-                                <input type="checkbox" id="saveAddress" ${isOutOfStock ? 'disabled' : ''}>
-                                <span class="checkmark"></span>
-                                Save address for faster checkout
-                            </label>
-                        </div>
-                    </div>
+                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
+                    ${sizesHTML}
+                    <p class="description">${product.description || 'No description available.'}</p>
                     <div class="product-buttons">
                         <button class="add-to-cart-btn" onclick="addProductToCart('${product.name}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] || ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
                             <i class="fas fa-shopping-cart"></i>
@@ -209,7 +192,6 @@ function loadProduct() {
                         </button>
                         <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>Buy Now</button>
                     </div>
-                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
                 </div>
             </div>
         `;
@@ -242,7 +224,7 @@ function loadProduct() {
 
         // ✅ Auto-adjust layout based on image size
         adjustLayoutToImageSize();
-        
+
         // ✅ Initialize color selection if colors are available
         if (colors.length > 0) {
             // Set the first color as selected by default
@@ -297,13 +279,13 @@ function showSizeAlert() {
 // ✅ WhatsApp Buy Now with User Information Modal
 function copyToWhatsApp(productName, productPrice) {
     console.log('🛍️ Buy Now clicked for:', productName);
-    
+
     // Get quantity and options
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
     const size = window.selectedSize || '';
     const color = window.selectedColor || '';
-    
+
     // Show user information modal
     showUserInfoModal(productName, productPrice, quantity, size, color);
 }
@@ -315,7 +297,7 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Create modal HTML
     const modalHTML = `
         <div id="userInfoModal" class="user-info-modal">
@@ -325,62 +307,77 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
                     <button class="close-modal" onclick="closeUserInfoModal()">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p class="modal-subtitle">Please provide your information to proceed with WhatsApp order</p>
+                    <p class="modal-subtitle">Please provide your delivery information</p>
                     
                     <form id="userInfoForm" onsubmit="event.preventDefault(); submitUserInfo('${productName.replace(/'/g, "\\'")}', '${productPrice}', ${quantity}, '${size}', '${color}');">
-                        <!-- Personal Information -->
-                        <div class="form-section">
-                            <h3>Personal Information</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="fullName">Name <span class="required">*</span></label>
-                                    <input type="text" id="fullName" name="fullName" placeholder="Enter your name" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="phone">Mobile No. <span class="required">*</span></label>
-                                    <input type="tel" id="phone" name="phone" placeholder="Enter mobile number" required pattern="[0-9]{10}">
-                                </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fullName">Name <span class="required">*</span></label>
+                                <input type="text" id="fullName" name="fullName" placeholder="Full Name" required>
                             </div>
                             <div class="form-group">
-                                <label for="altPhone">Alt Mobile No.</label>
-                                <input type="tel" id="altPhone" name="altPhone" placeholder="Alternate mobile number" pattern="[0-9]{10}">
+                                <label for="phone">Mobile No. <span class="required">*</span></label>
+                                <input type="tel" id="phone" name="phone" placeholder="10-digit number" required pattern="[0-9]{10}">
                             </div>
                         </div>
                         
-                        <!-- Delivery Address -->
-                        <div class="form-section">
-                            <h3>Delivery Address</h3>
-                            <div class="form-group">
-                                <label for="address">Address Line 1 (Flat/House No.) <span class="required">*</span></label>
-                                <input type="text" id="address" name="address" placeholder="Enter flat/house number" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="addressLine2">Address Line 2</label>
-                                <input type="text" id="addressLine2" name="addressLine2" placeholder="Street, Area, Locality (optional)">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="city">City <span class="required">*</span></label>
-                                    <input type="text" id="city" name="city" placeholder="Enter city" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="state">State <span class="required">*</span></label>
-                                    <input type="text" id="state" name="state" placeholder="Enter state" required>
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label for="address">Address <span class="required">*</span></label>
+                            <input type="text" id="address" name="address" placeholder="House No., Street, Area" required>
+                        </div>
+                        
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="pincode">Pincode <span class="required">*</span></label>
-                                <input type="text" id="pincode" name="pincode" placeholder="Enter 6-digit pincode" required pattern="[0-9]{6}">
+                                <input type="text" id="pincode" name="pincode" placeholder="6-digit pincode" required pattern="[0-9]{6}">
+                            </div>
+                            <div class="form-group">
+                                <label for="city">City <span class="required">*</span></label>
+                                <input type="text" id="city" name="city" placeholder="City" required>
                             </div>
                         </div>
                         
-                        <!-- Additional Information -->
-                        <div class="form-section">
-                            <h3>Additional Information</h3>
-                            <div class="form-group">
-                                <label for="deliveryInstructions">Delivery Instructions</label>
-                                <textarea id="deliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
-                            </div>
+                        <div class="form-group">
+                            <label for="state">State <span class="required">*</span></label>
+                            <select id="state" name="state" required>
+                                <option value="">Select State</option>
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                <option value="Chandigarh">Chandigarh</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Delhi">Delhi</option>
+                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                <option value="Ladakh">Ladakh</option>
+                                <option value="Lakshadweep">Lakshadweep</option>
+                                <option value="Puducherry">Puducherry</option>
+                            </select>
                         </div>
                         
                         <div class="modal-footer">
@@ -394,10 +391,10 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
             </div>
         </div>
     `;
-    
+
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
+
     // Add modal styles if not already added
     if (!document.getElementById('userInfoModalStyles')) {
         const styles = document.createElement('style');
@@ -599,7 +596,7 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
         `;
         document.head.appendChild(styles);
     }
-    
+
     // Focus on first input
     setTimeout(() => {
         document.getElementById('fullName')?.focus();
@@ -618,40 +615,37 @@ function closeUserInfoModal() {
 // ✅ Submit User Info and Redirect to WhatsApp
 function submitUserInfo(productName, productPrice, quantity, size, color) {
     console.log('📋 Submitting user info for:', productName);
-    
+
     // Collect form data
     const formData = {
         fullName: document.getElementById('fullName').value.trim(),
         phone: document.getElementById('phone').value.trim(),
-        altPhone: document.getElementById('altPhone').value.trim(),
         address: document.getElementById('address').value.trim(),
-        addressLine2: document.getElementById('addressLine2').value.trim(),
-        city: document.getElementById('city').value.trim(),
-        state: document.getElementById('state').value.trim(),
         pincode: document.getElementById('pincode').value.trim(),
-        deliveryInstructions: document.getElementById('deliveryInstructions').value.trim()
+        city: document.getElementById('city').value.trim(),
+        state: document.getElementById('state').value.trim()
     };
-    
+
     // Validate required fields
     if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.pincode) {
         alert('Please fill in all required fields marked with *');
         return;
     }
-    
+
     // Validate phone number
     if (!/^[0-9]{10}$/.test(formData.phone)) {
         alert('Please enter a valid 10-digit mobile number');
         return;
     }
-    
+
     // Validate pincode
     if (!/^[0-9]{6}$/.test(formData.pincode)) {
         alert('Please enter a valid 6-digit pincode');
         return;
     }
-    
+
     console.log('✅ Form data validated:', formData);
-    
+
     // Create WhatsApp message
     let message = `Hey WackyKicks! I'm interested in buying:\n\n`;
     message += `🛍️ *Product Details*\n`;
@@ -661,26 +655,20 @@ function submitUserInfo(productName, productPrice, quantity, size, color) {
     if (size) message += `Size: ${size}\n`;
     if (color) message += `Color: ${color}\n`;
     message += `\n`;
-    
+
     message += `👤 *Customer Information*\n`;
     message += `Name: ${formData.fullName}\n`;
     message += `Mobile No.: ${formData.phone}\n`;
-    if (formData.altPhone) message += `Alt Mobile No.: ${formData.altPhone}\n`;
-    
+
     message += `\n📍 *Delivery Address*\n`;
     message += `${formData.address}\n`;
-    if (formData.addressLine2) message += `${formData.addressLine2}\n`;
     message += `${formData.city}, ${formData.state} - ${formData.pincode}\n`;
-    
-    if (formData.deliveryInstructions) {
-        message += `\n📝 *Delivery Instructions*\n${formData.deliveryInstructions}\n`;
-    }
-    
+
     console.log('📱 WhatsApp message prepared:', message);
-    
+
     // Close modal
     closeUserInfoModal();
-    
+
     // Redirect directly to WhatsApp
     simpleRedirectToWhatsApp(message);
 }
@@ -714,10 +702,10 @@ let currentPurchaseData = null;
 // ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
 function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
     console.log('🚀 Starting WhatsApp redirect with message:', message);
-    
+
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     console.log('🔗 WhatsApp URL:', whatsappUrl);
-    
+
     // Method 1: Try window.open (most reliable for mobile)
     try {
         const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
@@ -728,14 +716,14 @@ function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
     } catch (error) {
         console.warn('⚠️ window.open failed:', error);
     }
-    
+
     // Method 2: Direct navigation for mobile devices
     if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         console.log('📱 Mobile device detected, using direct navigation');
         window.location.href = whatsappUrl;
         return;
     }
-    
+
     // Method 3: Link click simulation (fallback)
     try {
         const link = document.createElement('a');
@@ -743,7 +731,7 @@ function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.style.display = 'none';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -757,53 +745,53 @@ function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
 
 function proceedWithoutAddress() {
     if (!currentPurchaseData) return;
-    
+
     console.log('🚀 Product: Proceeding without address');
     console.log('📦 Current purchase data:', currentPurchaseData);
-    
+
     // Close modal first
     closeAddressModal();
-    
+
     // Proceed with WhatsApp message without address
     const { productName, productPrice, quantity, selectedSize, selectedColor } = currentPurchaseData;
-    
+
     let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
     let colorMsg = selectedColor ? `\nColor: ${selectedColor}` : '';
     const qtyMsg = `\nQuantity: ${quantity}`;
-    
+
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}`;
-    
+
     console.log('📱 Product: Sending message to WhatsApp');
-    
+
     // Use simple redirect directly
     simpleRedirectToWhatsApp(message);
 }
 
 function proceedWithAddress() {
     if (!currentPurchaseData) return;
-    
+
     console.log('🚀 Product: Proceeding with address');
     console.log('📦 Current purchase data:', currentPurchaseData);
-    
+
     // Get address data
     const addressData = getAddressFormData();
     console.log('📍 Product: Address data:', addressData);
-    
+
     // Save address to localStorage for future use
     if (addressData.hasData) {
         saveAddressToStorage(addressData);
     }
-    
+
     // Close modal first
     closeAddressModal();
-    
+
     // Proceed with WhatsApp message including address
     const { productName, productPrice, quantity, selectedSize, selectedColor } = currentPurchaseData;
-    
+
     let sizeMsg = selectedSize ? `\nSize: ${selectedSize}` : '';
     let colorMsg = selectedColor ? `\nColor: ${selectedColor}` : '';
     const qtyMsg = `\nQuantity: ${quantity}`;
-    
+
     // Add address to message if provided
     let addressMsg = '';
     if (addressData.hasData) {
@@ -817,11 +805,11 @@ function proceedWithAddress() {
         if (addressData.pincode) addressMsg += `\nPincode: ${addressData.pincode}`;
         if (addressData.landmark) addressMsg += `\nLandmark: ${addressData.landmark}`;
     }
-    
+
     const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}${addressMsg}`;
-    
+
     console.log('📱 Product: Sending message to WhatsApp with address');
-    
+
     // Use simple redirect directly
     simpleRedirectToWhatsApp(message);
 }
@@ -829,31 +817,31 @@ function proceedWithAddress() {
 // ✅ Enhanced WhatsApp Redirect/Forward Function
 function redirectToWhatsApp(message, phoneNumber = '918138999550') {
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    
+
     // Validate message and phone number
     if (!message || !phoneNumber) {
         console.error('Missing message or phone number for WhatsApp redirect');
         return;
     }
-    
+
     try {
         // Show loading/forwarding indicator
         showForwardingIndicator();
-        
+
         // Safety timeout to always hide indicator
         const safetyTimeout = setTimeout(() => {
             hideForwardingIndicator();
         }, 3000);
-        
+
         // Simplified and more reliable approach
         if (isMobileDevice()) {
             // On mobile devices - try app first, then web
             const whatsappAppUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
-            
+
             // Create a more reliable redirect mechanism
             setTimeout(() => {
                 let redirected = false;
-                
+
                 // Try to detect if app opens by checking page visibility
                 const visibilityHandler = () => {
                     if (document.hidden) {
@@ -863,16 +851,16 @@ function redirectToWhatsApp(message, phoneNumber = '918138999550') {
                         document.removeEventListener('visibilitychange', visibilityHandler);
                     }
                 };
-                
+
                 document.addEventListener('visibilitychange', visibilityHandler);
-                
+
                 // Try to open WhatsApp app
                 try {
                     window.location.href = whatsappAppUrl;
                 } catch (error) {
                     console.log('App redirect failed:', error);
                 }
-                
+
                 // Fallback to web version after delay
                 setTimeout(() => {
                     if (!redirected && !document.hidden) {
@@ -883,9 +871,9 @@ function redirectToWhatsApp(message, phoneNumber = '918138999550') {
                     clearTimeout(safetyTimeout);
                     hideForwardingIndicator();
                 }, 1200);
-                
+
             }, 300);
-            
+
         } else {
             // On desktop - directly open web WhatsApp
             setTimeout(() => {
@@ -894,7 +882,7 @@ function redirectToWhatsApp(message, phoneNumber = '918138999550') {
                 hideForwardingIndicator();
             }, 500);
         }
-        
+
     } catch (error) {
         console.error('Error in WhatsApp redirect:', error);
         hideForwardingIndicator();
@@ -912,7 +900,7 @@ function simpleWhatsAppRedirect(message, phoneNumber = '918138999550') {
 // ✅ Device Detection Function
 function isMobileDevice() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    
+
     // Check for mobile patterns
     const mobilePatterns = [
         /Android/i,
@@ -924,17 +912,17 @@ function isMobileDevice() {
         /Windows Phone/i,
         /Mobile/i
     ];
-    
-    return mobilePatterns.some(pattern => userAgent.match(pattern)) || 
-           window.innerWidth <= 768 ||
-           ('ontouchstart' in window);
+
+    return mobilePatterns.some(pattern => userAgent.match(pattern)) ||
+        window.innerWidth <= 768 ||
+        ('ontouchstart' in window);
 }
 
 // ✅ Forwarding Indicator Functions
 function showForwardingIndicator() {
     // Remove existing indicator
     hideForwardingIndicator();
-    
+
     // Create forwarding indicator
     const indicator = document.createElement('div');
     indicator.id = 'whatsappForwardingIndicator';
@@ -949,7 +937,7 @@ function showForwardingIndicator() {
             </div>
         </div>
     `;
-    
+
     // Add CSS styles
     indicator.style.cssText = `
         position: fixed;
@@ -965,7 +953,7 @@ function showForwardingIndicator() {
         justify-content: center;
         animation: fadeIn 0.3s ease-out;
     `;
-    
+
     // Add styles for content
     const style = document.createElement('style');
     style.textContent = `
@@ -1003,7 +991,7 @@ function showForwardingIndicator() {
             to { opacity: 1; }
         }
     `;
-    
+
     document.head.appendChild(style);
     document.body.appendChild(indicator);
 }
@@ -1024,7 +1012,7 @@ function hideForwardingIndicator() {
             `;
             document.head.appendChild(fadeOutStyle);
         }
-        
+
         indicator.style.animation = 'fadeOut 0.3s ease-out forwards';
         setTimeout(() => {
             if (indicator.parentNode) {
@@ -1050,9 +1038,9 @@ function getAddressFormData() {
     const state = document.getElementById('state')?.value.trim() || '';
     const pincode = document.getElementById('pincode')?.value.trim() || '';
     const landmark = document.getElementById('landmark')?.value.trim() || '';
-    
+
     const hasData = fullName || phoneNumber || addressLine1 || city || state || pincode;
-    
+
     return {
         fullName,
         phoneNumber,
@@ -1081,7 +1069,7 @@ function loadSavedAddress() {
         const savedAddress = localStorage.getItem('wackykicks_saved_address');
         if (savedAddress) {
             const addressData = JSON.parse(savedAddress);
-            
+
             // Fill form fields with saved data
             if (addressData.fullName) document.getElementById('fullName').value = addressData.fullName;
             if (addressData.phoneNumber) document.getElementById('phoneNumber').value = addressData.phoneNumber;
@@ -1091,7 +1079,7 @@ function loadSavedAddress() {
             if (addressData.state) document.getElementById('state').value = addressData.state;
             if (addressData.pincode) document.getElementById('pincode').value = addressData.pincode;
             if (addressData.landmark) document.getElementById('landmark').value = addressData.landmark;
-            
+
             console.log('Address loaded from localStorage');
             return addressData;
         }
@@ -1112,7 +1100,7 @@ function hasSavedAddress() {
 }
 
 // Close modal when clicking outside
-window.addEventListener('click', function(event) {
+window.addEventListener('click', function (event) {
     const modal = document.getElementById('addressModal');
     if (event.target === modal) {
         closeAddressModal();
@@ -1120,7 +1108,7 @@ window.addEventListener('click', function(event) {
 });
 
 // Close modal on Escape key
-window.addEventListener('keydown', function(event) {
+window.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeAddressModal();
     }
@@ -1130,18 +1118,18 @@ window.addEventListener('keydown', function(event) {
 function addProductToCart(productName, productPrice, productOldPrice, productImage) {
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-    
+
     // Get selected size and color if available
     const productSelectedSize = selectedSize || null;
     const productSelectedColor = selectedColor || null;
-    
+
     // Get address information if provided
     const customerName = document.getElementById('customerName')?.value.trim() || null;
     const customerPhone = document.getElementById('customerPhone')?.value.trim() || null;
     const customerAddress = document.getElementById('customerAddress')?.value.trim() || null;
     const customerPincode = document.getElementById('customerPincode')?.value.trim() || null;
     const saveAddress = document.getElementById('saveAddress')?.checked || false;
-    
+
     // Create product object
     const product = {
         id: productId, // Use the global productId from URL
@@ -1150,7 +1138,7 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
         oldPrice: productOldPrice || null,
         img: productImage
     };
-    
+
     // Create address object if any address field is filled
     const addressInfo = (customerName || customerPhone || customerAddress || customerPincode) ? {
         name: customerName,
@@ -1159,12 +1147,12 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
         pincode: customerPincode,
         saveForLater: saveAddress
     } : null;
-    
+
     // Save address if requested
     if (addressInfo && saveAddress) {
         saveAddressToStorage(addressInfo);
     }
-    
+
     // Add to cart using the global cart object
     if (typeof window.cart !== 'undefined') {
         window.cart.addToCart(product, quantity, productSelectedSize, productSelectedColor, addressInfo);
@@ -1202,13 +1190,13 @@ function loadAddressIntoForm() {
         const addressInput = document.getElementById('customerAddress');
         const pincodeInput = document.getElementById('customerPincode');
         const saveCheckbox = document.getElementById('saveAddress');
-        
+
         if (nameInput) nameInput.value = savedAddress.name || '';
         if (phoneInput) phoneInput.value = savedAddress.phone || '';
         if (addressInput) addressInput.value = savedAddress.address || '';
         if (pincodeInput) pincodeInput.value = savedAddress.pincode || '';
         if (saveCheckbox) saveCheckbox.checked = true;
-        
+
         console.log('Address loaded from storage');
     }
 }
@@ -1238,11 +1226,11 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const addBtn = document.getElementById('fixedAddToCart');
         const buyBtn = document.getElementById('fixedBuyNow');
-        
+
         // Check if product is out of stock by looking at disabled buttons in product info
         const productAddBtn = document.querySelector('.product-buttons .add-to-cart-btn');
         const isOutOfStock = productAddBtn && productAddBtn.hasAttribute('disabled');
-        
+
         if (isOutOfStock) {
             // Hide the entire fixed product bar when out of stock
             const fixedBar = document.querySelector('.fixed-product-bar');
@@ -1281,7 +1269,7 @@ window.addEventListener('scroll', () => {
 // ✅ Load Related Products
 async function loadRelatedProducts() {
     const relatedContainer = document.getElementById('relatedCarousel');
-    
+
     if (!productId) {
         console.error('No product ID available for loading related products');
         return;
@@ -1294,105 +1282,105 @@ async function loadRelatedProducts() {
             console.error('Current product not found');
             return;
         }
-        
+
         const currentProduct = currentProductDoc.data();
         const currentCategories = currentProduct.categories || [];
         const currentName = currentProduct.name || '';
-        
+
         console.log('🔍 Finding related products for:', currentName);
         console.log('📂 Current product categories:', currentCategories);
-        
+
         // Extract brand name from product name (common patterns)
         const brandKeywords = ['nike', 'adidas', 'puma', 'reebok', 'converse', 'vans', 'jordan', 'under armour', 'new balance', 'fossil', 'casio', 'apple', 'samsung', 'boat', 'noise', 'fire-boltt'];
         let detectedBrand = null;
-        
+
         brandKeywords.forEach(brand => {
             if (currentName.toLowerCase().includes(brand)) {
                 detectedBrand = brand;
             }
         });
-        
+
         console.log('🏷️ Detected brand:', detectedBrand);
-        
+
         // Load all products to filter for related ones
         const allProductsSnapshot = await db.collection("products").get();
         const allProducts = [];
-        
+
         allProductsSnapshot.forEach(doc => {
             const product = doc.data();
             const docId = doc.id;
-            
+
             // Skip the current product
             if (docId === productId) return;
-            
+
             allProducts.push({
                 id: docId,
                 ...product
             });
         });
-        
+
         console.log('📦 Total products loaded:', allProducts.length);
-        
+
         // Score products based on similarity
         const scoredProducts = allProducts.map(product => {
             let score = 0;
             const productCategories = product.categories || [];
             const productName = product.name || '';
-            
+
             // Brand matching (highest priority) - 50 points
             if (detectedBrand) {
                 if (productName.toLowerCase().includes(detectedBrand)) {
                     score += 50;
                 }
             }
-            
+
             // Category matching - 20 points per matching category
-            const matchingCategories = currentCategories.filter(cat => 
-                productCategories.some(pCat => 
+            const matchingCategories = currentCategories.filter(cat =>
+                productCategories.some(pCat =>
                     pCat.toLowerCase() === cat.toLowerCase() ||
                     pCat.toLowerCase().includes(cat.toLowerCase()) ||
                     cat.toLowerCase().includes(pCat.toLowerCase())
                 )
             );
-            
+
             score += matchingCategories.length * 20;
-            
+
             // Similar product type keywords - 15 points each
             const typeKeywords = ['shoe', 'shoes', 'sneaker', 'sneakers', 'boot', 'boots', 'watch', 'watches', 'glass', 'glasses', 'sunglass', 'sunglasses', 'headphone', 'headphones', 'earphone', 'earphones'];
             const currentTypeKeywords = typeKeywords.filter(keyword => currentName.toLowerCase().includes(keyword));
             const productTypeKeywords = typeKeywords.filter(keyword => productName.toLowerCase().includes(keyword));
-            
+
             const matchingTypeKeywords = currentTypeKeywords.filter(keyword => productTypeKeywords.includes(keyword));
             score += matchingTypeKeywords.length * 15;
-            
+
             // Price range similarity - 10 points
             const currentPrice = currentProduct.newPrice || currentProduct.price || 0;
             const productPrice = product.newPrice || product.price || 0;
             const priceDifference = Math.abs(currentPrice - productPrice);
             const priceRange = Math.max(currentPrice, productPrice) * 0.3; // 30% price range tolerance
-            
+
             if (priceDifference <= priceRange) {
                 score += 10;
             }
-            
+
             // Color similarity - 5 points
             if (currentProduct.colors && product.colors) {
-                const matchingColors = currentProduct.colors.filter(color => 
+                const matchingColors = currentProduct.colors.filter(color =>
                     product.colors.some(pColor => pColor.toLowerCase() === color.toLowerCase())
                 );
                 score += matchingColors.length * 5;
             }
-            
+
             return { ...product, score };
         });
-        
+
         // Sort by score (highest first) and take top 8
         let relatedProducts = scoredProducts
             .sort((a, b) => b.score - a.score)
             .slice(0, 8);
-        
+
         console.log('🏆 Top related products:', relatedProducts.slice(0, 6).map(p => `${p.name} (Score: ${p.score})`));
-        
+
         // If we don't have enough highly scored products (score > 0), fill with random ones
         if (relatedProducts.filter(p => p.score > 0).length < 6) {
             const randomProducts = scoredProducts
@@ -1401,15 +1389,15 @@ async function loadRelatedProducts() {
                 .slice(0, 6 - relatedProducts.filter(p => p.score > 0).length);
             relatedProducts = [...relatedProducts.filter(p => p.score > 0), ...randomProducts];
         }
-        
+
         // Take only first 6 for display
         relatedProducts = relatedProducts.slice(0, 6);
-        
+
         // Clear container and render related products
         relatedContainer.innerHTML = '';
         relatedProducts.forEach(product => {
             const relatedDiscountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
-            
+
             // Check if product is out of stock
             const isOutOfStock = product.categories && product.categories.includes('out-of-stock');
 
@@ -1430,9 +1418,9 @@ async function loadRelatedProducts() {
 
             relatedContainer.appendChild(relatedCard);
         });
-        
+
         console.log('✅ Related products loaded successfully');
-        
+
     } catch (error) {
         console.error("Error loading related products:", error);
         relatedContainer.innerHTML = `<p>Unable to load related products.</p>`;
@@ -1452,13 +1440,13 @@ function scrollCarousel(direction) {
 function adjustLayoutToImageSize() {
     const productContainer = document.querySelector('.product-container');
     const firstImage = document.querySelector('.image-slide img');
-    
+
     if (!productContainer || !firstImage) return;
-    
-    firstImage.onload = function() {
+
+    firstImage.onload = function () {
         const imageAspectRatio = this.naturalWidth / this.naturalHeight;
         const imageWidth = this.offsetWidth;
-        
+
         // If image is smaller or more square, reduce gap
         if (imageAspectRatio >= 0.8 && imageWidth < 400) {
             productContainer.style.gap = '15px';
@@ -1472,14 +1460,14 @@ function adjustLayoutToImageSize() {
             productContainer.classList.remove('compact-layout', 'very-compact-layout');
         }
     };
-    
+
     // If image is already loaded
     if (firstImage.complete) {
         firstImage.onload();
     }
 }
 
-window.selectSize = function(size) {
+window.selectSize = function (size) {
     selectedSize = size;
     window.selectedSize = size; // Also set on window for backward compatibility
     const dropdown = document.getElementById('sizeDropdown');
@@ -1489,7 +1477,7 @@ window.selectSize = function(size) {
     console.log('Selected size:', size);
 };
 
-window.selectColor = function(color) {
+window.selectColor = function (color) {
     selectedColor = color;
     window.selectedColor = color; // Also set on window for backward compatibility
     const dropdown = document.getElementById('colorDropdown');
@@ -1505,12 +1493,12 @@ function getColorHex(colorName) {
     if (colorName.startsWith('#') && /^#[0-9A-Fa-f]{6}$/.test(colorName)) {
         return colorName;
     }
-    
+
     // If colorName looks like a CSS color value, return it
     if (colorName.startsWith('rgb') || colorName.startsWith('hsl')) {
         return colorName;
     }
-    
+
     const colorMap = {
         // Basic colors
         'Red': '#ef4444',
@@ -1540,7 +1528,7 @@ function getColorHex(colorName) {
         'Beige': '#f5f5dc',
         'Crimson': '#dc2626',
         'Burgundy': '#7f1d1d',
-        
+
         // Additional common colors
         'Sky Blue': '#87ceeb',
         'Royal Blue': '#4169e1',
@@ -1573,7 +1561,7 @@ function getColorHex(colorName) {
         'Slate': '#708090',
         'Copper': '#b87333',
         'Bronze': '#cd7f32',
-        
+
         // Common shoe/fashion colors
         'Off White': '#faf0e6',
         'Cream White': '#fffdd0',
@@ -1598,12 +1586,12 @@ function getColorHex(colorName) {
         'Desert': '#c19a6b',
         'Clay': '#b66a50'
     };
-    
+
     // Try exact match first
     if (colorMap[colorName]) {
         return colorMap[colorName];
     }
-    
+
     // Try case-insensitive match
     const lowerColorName = colorName.toLowerCase();
     for (const [key, value] of Object.entries(colorMap)) {
@@ -1611,7 +1599,7 @@ function getColorHex(colorName) {
             return value;
         }
     }
-    
+
     // Try partial matching for custom colors (more comprehensive)
     for (const [key, value] of Object.entries(colorMap)) {
         const keyLower = key.toLowerCase();
@@ -1624,7 +1612,7 @@ function getColorHex(colorName) {
             return value;
         }
     }
-    
+
     // Try to match common color prefixes/suffixes
     const colorVariations = {
         'light': (color) => lightenColor(color, 20),
@@ -1633,7 +1621,7 @@ function getColorHex(colorName) {
         'pale': (color) => lightenColor(color, 30),
         'deep': (color) => darkenColor(color, 30)
     };
-    
+
     for (const [variation, modifier] of Object.entries(colorVariations)) {
         if (lowerColorName.includes(variation)) {
             const baseColorName = lowerColorName.replace(variation, '').trim();
@@ -1644,7 +1632,7 @@ function getColorHex(colorName) {
             }
         }
     }
-    
+
     // Generate a color based on the color name hash for custom colors
     return generateColorFromName(colorName);
 }
@@ -1658,15 +1646,15 @@ function generateColorFromName(colorName) {
         hash = ((hash << 5) - hash) + char;
         hash = hash & hash; // Convert to 32bit integer
     }
-    
+
     // Make colors more appealing by using a better palette
     const colorPalette = [
-        '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', 
+        '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
         '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b',
         '#10b981', '#6366f1', '#8b5cf6', '#f43f5e', '#84cc16',
         '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899', '#f97316'
     ];
-    
+
     // Use hash to pick from the predefined palette for more appealing colors
     const colorIndex = Math.abs(hash) % colorPalette.length;
     return colorPalette[colorIndex];
@@ -1704,24 +1692,24 @@ function saturateColor(hex, percent) {
 }
 
 // Modern color selection function
-window.selectProductColor = function(colorName, hexValue, element) {
+window.selectProductColor = function (colorName, hexValue, element) {
     selectedColor = colorName;
     window.selectedColor = colorName; // Also set on window for backward compatibility
-    
+
     // Update visual selection
     document.querySelectorAll('.product-color-circle').forEach(circle => {
         circle.classList.remove('selected');
     });
-    
+
     element.classList.add('selected');
-    
+
     // Update selected color display
     const colorDisplay = document.getElementById('selectedColorDisplay');
     if (colorDisplay) {
         colorDisplay.textContent = colorName;
         colorDisplay.classList.add('active');
     }
-    
+
     console.log('Selected color:', colorName, hexValue);
 };
 
@@ -1763,21 +1751,21 @@ function loadReviews() {
     console.log('🔍 === STARTING REVIEW LOADING PROCESS ===');
     console.log('Current productId from URL:', productId);
     console.log('Current URL:', window.location.href);
-    
+
     if (!productId) {
         console.error('❌ No productId available for loading reviews');
         return;
     }
-    
+
     const reviewsContainer = document.getElementById('reviewsContainer');
     const reviewsOverview = document.getElementById('reviewsOverview');
     if (!reviewsContainer) {
         console.error('❌ Reviews container not found in DOM');
         return;
     }
-    
+
     console.log('✅ Reviews container found, starting Firebase query...');
-    
+
     // Load reviews from Firestore (without orderBy to avoid index issues)
     db.collection("reviews")
         .where("productId", "==", productId)
@@ -1788,12 +1776,12 @@ function loadReviews() {
                 reviewsOverview.innerHTML = '<div class="no-reviews">No reviews available for this product yet.</div>';
                 return;
             }
-            
+
             const reviews = [];
             snapshot.forEach(doc => {
                 reviews.push({ id: doc.id, ...doc.data() });
             });
-            
+
             // Sort reviews by timestamp client-side (newest first)
             reviews.sort((a, b) => {
                 if (!a.timestamp && !b.timestamp) return 0;
@@ -1801,7 +1789,7 @@ function loadReviews() {
                 if (!b.timestamp) return -1;
                 return b.timestamp.seconds - a.timestamp.seconds;
             });
-            
+
             displayReviews(reviews);
             displayAverageRating(reviews);
         })
@@ -1815,7 +1803,7 @@ function loadReviews() {
             });
             console.error("ProductId that failed:", productId);
             console.error("Current URL:", window.location.href);
-            
+
             const errorMsg = error.message || error.code || 'Unknown error';
             reviewsContainer.innerHTML = `
                 <div class="no-reviews" style="color: #dc3545; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: #f8f9fa;">
@@ -1833,28 +1821,28 @@ function loadReviews() {
 
 function displayReviews(reviews) {
     const reviewsContainer = document.getElementById('reviewsContainer');
-    
+
     // Separate reviews by rating
     const goodReviews = reviews.filter(review => review.rating >= 4);
     const badReviews = reviews.filter(review => review.rating <= 2);
     const averageReviews = reviews.filter(review => review.rating === 3);
-    
+
     // Select initial reviews to show (2-3 good, 2-3 bad)
     const initialGoodReviews = goodReviews.slice(0, 3);
     const initialBadReviews = badReviews.slice(0, 2);
     const initialReviews = [...initialGoodReviews, ...initialBadReviews];
-    
+
     // Remaining reviews for "View More"
     const remainingReviews = [
         ...goodReviews.slice(3),
         ...badReviews.slice(2),
         ...averageReviews
     ];
-    
+
     function createReviewHTML(review) {
         const date = review.timestamp ? new Date(review.timestamp.seconds * 1000).toLocaleDateString() : 'Recently';
         const reviewerInitial = (review.reviewerName || 'A').charAt(0).toUpperCase();
-        
+
         // Create star display
         let starsHTML = '';
         for (let i = 1; i <= 5; i++) {
@@ -1864,7 +1852,7 @@ function displayReviews(reviews) {
                 starsHTML += '<span class="review-star empty">★</span>';
             }
         }
-        
+
         return `
             <div class="review-card">
                 <div class="review-header">
@@ -1881,26 +1869,26 @@ function displayReviews(reviews) {
             </div>
         `;
     }
-    
+
     // Create HTML for initial reviews
     let initialReviewsHTML = '';
     initialReviews.forEach(review => {
         initialReviewsHTML += createReviewHTML(review);
     });
-    
+
     // Create HTML for remaining reviews (hidden initially)
     let remainingReviewsHTML = '';
     remainingReviews.forEach(review => {
         remainingReviewsHTML += createReviewHTML(review);
     });
-    
+
     // Create the complete HTML structure
     let reviewsHTML = `
         <div id="initialReviews">
             ${initialReviewsHTML}
         </div>
     `;
-    
+
     if (remainingReviews.length > 0) {
         reviewsHTML += `
             <div id="remainingReviews" style="display: none;">
@@ -1913,7 +1901,7 @@ function displayReviews(reviews) {
             </div>
         `;
     }
-    
+
     reviewsContainer.innerHTML = reviewsHTML;
 }
 
@@ -1921,7 +1909,7 @@ function displayReviews(reviews) {
 function toggleMoreReviews() {
     const remainingReviews = document.getElementById('remainingReviews');
     const viewMoreBtn = document.getElementById('viewMoreBtn');
-    
+
     if (remainingReviews.style.display === 'none') {
         remainingReviews.style.display = 'block';
         viewMoreBtn.textContent = 'Show Less Reviews';
@@ -1942,22 +1930,22 @@ window.showUserInfoModal = showUserInfoModal;
 
 function displayAverageRating(reviews) {
     if (reviews.length === 0) return;
-    
+
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = totalRating / reviews.length; // Keep as number for calculations
     const averageRatingText = averageRating.toFixed(1); // String for display
-    
+
     // Calculate rating breakdown
     const ratingCounts = [0, 0, 0, 0, 0]; // Index 0 = 1 star, Index 4 = 5 stars
     reviews.forEach(review => {
         ratingCounts[review.rating - 1]++;
     });
-    
+
     // Create star display for overall rating
     let starsHTML = '';
     const fullStars = Math.floor(averageRating);
     const hasHalf = (averageRating % 1) >= 0.5;
-    
+
     for (let i = 1; i <= 5; i++) {
         if (i <= fullStars) {
             starsHTML += '<span class="star-large filled">★</span>';
@@ -1967,7 +1955,7 @@ function displayAverageRating(reviews) {
             starsHTML += '<span class="star-large">★</span>';
         }
     }
-    
+
     // Create rating bars
     let ratingBarsHTML = '';
     for (let i = 4; i >= 0; i--) {
@@ -1983,7 +1971,7 @@ function displayAverageRating(reviews) {
             </div>
         `;
     }
-    
+
     // Category ratings (mock data for demo - you can expand this)
     const categoryRatings = [
         { name: 'Quality', score: Math.max(1, Math.min(5, averageRating + 0.2)).toFixed(1) },
@@ -1991,7 +1979,7 @@ function displayAverageRating(reviews) {
         { name: 'Style', score: Math.max(1, Math.min(5, averageRating + 0.1)).toFixed(1) },
         { name: 'Value', score: Math.max(1, Math.min(5, averageRating - 0.3)).toFixed(1) }
     ];
-    
+
     let categoryHTML = '';
     categoryRatings.forEach(category => {
         categoryHTML += `
@@ -2001,7 +1989,7 @@ function displayAverageRating(reviews) {
             </div>
         `;
     });
-    
+
     const overviewHTML = `
         <div class="reviews-summary">
             <h3>Reviews</h3>
@@ -2020,7 +2008,7 @@ function displayAverageRating(reviews) {
             ${ratingBarsHTML}
         </div>
     `;
-    
+
     const reviewsOverview = document.getElementById('reviewsOverview');
     reviewsOverview.innerHTML = overviewHTML;
 }
@@ -2028,26 +2016,26 @@ function displayAverageRating(reviews) {
 function setupReviewForm() {
     const stars = document.querySelectorAll('.star');
     const reviewForm = document.getElementById('reviewForm');
-    
+
     if (!stars.length || !reviewForm) return;
-    
+
     // Setup star rating
     stars.forEach(star => {
         star.addEventListener('click', () => {
             selectedRating = parseInt(star.dataset.rating);
             updateStarDisplay();
         });
-        
+
         star.addEventListener('mouseover', () => {
             const rating = parseInt(star.dataset.rating);
             highlightStars(rating);
         });
     });
-    
+
     document.getElementById('starRating').addEventListener('mouseleave', () => {
         updateStarDisplay();
     });
-    
+
     // Setup form submission
     reviewForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2086,7 +2074,7 @@ async function submitReview() {
         }
         return;
     }
-    
+
     if (selectedRating === 0) {
         if (window.FloatingAlertManager) {
             window.FloatingAlertManager.pleaseSelectRating();
@@ -2095,10 +2083,10 @@ async function submitReview() {
         }
         return;
     }
-    
+
     const reviewerName = document.getElementById('reviewerName').value.trim();
     const reviewText = document.getElementById('reviewText').value.trim();
-    
+
     if (!reviewerName || !reviewText) {
         if (window.FloatingAlertManager) {
             window.FloatingAlertManager.pleaseFillAllFields();
@@ -2107,7 +2095,7 @@ async function submitReview() {
         }
         return;
     }
-    
+
     try {
         await db.collection("reviews").add({
             productId: productId,
@@ -2116,18 +2104,18 @@ async function submitReview() {
             rating: selectedRating,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
+
         if (window.FloatingAlertManager) {
             window.FloatingAlertManager.reviewSubmitted();
         } else {
             alert('Review submitted successfully!');
         }
-        
+
         // Reset form
         document.getElementById('reviewForm').reset();
         selectedRating = 0;
         updateStarDisplay();
-        
+
         // Reload reviews
         setTimeout(() => {
             // Remove existing average rating display
@@ -2135,7 +2123,7 @@ async function submitReview() {
             if (existingAverage) existingAverage.remove();
             loadReviews();
         }, 500);
-        
+
     } catch (error) {
         console.error("Error submitting review:", error);
         if (window.FloatingAlertManager) {

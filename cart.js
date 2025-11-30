@@ -387,62 +387,77 @@ function showCartUserInfoModal() {
                     <button class="close-modal" onclick="closeCartUserInfoModal()">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p class="modal-subtitle">Please provide your information to proceed with WhatsApp order</p>
+                    <p class="modal-subtitle">Please provide your delivery information</p>
                     
                     <form id="cartUserInfoForm" onsubmit="event.preventDefault(); submitCartUserInfo();">
-                        <!-- Personal Information -->
-                        <div class="form-section">
-                            <h3>Personal Information</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartFullName">Name <span class="required">*</span></label>
-                                    <input type="text" id="cartFullName" name="fullName" placeholder="Enter your name" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="cartPhone">Mobile No. <span class="required">*</span></label>
-                                    <input type="tel" id="cartPhone" name="phone" placeholder="Enter mobile number" required pattern="[0-9]{10}">
-                                </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cartFullName">Name <span class="required">*</span></label>
+                                <input type="text" id="cartFullName" name="fullName" placeholder="Full Name" required>
                             </div>
                             <div class="form-group">
-                                <label for="cartAltPhone">Alt Mobile No.</label>
-                                <input type="tel" id="cartAltPhone" name="altPhone" placeholder="Alternate mobile number" pattern="[0-9]{10}">
+                                <label for="cartPhone">Mobile No. <span class="required">*</span></label>
+                                <input type="tel" id="cartPhone" name="phone" placeholder="10-digit number" required pattern="[0-9]{10}">
                             </div>
                         </div>
                         
-                        <!-- Delivery Address -->
-                        <div class="form-section">
-                            <h3>Delivery Address</h3>
-                            <div class="form-group">
-                                <label for="cartAddress">Address Line 1 (Flat/House No.) <span class="required">*</span></label>
-                                <input type="text" id="cartAddress" name="address" placeholder="Enter flat/house number" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="cartAddressLine2">Address Line 2</label>
-                                <input type="text" id="cartAddressLine2" name="addressLine2" placeholder="Street, Area, Locality (optional)">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cartCity">City <span class="required">*</span></label>
-                                    <input type="text" id="cartCity" name="city" placeholder="Enter city" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="cartState">State <span class="required">*</span></label>
-                                    <input type="text" id="cartState" name="state" placeholder="Enter state" required>
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label for="cartAddress">Address <span class="required">*</span></label>
+                            <input type="text" id="cartAddress" name="address" placeholder="House No., Street, Area" required>
+                        </div>
+                        
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="cartPincode">Pincode <span class="required">*</span></label>
-                                <input type="text" id="cartPincode" name="pincode" placeholder="Enter 6-digit pincode" required pattern="[0-9]{6}">
+                                <input type="text" id="cartPincode" name="pincode" placeholder="6-digit pincode" required pattern="[0-9]{6}">
+                            </div>
+                            <div class="form-group">
+                                <label for="cartCity">City <span class="required">*</span></label>
+                                <input type="text" id="cartCity" name="city" placeholder="City" required>
                             </div>
                         </div>
                         
-                        <!-- Additional Information -->
-                        <div class="form-section">
-                            <h3>Additional Information</h3>
-                            <div class="form-group">
-                                <label for="cartDeliveryInstructions">Delivery Instructions</label>
-                                <textarea id="cartDeliveryInstructions" name="deliveryInstructions" rows="3" placeholder="Any special instructions for delivery (optional)"></textarea>
-                            </div>
+                        <div class="form-group">
+                            <label for="cartState">State <span class="required">*</span></label>
+                            <select id="cartState" name="state" required>
+                                <option value="">Select State</option>
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                <option value="Chandigarh">Chandigarh</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Delhi">Delhi</option>
+                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                <option value="Ladakh">Ladakh</option>
+                                <option value="Lakshadweep">Lakshadweep</option>
+                                <option value="Puducherry">Puducherry</option>
+                            </select>
                         </div>
                         
                         <div class="modal-footer">
@@ -685,13 +700,10 @@ function submitCartUserInfo() {
     const formData = {
         fullName: document.getElementById('cartFullName').value.trim(),
         phone: document.getElementById('cartPhone').value.trim(),
-        altPhone: document.getElementById('cartAltPhone').value.trim(),
         address: document.getElementById('cartAddress').value.trim(),
-        addressLine2: document.getElementById('cartAddressLine2').value.trim(),
-        city: document.getElementById('cartCity').value.trim(),
-        state: document.getElementById('cartState').value.trim(),
         pincode: document.getElementById('cartPincode').value.trim(),
-        deliveryInstructions: document.getElementById('cartDeliveryInstructions').value.trim()
+        city: document.getElementById('cartCity').value.trim(),
+        state: document.getElementById('cartState').value.trim()
     };
     
     // Validate required fields
@@ -731,16 +743,10 @@ function submitCartUserInfo() {
     message += `👤 *Customer Information*\n`;
     message += `Name: ${formData.fullName}\n`;
     message += `Mobile No.: ${formData.phone}\n`;
-    if (formData.altPhone) message += `Alt Mobile No.: ${formData.altPhone}\n`;
     
     message += `\n📍 *Delivery Address*\n`;
     message += `${formData.address}\n`;
-    if (formData.addressLine2) message += `${formData.addressLine2}\n`;
     message += `${formData.city}, ${formData.state} - ${formData.pincode}\n`;
-    
-    if (formData.deliveryInstructions) {
-        message += `\n📝 *Delivery Instructions*\n${formData.deliveryInstructions}\n`;
-    }
     
     console.log('📱 WhatsApp message prepared:', message);
     
