@@ -1554,6 +1554,18 @@ function loadProducts() {
             });
         });
         
+        // Sort products: newest first (with createdAt), then existing products
+        allProducts.sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            } else if (a.createdAt) {
+                return -1; // a comes first
+            } else if (b.createdAt) {
+                return 1; // b comes first
+            }
+            return 0; // keep existing order for products without createdAt
+        });
+        
         console.log('🎯 Products loaded:', allProducts.length);
         console.log('📋 All products with categories:');
         allProducts.forEach(p => {
