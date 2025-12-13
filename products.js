@@ -17,50 +17,92 @@ function copyToWhatsApp(productName, productPrice) {
     showUserInfoModal(productName, productPrice);
 }
 
-// ✅ Show User Information Modal (address input removed)
-function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
-    // Remove any existing modal
+// ✅ Show User Information Modal - Redirect to checkout page
+function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '', image = '') {
+    // Redirect to checkout page with product details
+    const params = new URLSearchParams({
+        product: productName,
+        price: productPrice,
+        quantity: quantity,
+        size: size || '',
+        color: color || '',
+        image: image || ''
+    });
+    
+    window.location.href = `checkout.html?${params.toString()}`;
+    return; // Exit function after redirect
+    
+    // Old modal code below (keeping for reference, won't execute)
     const existingModal = document.getElementById('userInfoModal');
     if (existingModal) {
         existingModal.remove();
     }
 
-    // Create modal HTML (address section removed)
+    const savedAddresses = window.addressManager ? window.addressManager.getAddresses() : [];
+    const lastAddress = window.addressManager ? window.addressManager.getLastAddress() : null;
+    
+    let savedAddressesHTML = '';
+    if (savedAddresses.length > 0) {
+        savedAddressesHTML = `
+            <div class="saved-addresses-section">
+                <h3>Saved Addresses</h3>
+                <div class="saved-addresses-list">
+                    ${savedAddresses.map((addr, index) => `
+                        <div class="saved-address-item" onclick="selectSavedAddress(${addr.id})" id="saved-addr-${addr.id}">
+                            <button class="delete-address" onclick="event.stopPropagation(); deleteSavedAddress(${addr.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <div class="address-name">${addr.fullName}</div>
+                            <div class="address-details">
+                                ${addr.address}, ${addr.city}, ${addr.state} - ${addr.pincode}<br>
+                                Phone: ${addr.phone}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="address-divider"><span>OR ADD NEW ADDRESS</span></div>
+            </div>
+        `;
+    }
+    
+    // Create modal HTML with saved addresses
     const modalHTML = `
         <div id="userInfoModal" class="user-info-modal">
             <div class="user-info-modal-content">
                 <div class="modal-header">
-                    <h2>Complete Your Purchase</h2>
+                    <h2>Shipping Address</h2>
                     <button class="close-modal" onclick="closeUserInfoModal()">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p class="modal-subtitle">Please provide your delivery information</p>
+                    <p class="modal-subtitle">Where should we deliver your order?</p>
                     
-                    <form id="userInfoForm" onsubmit="event.preventDefault(); submitUserInfo('${productName.replace(/'/g, "\\'")}', '${productPrice}', ${quantity}, '${size}', '${color}');">
+                    ${savedAddressesHTML}
+                    
+                    <form id="userInfoForm" class="address-form" onsubmit="event.preventDefault(); submitUserInfo('${productName.replace(/'/g, "\\'")}', '${productPrice}', ${quantity}, '${size}', '${color}');">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="fullName">Name <span class="required">*</span></label>
-                                <input type="text" id="fullName" name="fullName" placeholder="Full Name" required>
+                                <label for="fullName">Full Name <span class="required">*</span></label>
+                                <input type="text" id="fullName" name="fullName" placeholder="Enter your name" value="${lastAddress ? lastAddress.fullName : ''}" required>
                             </div>
                             <div class="form-group">
-                                <label for="phone">Mobile No. <span class="required">*</span></label>
-                                <input type="tel" id="phone" name="phone" placeholder="10-digit number" required pattern="[0-9]{10}">
+                                <label for="phone">Mobile Number <span class="required">*</span></label>
+                                <input type="tel" id="phone" name="phone" placeholder="10-digit number" value="${lastAddress ? lastAddress.phone : ''}" required pattern="[0-9]{10}">
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label for="address">Address <span class="required">*</span></label>
-                            <input type="text" id="address" name="address" placeholder="House No., Street, Area" required>
+                            <input type="text" id="address" name="address" placeholder="Start typing your address..." value="${lastAddress ? lastAddress.address : ''}" required>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="pincode">Pincode <span class="required">*</span></label>
-                                <input type="text" id="pincode" name="pincode" placeholder="6-digit pincode" required pattern="[0-9]{6}">
+                                <input type="text" id="pincode" name="pincode" placeholder="6-digit pincode" value="${lastAddress ? lastAddress.pincode : ''}" required pattern="[0-9]{6}">
                             </div>
                             <div class="form-group">
                                 <label for="city">City <span class="required">*</span></label>
-                                <input type="text" id="city" name="city" placeholder="City" required>
+                                <input type="text" id="city" name="city" placeholder="City" value="${lastAddress ? lastAddress.city : ''}" required>
                             </div>
                         </div>
                         
@@ -68,43 +110,48 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
                             <label for="state">State <span class="required">*</span></label>
                             <select id="state" name="state" required>
                                 <option value="">Select State</option>
-                                <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                                <option value="Assam">Assam</option>
-                                <option value="Bihar">Bihar</option>
-                                <option value="Chhattisgarh">Chhattisgarh</option>
-                                <option value="Goa">Goa</option>
-                                <option value="Gujarat">Gujarat</option>
-                                <option value="Haryana">Haryana</option>
-                                <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                <option value="Jharkhand">Jharkhand</option>
-                                <option value="Karnataka">Karnataka</option>
-                                <option value="Kerala">Kerala</option>
-                                <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                <option value="Maharashtra">Maharashtra</option>
-                                <option value="Manipur">Manipur</option>
-                                <option value="Meghalaya">Meghalaya</option>
-                                <option value="Mizoram">Mizoram</option>
-                                <option value="Nagaland">Nagaland</option>
-                                <option value="Odisha">Odisha</option>
-                                <option value="Punjab">Punjab</option>
-                                <option value="Rajasthan">Rajasthan</option>
-                                <option value="Sikkim">Sikkim</option>
-                                <option value="Tamil Nadu">Tamil Nadu</option>
-                                <option value="Telangana">Telangana</option>
-                                <option value="Tripura">Tripura</option>
-                                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                <option value="Uttarakhand">Uttarakhand</option>
-                                <option value="West Bengal">West Bengal</option>
-                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                                <option value="Chandigarh">Chandigarh</option>
-                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                                <option value="Delhi">Delhi</option>
-                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                                <option value="Ladakh">Ladakh</option>
-                                <option value="Lakshadweep">Lakshadweep</option>
-                                <option value="Puducherry">Puducherry</option>
+                                <option value="Andhra Pradesh" ${lastAddress && lastAddress.state === 'Andhra Pradesh' ? 'selected' : ''}>Andhra Pradesh</option>
+                                <option value="Arunachal Pradesh" ${lastAddress && lastAddress.state === 'Arunachal Pradesh' ? 'selected' : ''}>Arunachal Pradesh</option>
+                                <option value="Assam" ${lastAddress && lastAddress.state === 'Assam' ? 'selected' : ''}>Assam</option>
+                                <option value="Bihar" ${lastAddress && lastAddress.state === 'Bihar' ? 'selected' : ''}>Bihar</option>
+                                <option value="Chhattisgarh" ${lastAddress && lastAddress.state === 'Chhattisgarh' ? 'selected' : ''}>Chhattisgarh</option>
+                                <option value="Goa" ${lastAddress && lastAddress.state === 'Goa' ? 'selected' : ''}>Goa</option>
+                                <option value="Gujarat" ${lastAddress && lastAddress.state === 'Gujarat' ? 'selected' : ''}>Gujarat</option>
+                                <option value="Haryana" ${lastAddress && lastAddress.state === 'Haryana' ? 'selected' : ''}>Haryana</option>
+                                <option value="Himachal Pradesh" ${lastAddress && lastAddress.state === 'Himachal Pradesh' ? 'selected' : ''}>Himachal Pradesh</option>
+                                <option value="Jharkhand" ${lastAddress && lastAddress.state === 'Jharkhand' ? 'selected' : ''}>Jharkhand</option>
+                                <option value="Karnataka" ${lastAddress && lastAddress.state === 'Karnataka' ? 'selected' : ''}>Karnataka</option>
+                                <option value="Kerala" ${lastAddress && lastAddress.state === 'Kerala' ? 'selected' : ''}>Kerala</option>
+                                <option value="Madhya Pradesh" ${lastAddress && lastAddress.state === 'Madhya Pradesh' ? 'selected' : ''}>Madhya Pradesh</option>
+                                <option value="Maharashtra" ${lastAddress && lastAddress.state === 'Maharashtra' ? 'selected' : ''}>Maharashtra</option>
+                                <option value="Manipur" ${lastAddress && lastAddress.state === 'Manipur' ? 'selected' : ''}>Manipur</option>
+                                <option value="Meghalaya" ${lastAddress && lastAddress.state === 'Meghalaya' ? 'selected' : ''}>Meghalaya</option>
+                                <option value="Mizoram" ${lastAddress && lastAddress.state === 'Mizoram' ? 'selected' : ''}>Mizoram</option>
+                                <option value="Nagaland" ${lastAddress && lastAddress.state === 'Nagaland' ? 'selected' : ''}>Nagaland</option>
+                                <option value="Odisha" ${lastAddress && lastAddress.state === 'Odisha' ? 'selected' : ''}>Odisha</option>
+                                <option value="Punjab" ${lastAddress && lastAddress.state === 'Punjab' ? 'selected' : ''}>Punjab</option>
+                                <option value="Rajasthan" ${lastAddress && lastAddress.state === 'Rajasthan' ? 'selected' : ''}>Rajasthan</option>
+                                <option value="Sikkim" ${lastAddress && lastAddress.state === 'Sikkim' ? 'selected' : ''}>Sikkim</option>
+                                <option value="Tamil Nadu" ${lastAddress && lastAddress.state === 'Tamil Nadu' ? 'selected' : ''}>Tamil Nadu</option>
+                                <option value="Telangana" ${lastAddress && lastAddress.state === 'Telangana' ? 'selected' : ''}>Telangana</option>
+                                <option value="Tripura" ${lastAddress && lastAddress.state === 'Tripura' ? 'selected' : ''}>Tripura</option>
+                                <option value="Uttar Pradesh" ${lastAddress && lastAddress.state === 'Uttar Pradesh' ? 'selected' : ''}>Uttar Pradesh</option>
+                                <option value="Uttarakhand" ${lastAddress && lastAddress.state === 'Uttarakhand' ? 'selected' : ''}>Uttarakhand</option>
+                                <option value="West Bengal" ${lastAddress && lastAddress.state === 'West Bengal' ? 'selected' : ''}>West Bengal</option>
+                                <option value="Andaman and Nicobar Islands" ${lastAddress && lastAddress.state === 'Andaman and Nicobar Islands' ? 'selected' : ''}>Andaman and Nicobar Islands</option>
+                                <option value="Chandigarh" ${lastAddress && lastAddress.state === 'Chandigarh' ? 'selected' : ''}>Chandigarh</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu" ${lastAddress && lastAddress.state === 'Dadra and Nagar Haveli and Daman and Diu' ? 'selected' : ''}>Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Delhi" ${lastAddress && lastAddress.state === 'Delhi' ? 'selected' : ''}>Delhi</option>
+                                <option value="Jammu and Kashmir" ${lastAddress && lastAddress.state === 'Jammu and Kashmir' ? 'selected' : ''}>Jammu and Kashmir</option>
+                                <option value="Ladakh" ${lastAddress && lastAddress.state === 'Ladakh' ? 'selected' : ''}>Ladakh</option>
+                                <option value="Lakshadweep" ${lastAddress && lastAddress.state === 'Lakshadweep' ? 'selected' : ''}>Lakshadweep</option>
+                                <option value="Puducherry" ${lastAddress && lastAddress.state === 'Puducherry' ? 'selected' : ''}>Puducherry</option>
                             </select>
+                        </div>
+                        
+                        <div class="save-address-check">
+                            <input type="checkbox" id="saveAddress" checked>
+                            <label for="saveAddress">Save this address for future orders</label>
                         </div>
                         
                         <div class="modal-footer">
@@ -121,9 +168,25 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
     
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // ...rest of the function remains unchanged...
-    // (styles, focus management, etc.)
+    
+    // Display modal
+    const modal = document.getElementById('userInfoModal');
+    if (modal) {
+        modal.style.display = 'block';
+    }
+    
+    // Initialize Google Maps Autocomplete
+    setTimeout(() => {
+        if (window.initAddressAutocomplete) {
+            window.initAddressAutocomplete('address');
+        }
+    }, 500);
+    
+    // Focus on first input
+    setTimeout(() => {
+        const firstInput = savedAddresses.length > 0 ? null : document.getElementById('fullName');
+        firstInput?.focus();
+    }, 100);
 }    // Add modal styles if not already added
     if (!document.getElementById('userInfoModalStyles')) {
         const styles = document.createElement('style');
@@ -331,14 +394,65 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
         document.getElementById('fullName')?.focus();
     }, 100);
 
+// Select saved address
+function selectSavedAddress(id) {
+    if (!window.addressManager) return;
+    
+    const addresses = window.addressManager.getAddresses();
+    const selectedAddr = addresses.find(addr => addr.id === id);
+    
+    if (selectedAddr) {
+        // Fill form with selected address
+        document.getElementById('fullName').value = selectedAddr.fullName;
+        document.getElementById('phone').value = selectedAddr.phone;
+        document.getElementById('address').value = selectedAddr.address;
+        document.getElementById('pincode').value = selectedAddr.pincode;
+        document.getElementById('city').value = selectedAddr.city;
+        document.getElementById('state').value = selectedAddr.state;
+        
+        // Visual feedback
+        document.querySelectorAll('.saved-address-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        document.getElementById(`saved-addr-${id}`).classList.add('selected');
+    }
+}
+
+// Delete saved address
+function deleteSavedAddress(id) {
+    if (!window.addressManager) return;
+    
+    if (confirm('Delete this saved address?')) {
+        window.addressManager.deleteAddress(id);
+        
+        // Remove from DOM
+        const element = document.getElementById(`saved-addr-${id}`);
+        if (element) {
+            element.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => {
+                element.remove();
+                
+                // If no saved addresses left, remove the section
+                const list = document.querySelector('.saved-addresses-list');
+                if (list && list.children.length === 0) {
+                    document.querySelector('.saved-addresses-section')?.remove();
+                }
+            }, 300);
+        }
+    }
+}
+
 // ✅ Close User Info Modal
 function closeUserInfoModal() {
     const modal = document.getElementById('userInfoModal');
     if (modal) {
-        modal.style.animation = 'modalSlideOut 0.3s ease-out';
+        modal.style.display = 'none';
         setTimeout(() => modal.remove(), 300);
     }
 }
+
+window.selectSavedAddress = selectSavedAddress;
+window.deleteSavedAddress = deleteSavedAddress;
 
 // ✅ Submit User Info and Redirect to WhatsApp
 function submitUserInfo(productName, productPrice) {
@@ -373,6 +487,13 @@ function submitUserInfo(productName, productPrice) {
     }
     
     console.log('✅ Form data validated:', formData);
+    
+    // Save address if checkbox is checked
+    const saveAddress = document.getElementById('saveAddress');
+    if (saveAddress && saveAddress.checked && window.addressManager) {
+        window.addressManager.saveAddress(formData);
+        console.log('💾 Address saved for future use');
+    }
     
     // Create WhatsApp message
     let message = `Hey WackyKicks! I'm interested in buying:\n\n`;

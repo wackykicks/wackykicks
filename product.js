@@ -57,6 +57,13 @@ function loadProduct() {
         }
 
         const product = doc.data();
+        
+        // Store product data globally for checkout
+        window.currentProductData = {
+            ...product,
+            photos: product.imgUrl || []
+        };
+        
         const images = product.imgUrl || [];
 
         const sizes = product.sizes || [];
@@ -292,13 +299,28 @@ function copyToWhatsApp(productName, productPrice) {
 
 // ✅ Show User Information Modal
 function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '') {
-    // Remove any existing modal
+    // Get product image from current product data
+    const productImage = window.currentProductData ? (window.currentProductData.photos && window.currentProductData.photos[0] ? window.currentProductData.photos[0] : '') : '';
+    
+    // Redirect to checkout page with product details
+    const params = new URLSearchParams({
+        product: productName,
+        price: productPrice,
+        quantity: quantity,
+        size: size || '',
+        color: color || '',
+        image: productImage
+    });
+    
+    window.location.href = `checkout.html?${params.toString()}`;
+    return; // Exit after redirect
+    
+    // Old modal code (won't execute)
     const existingModal = document.getElementById('userInfoModal');
     if (existingModal) {
         existingModal.remove();
     }
 
-    // Create modal HTML
     const modalHTML = `
         <div id="userInfoModal" class="user-info-modal">
             <div class="user-info-modal-content">

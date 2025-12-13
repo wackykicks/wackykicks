@@ -370,9 +370,13 @@ function checkoutViaWhatsApp() {
     }
 }
 
-// ✅ Show User Information Modal for Cart Checkout
+// ✅ Show User Information Modal for Cart Checkout - Redirect to checkout page
 function showCartUserInfoModal() {
-    // Remove any existing modal
+    // Redirect to checkout page (cart data will be loaded from localStorage)
+    window.location.href = 'checkout.html';
+    return; // Exit after redirect
+    
+    // Old modal code (won't execute)
     const existingModal = document.getElementById('cartUserInfoModal');
     if (existingModal) {
         existingModal.remove();
