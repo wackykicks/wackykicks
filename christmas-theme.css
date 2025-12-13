@@ -1,0 +1,494 @@
+/* Christmas Theme CSS - Active from Dec 1 to Jan 5 */
+/* Applied dynamically via JavaScript */
+
+/* Christmas color scheme */
+:root {
+    --christmas-red: #c41e3a;
+    --christmas-green: #165b33;
+    --christmas-gold: #FFD700;
+    --christmas-white: #FFFAFA;
+    --christmas-dark-red: #8b0000;
+    --christmas-light-green: #90EE90;
+}
+
+/* Christmas Background with snow effect */
+body.christmas-theme {
+    background: linear-gradient(to bottom, #FFFAFA 0%, #F0F8FF 100%);
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Snowflakes animation */
+body.christmas-theme::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 80%, white, transparent),
+        radial-gradient(2px 2px at 75% 40%, white, transparent);
+    background-size: 200% 200%;
+    animation: snowfall 20s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+}
+
+@keyframes snowfall {
+    0% {
+        background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
+    }
+    100% {
+        background-position: 100% 100%, 50% 100%, 80% 100%, 60% 100%, 90% 100%, 70% 100%, 110% 100%;
+    }
+}
+
+/* Navbar Christmas styling */
+.christmas-theme .navbar {
+    background: linear-gradient(135deg, var(--christmas-red) 0%, var(--christmas-dark-red) 100%);
+    box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+    border-bottom: 3px solid var(--christmas-gold);
+}
+
+.christmas-theme .logo {
+    color: var(--christmas-white);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: bold;
+}
+
+.christmas-theme .nav-links a {
+    color: var(--christmas-white) !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.christmas-theme .nav-links a:hover {
+    color: var(--christmas-gold) !important;
+    transform: scale(1.05);
+}
+
+/* Search container Christmas theme */
+.christmas-theme .search-container {
+    border: 2px solid var(--christmas-gold);
+    background: white;
+}
+
+.christmas-theme .search-container:focus-within {
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+/* Cart button Christmas theme */
+.christmas-theme .cart-container {
+    margin-left: auto;
+}
+
+.christmas-theme .cart-container button {
+    background: var(--christmas-green);
+    border: 2px solid var(--christmas-gold);
+    color: white;
+}
+
+.christmas-theme .cart-container button i {
+    color: white;
+}
+
+.christmas-theme .cart-container button:hover {
+    background: var(--christmas-dark-red);
+    transform: scale(1.1);
+}
+
+.christmas-theme .cart-count {
+    background: var(--christmas-red);
+    border: 2px solid var(--christmas-gold);
+    color: white;
+}
+
+/* Product cards Christmas styling */
+.christmas-theme .product-card {
+    border: 2px solid var(--christmas-gold);
+    box-shadow: 0 4px 15px rgba(196, 30, 58, 0.15);
+    transition: all 0.3s ease;
+}
+
+.christmas-theme .product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(196, 30, 58, 0.25);
+    border-color: var(--christmas-red);
+}
+
+/* Product buttons Christmas theme */
+.christmas-theme .product-card button {
+    background: linear-gradient(135deg, var(--christmas-red) 0%, var(--christmas-dark-red) 100%);
+    border: 2px solid var(--christmas-gold);
+    color: white;
+    font-weight: bold;
+}
+
+.christmas-theme .product-card button:hover {
+    background: linear-gradient(135deg, var(--christmas-green) 0%, #0d4020 100%);
+    transform: scale(1.05);
+    color: white;
+}
+
+.christmas-theme .product-card button i {
+    color: white;
+}
+
+/* Headings Christmas theme */
+.christmas-theme h2,
+.christmas-theme h3 {
+    color: var(--christmas-red);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer Christmas theme */
+.christmas-theme .footer {
+    background: linear-gradient(135deg, var(--christmas-green) 0%, #0d4020 100%);
+    color: var(--christmas-white);
+    border-top: 3px solid var(--christmas-gold);
+}
+
+.christmas-theme .footer a {
+    color: var(--christmas-white);
+}
+
+.christmas-theme .footer a:hover {
+    color: var(--christmas-gold);
+}
+
+/* Christmas lights decoration */
+.christmas-lights {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    z-index: 1000;
+    pointer-events: none;
+    background: linear-gradient(to right, 
+        transparent 0%, transparent 10%,
+        rgba(255, 0, 0, 0.3) 10%, rgba(255, 0, 0, 0.3) 20%,
+        transparent 20%, transparent 30%,
+        rgba(0, 255, 0, 0.3) 30%, rgba(0, 255, 0, 0.3) 40%,
+        transparent 40%, transparent 50%,
+        rgba(255, 215, 0, 0.3) 50%, rgba(255, 215, 0, 0.3) 60%,
+        transparent 60%, transparent 70%,
+        rgba(255, 0, 0, 0.3) 70%, rgba(255, 0, 0, 0.3) 80%,
+        transparent 80%, transparent 90%,
+        rgba(0, 255, 0, 0.3) 90%, rgba(0, 255, 0, 0.3) 100%
+    );
+    animation: lights-twinkle 2s ease-in-out infinite;
+}
+
+@keyframes lights-twinkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Today's offer section Christmas theme */
+.christmas-theme .todays-offer-section {
+    background: linear-gradient(135deg, rgba(255, 255, 250, 0.9) 0%, rgba(240, 248, 255, 0.9) 100%);
+    border: 3px solid var(--christmas-gold);
+    border-radius: 15px;
+    padding: 30px;
+    margin: 20px auto;
+}
+
+.christmas-theme .offer-header h2 {
+    color: var(--christmas-red);
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Promotional banners Christmas theme */
+.christmas-theme .promo-banner {
+    border: 3px solid var(--christmas-gold);
+    box-shadow: 0 6px 20px rgba(196, 30, 58, 0.2);
+}
+
+.christmas-theme .promo-banner:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 30px rgba(196, 30, 58, 0.3);
+}
+
+/* Fixed product bar Christmas theme */
+.christmas-theme .fixed-product-bar {
+    background: linear-gradient(135deg, rgba(196, 30, 58, 0.98) 0%, rgba(139, 0, 0, 0.98) 100%);
+    border-top: 3px solid var(--christmas-gold);
+}
+
+.christmas-theme .fixed-product-bar .add-to-cart-btn {
+    background: var(--christmas-green);
+    border: 2px solid var(--christmas-gold);
+    color: white;
+}
+
+.christmas-theme .fixed-product-bar .add-to-cart-btn i {
+    color: white;
+}
+
+.christmas-theme .fixed-product-bar .buy-now {
+    background: var(--christmas-white);
+    color: var(--christmas-red);
+    border: 2px solid var(--christmas-gold);
+    font-weight: bold;
+}
+
+/* Modal Christmas theme */
+.christmas-theme .user-info-modal-content,
+.christmas-theme .modal-content {
+    border: 3px solid var(--christmas-gold);
+    box-shadow: 0 10px 40px rgba(196, 30, 58, 0.3);
+}
+
+.christmas-theme .modal-header {
+    background: linear-gradient(135deg, var(--christmas-red) 0%, var(--christmas-dark-red) 100%);
+    color: white;
+    border-bottom: 3px solid var(--christmas-gold);
+}
+
+.christmas-theme .btn-primary {
+    background: linear-gradient(135deg, var(--christmas-green) 0%, #0d4020 100%);
+    border: 2px solid var(--christmas-gold);
+    color: white;
+}
+
+.christmas-theme .btn-primary i {
+    color: white;
+}
+
+.christmas-theme .btn-primary:hover {
+    background: linear-gradient(135deg, var(--christmas-red) 0%, var(--christmas-dark-red) 100%);
+    color: white;
+}
+
+/* Price tags Christmas theme */
+.christmas-theme .new-price {
+    color: var(--christmas-red);
+    font-weight: bold;
+}
+
+.christmas-theme .discount-tag-price {
+    background: linear-gradient(135deg, var(--christmas-green) 0%, #0d4020 100%);
+    border: 2px solid var(--christmas-gold);
+}
+
+/* Categories Christmas theme */
+.christmas-theme .category-card {
+    border: 2px solid var(--christmas-gold);
+    transition: all 0.3s ease;
+}
+
+.christmas-theme .category-card:hover {
+    background: linear-gradient(135deg, rgba(196, 30, 58, 0.1) 0%, rgba(22, 91, 51, 0.1) 100%);
+    border-color: var(--christmas-red);
+    transform: scale(1.05);
+}
+
+/* Pagination Christmas theme */
+.christmas-theme .product-pagination button {
+    background: var(--christmas-red);
+    color: white;
+    border: 2px solid var(--christmas-gold);
+}
+
+.christmas-theme .product-pagination button:hover:not(:disabled) {
+    background: var(--christmas-green);
+}
+
+.christmas-theme .product-pagination button:disabled {
+    background: #ccc;
+    border-color: #999;
+}
+
+/* Hamburger menu Christmas theme */
+.christmas-theme .hamburger i {
+    color: var(--christmas-white);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .christmas-theme .offer-header h2 {
+        font-size: 1.8rem;
+    }
+    
+    .christmas-lights {
+        height: 30px;
+    }
+}
+
+/* Christmas banner message */
+.christmas-banner-message {
+    background: linear-gradient(135deg, var(--christmas-red) 0%, var(--christmas-dark-red) 100%);
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    border-bottom: 3px solid var(--christmas-gold);
+    animation: banner-glow 2s ease-in-out infinite;
+}
+
+@keyframes banner-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+}
+
+.christmas-banner-message .emoji {
+    font-size: 1.5rem;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Christmas Slideshow Styles */
+.christmas-slideshow-container {
+    position: relative;
+    max-width: 100%;
+    margin: auto;
+    overflow: hidden;
+    border-radius: 15px;
+    border: 3px solid var(--christmas-gold);
+    box-shadow: 0 8px 30px rgba(196, 30, 58, 0.3);
+}
+
+.christmas-slides {
+    display: none;
+    position: relative;
+}
+
+.christmas-slides img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+}
+
+.fallback-banner-1,
+.fallback-banner-2 {
+    padding: 100px 40px;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, #c41e3a 0%, #165b33 100%);
+}
+
+.fallback-banner-2 {
+    background: linear-gradient(135deg, #165b33 0%, #c41e3a 100%);
+}
+
+.fallback-banner-1 h2,
+.fallback-banner-2 h2 {
+    font-size: 3.5rem;
+    margin: 0;
+    text-shadow: 3px 3px 8px rgba(0,0,0,0.5);
+}
+
+.fallback-banner-1 p,
+.fallback-banner-2 p {
+    font-size: 2rem;
+    margin-top: 20px;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+}
+
+/* Navigation arrows */
+.christmas-slideshow-container .prev,
+.christmas-slideshow-container .next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    margin-top: -30px;
+    padding: 16px 20px;
+    color: white;
+    background: rgba(196, 30, 58, 0.8);
+    font-weight: bold;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    border-radius: 0 8px 8px 0;
+    user-select: none;
+    z-index: 100;
+    border: 2px solid var(--christmas-gold);
+}
+
+.christmas-slideshow-container .next {
+    right: 0;
+    border-radius: 8px 0 0 8px;
+}
+
+.christmas-slideshow-container .prev:hover,
+.christmas-slideshow-container .next:hover {
+    background: rgba(22, 91, 51, 0.9);
+    transform: scale(1.1);
+}
+
+/* Dots/indicators */
+.dots-container {
+    text-align: center;
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    z-index: 100;
+}
+
+.dot {
+    cursor: pointer;
+    height: 8px;
+    width: 8px;
+    margin: 0 4px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--christmas-gold);
+    border-radius: 50%;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.dot:hover,
+.dot.active {
+    background-color: var(--christmas-gold);
+    transform: scale(1.2);
+}
+
+/* Fade animation */
+.fade {
+    animation: fade 1s ease-in-out;
+}
+
+@keyframes fade {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
+}
+
+/* Responsive slideshow */
+@media (max-width: 768px) {
+    .christmas-slideshow-container .prev,
+    .christmas-slideshow-container .next {
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+    
+    .fallback-banner-1 h2,
+    .fallback-banner-2 h2 {
+        font-size: 2rem;
+    }
+    
+    .fallback-banner-1 p,
+    .fallback-banner-2 p {
+        font-size: 1.2rem;
+    }
+    
+    .fallback-banner-1,
+    .fallback-banner-2 {
+        padding: 60px 20px;
+    }
+}

@@ -350,14 +350,20 @@ body {
         position: absolute;
         right: 0;
         top: 60px;
-        background-color: #f8f8f8;
+        background-color: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         flex-direction: column;
         width: 180px;
         display: none;
         padding: 15px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         order: 5;
         z-index: 1001;
+    }
+    
+    .nav-links a {
+        color: white !important;
     }
 
     .nav-links.active {
