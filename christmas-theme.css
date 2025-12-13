@@ -427,31 +427,9 @@ body.christmas-theme::before {
     display: none;
 }
 
-/* Dots/indicators */
+/* Dots/indicators - Hidden */
 .dots-container {
-    text-align: center;
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    z-index: 100;
-}
-
-.dot {
-    cursor: pointer;
-    height: 8px;
-    width: 8px;
-    margin: 0 4px;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid var(--christmas-gold);
-    border-radius: 50%;
-    display: inline-block;
-    transition: all 0.3s ease;
-}
-
-.dot:hover,
-.dot.active {
-    background-color: var(--christmas-gold);
-    transform: scale(1.2);
+    display: none;
 }
 
 /* Fade animation */
