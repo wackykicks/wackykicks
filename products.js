@@ -1336,11 +1336,7 @@ function filterProducts(categories = [], categoryData = null) {
 
 // Render products function (no pagination)
 function renderProducts(productsToShow = allProducts) {
-    console.log('🎨 Rendering products...');
-    console.log('📦 Products to show:', productsToShow.length);
-    
     const productList = document.getElementById('productList');
-    console.log('🎯 Product list element found:', !!productList);
     
     if (!productList) {
         console.error('❌ Product list element not found! Check if element with id="productList" exists');
@@ -1361,9 +1357,10 @@ function renderProducts(productsToShow = allProducts) {
         return;
     }
     
-    console.log('✅ Adding products to DOM...');
+    // Use document fragment for better performance
+    const fragment = document.createDocumentFragment();
+    
     productsToShow.forEach((product, index) => {
-        console.log(`📦 Adding product ${index + 1}:`, product.name);
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         
@@ -1379,7 +1376,7 @@ function renderProducts(productsToShow = allProducts) {
                 ${discountPercentage && !outOfStock ? `<span class=\"tag discount-tag\">${discountPercentage}% OFF</span>` : ''}
                 ${outOfStock ? `<span class=\"tag out-stock-tag\">Out of Stock</span>` : ''}
                 <div class="img-wrapper">
-                    <img src="${product.img}" alt="${product.name}">
+                    <img src="${product.img}" alt="${product.name}" loading="lazy" decoding="async">
                 </div>
                 <h3>${product.name}</h3>
                 <div class="price">
@@ -1392,10 +1389,11 @@ function renderProducts(productsToShow = allProducts) {
                 `<button class="buy-now" onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}')">Buy Now</button>`
             }
         `;
-        productList.appendChild(productCard);
+        fragment.appendChild(productCard);
     });
-
-    console.log('✅ Products rendered successfully');
+    
+    // Append all at once for better performance
+    productList.appendChild(fragment);
     
     // Hide pagination controls if present
     const paginationDiv = document.querySelector('.product-pagination');
@@ -1521,6 +1519,30 @@ function searchProducts() {
 }
 
 // Initial load
+// Show skeleton loading
+function showSkeletonLoading() {
+    const productList = document.getElementById('productList');
+    if (!productList) return;
+    
+    productList.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    
+    // Show 8 skeleton cards
+    for (let i = 0; i < 8; i++) {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton-card';
+        skeleton.innerHTML = `
+            <div class="skeleton-image"></div>
+            <div class="skeleton-title"></div>
+            <div class="skeleton-price"></div>
+            <div class="skeleton-button"></div>
+        `;
+        fragment.appendChild(skeleton);
+    }
+    
+    productList.appendChild(fragment);
+}
+
 function loadProducts() {
     console.log('🔄 Starting to load products...');
     console.log('📱 Firebase db available:', typeof db !== 'undefined');
@@ -1530,8 +1552,17 @@ function loadProducts() {
         return;
     }
 
-    // Force fresh query from server (bypass cache)
-    db.collection("products").get({ source: 'server' }).then(snapshot => {
+    // Show skeleton loading immediately
+    showSkeletonLoading();
+
+    // Use cache first for faster loading, fallback to server
+    db.collection("products").get({ source: 'cache' }).then(snapshot => {
+        // If cache is empty, fetch from server
+        if (snapshot.empty || snapshot.metadata.fromCache === false) {
+            return db.collection("products").get({ source: 'server' });
+        }
+        return snapshot;
+    }).then(snapshot => {
         console.log('✅ Connected to Firebase successfully');
         console.log('📦 Number of products found:', snapshot.size);
         
@@ -1540,11 +1571,6 @@ function loadProducts() {
             const product = doc.data();
             const productId = doc.id;
             const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
-            
-            console.log(`📦 Loading product: ${product.name}`);
-            console.log(`   - ID: ${productId}`);
-            console.log(`   - Categories: ${product.categories ? JSON.stringify(product.categories) : 'NONE'}`);
-            console.log(`   - Image: ${firstImage}`);
             
             allProducts.push({ 
                 ...product, 
@@ -1567,10 +1593,6 @@ function loadProducts() {
         });
         
         console.log('🎯 Products loaded:', allProducts.length);
-        console.log('📋 All products with categories:');
-        allProducts.forEach(p => {
-            console.log(`  - ${p.name}: [${p.categories.join(', ')}]`);
-        });
         
         // Render products
         renderProducts(allProducts);
