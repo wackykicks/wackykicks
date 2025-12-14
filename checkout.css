@@ -1,0 +1,556 @@
+/* Checkout Page Styles */
+
+.checkout-container {
+    max-width: 1400px;
+    margin: 80px auto 40px;
+    padding: 0 20px;
+    min-height: calc(100vh - 200px);
+}
+
+.checkout-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.back-btn {
+    background: none;
+    border: 2px solid #333;
+    color: #333;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #333;
+    color: white;
+}
+
+.checkout-header h1 {
+    font-size: 2rem;
+    color: #333;
+    margin: 0;
+}
+
+.security-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #28a745;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.security-badge i {
+    font-size: 1.1rem;
+}
+
+.checkout-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 40px;
+    align-items: start;
+}
+
+/* Order Summary Sidebar */
+.order-summary {
+    position: sticky;
+    top: 100px;
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    order: 2;
+}
+
+.order-summary h2 {
+    font-size: 1.3rem;
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.order-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.order-item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.order-item-details {
+    flex: 1;
+}
+
+.order-item-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.order-item-meta {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.order-item-price {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 1rem;
+}
+
+.order-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.total-price {
+    color: #28a745;
+    font-size: 1.4rem;
+}
+
+/* Address Form Section */
+.address-section {
+    order: 1;
+}
+
+.form-section {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.form-section h2 {
+    font-size: 1.3rem;
+    margin: 0 0 24px 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-section h2::before {
+    content: '';
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.required {
+    color: #dc3545;
+    margin-left: 2px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-group input::placeholder {
+    color: #adb5bd;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.helper-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.helper-text i {
+    color: #667eea;
+}
+
+/* Saved Addresses Section */
+.saved-addresses-section {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.saved-addresses-section h2 {
+    font-size: 1.3rem;
+    margin: 0 0 24px 0;
+    color: #333;
+}
+
+.saved-addresses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.saved-address-card {
+    background: #f8f9fa;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.saved-address-card:hover {
+    border-color: #667eea;
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.saved-address-card.selected {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.saved-address-card .delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    opacity: 0;
+}
+
+.saved-address-card:hover .delete-btn {
+    opacity: 1;
+}
+
+.saved-address-card .delete-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.saved-address-name {
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.saved-address-details {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.saved-address-phone {
+    color: #667eea;
+    font-weight: 600;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 24px 0;
+    color: #999;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #ddd, transparent);
+}
+
+.divider span {
+    padding: 0 20px;
+}
+
+/* Save Address Option */
+.save-address-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-top: 24px;
+    cursor: pointer;
+}
+
+.save-address-option input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.save-address-option label {
+    cursor: pointer;
+    color: #333;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.save-address-option label i {
+    color: #667eea;
+}
+
+/* Checkout Actions */
+.checkout-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.btn-secondary,
+.btn-primary {
+    flex: 1;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+}
+
+.btn-primary {
+    background: #25d366;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1fb855;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+}
+
+.btn-primary i {
+    font-size: 1.3rem;
+}
+
+/* Google Maps Autocomplete Styling */
+.pac-container {
+    border-radius: 10px;
+    margin-top: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e1e5e9;
+}
+
+.pac-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-top: 1px solid #f0f0f0;
+}
+
+.pac-item:hover {
+    background-color: #f8f9fa;
+}
+
+.pac-item-query {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .checkout-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .order-summary {
+        order: 1;
+        position: static;
+        margin-bottom: 32px;
+    }
+    
+    .address-section {
+        order: 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .checkout-container {
+        margin-top: 70px;
+        padding: 0 16px;
+    }
+    
+    .checkout-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .checkout-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .form-section {
+        padding: 24px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .saved-addresses-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkout-actions {
+        flex-direction: column;
+    }
+    
+    .order-summary {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .checkout-container {
+        padding: 0 12px;
+    }
+    
+    .form-section {
+        padding: 20px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 12px 14px;
+        font-size: 0.95rem;
+    }
+    
+    .checkout-header h1 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Christmas Theme */
+.christmas-theme .form-section,
+.christmas-theme .saved-addresses-section,
+.christmas-theme .order-summary {
+    border: 2px solid var(--christmas-gold);
+}
+
+.christmas-theme .form-group input:focus,
+.christmas-theme .form-group select:focus {
+    border-color: var(--christmas-gold);
+    box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.1);
+}
+
+.christmas-theme .btn-primary {
+    background: #25d366;
+}
+
+.christmas-theme .btn-primary:hover {
+    background: #1fb855;
+}
+
+.christmas-theme .saved-address-card.selected {
+    border-color: var(--christmas-gold);
+    background: rgba(255, 215, 0, 0.05);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}

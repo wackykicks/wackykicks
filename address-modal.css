@@ -1,0 +1,424 @@
+/* Modern Dark Address Modal - Similar to Shopify checkout design */
+
+.user-info-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    animation: fadeIn 0.3s ease-out;
+    overflow-y: auto;
+}
+
+.user-info-modal-content {
+    background: #1a1a1a;
+    margin: 20px auto;
+    padding: 0;
+    width: 90%;
+    max-width: 580px;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideInUp 0.4s ease-out;
+    color: #e0e0e0;
+}
+
+.modal-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid #333;
+    background: #1a1a1a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.modal-subtitle {
+    color: #999;
+    font-size: 0.9rem;
+    margin: 0 0 24px 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    color: #888;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.close-modal:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.modal-body {
+    padding: 28px;
+}
+
+/* Saved Addresses Section */
+.saved-addresses-section {
+    margin-bottom: 28px;
+}
+
+.saved-addresses-section h3 {
+    font-size: 1rem;
+    color: #fff;
+    margin: 0 0 16px 0;
+    font-weight: 600;
+}
+
+.saved-addresses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.saved-address-item {
+    background: #252525;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.saved-address-item:hover {
+    border-color: #0066ff;
+    background: #2a2a2a;
+}
+
+.saved-address-item.selected {
+    border-color: #0066ff;
+    background: rgba(0, 102, 255, 0.1);
+}
+
+.saved-address-item .address-name {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.saved-address-item .address-details {
+    color: #999;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.saved-address-item .delete-address {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.saved-address-item .delete-address:hover {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.address-divider {
+    display: flex;
+    align-items: center;
+    margin: 24px 0;
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.address-divider::before,
+.address-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #333;
+}
+
+.address-divider span {
+    padding: 0 16px;
+}
+
+/* Form Styles */
+.address-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+}
+
+.required {
+    color: #ff4444;
+    margin-left: 2px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 14px 16px;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #252525;
+    color: #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #0066ff;
+    background-color: #2a2a2a;
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+.form-group input::placeholder {
+    color: #666;
+}
+
+.form-group select {
+    cursor: pointer;
+}
+
+.form-group select option {
+    background-color: #252525;
+    color: #e0e0e0;
+}
+
+/* Google Maps Autocomplete Styling */
+.pac-container {
+    background-color: #252525;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    margin-top: 4px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.pac-item {
+    border-top: 1px solid #3a3a3a;
+    padding: 12px 14px;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.pac-item:hover {
+    background-color: #2a2a2a;
+}
+
+.pac-item-query {
+    color: #fff;
+    font-weight: 500;
+}
+
+.pac-icon {
+    filter: invert(0.7);
+}
+
+/* Save Address Checkbox */
+.save-address-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    background: #252525;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-address-check:hover {
+    background: #2a2a2a;
+}
+
+.save-address-check input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #0066ff;
+}
+
+.save-address-check label {
+    cursor: pointer;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 28px;
+}
+
+.btn-secondary,
+.btn-primary {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: #333;
+    color: #e0e0e0;
+    border: 1px solid #4a4a4a;
+}
+
+.btn-secondary:hover {
+    background: #3a3a3a;
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: #25d366;
+    color: white;
+    flex: 1;
+}
+
+.btn-primary:hover {
+    background: #1fb855;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+}
+
+.btn-primary i {
+    font-size: 1.2rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .user-info-modal-content {
+        width: 95%;
+        margin: 10px auto;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .modal-header,
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .btn-secondary,
+    .btn-primary {
+        width: 100%;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-info-modal-content {
+        width: 98%;
+        border-radius: 8px;
+    }
+    
+    .modal-header,
+    .modal-body {
+        padding: 16px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 12px 14px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Christmas theme compatibility */
+.christmas-theme .user-info-modal-content {
+    border: 2px solid var(--christmas-gold);
+}
+
+.christmas-theme .btn-primary {
+    background: #25d366;
+}
+
+.christmas-theme .btn-primary:hover {
+    background: #1fb855;
+}
+
+.christmas-theme .saved-address-item.selected {
+    border-color: var(--christmas-gold);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.christmas-theme .form-group input:focus,
+.christmas-theme .form-group select:focus {
+    border-color: var(--christmas-gold);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}

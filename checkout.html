@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Wackykicks</title>
+    <link rel="icon" href="Logo/1000163691.jpg" type="image/png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="checkout.css">
+    <link rel="stylesheet" href="christmas-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="logo">Wackykicks.in</div>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#product-grid">Products</a></li>
+        <li><a href="about.html">About us</a></li>
+        <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i></a></li>
+        <li><a href="https://www.instagram.com/wackykicks.in/" target="_blank"><i class="fab fa-instagram"></i></a></li>
+    </ul>
+    <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <div class="cart-container">
+        <button onclick="window.location.href='cart.html'">
+            <i class="fas fa-shopping-cart"></i>
+            <span id="cart-count" class="cart-count">0</span>
+        </button>
+    </div>
+</nav>
+
+<!-- Checkout Container -->
+<div class="checkout-container">
+    <div class="checkout-header">
+        <button class="back-btn" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1>Shipping Address</h1>
+        <div class="security-badge">
+            <i class="fas fa-lock"></i> Secure Checkout
+        </div>
+    </div>
+
+    <div class="checkout-content">
+        <!-- Order Summary Sidebar -->
+        <div class="order-summary">
+            <h2>Order Summary</h2>
+            <div id="orderSummaryContent" class="order-items">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <div class="order-total">
+                <span>Total</span>
+                <span id="orderTotal" class="total-price">₹0</span>
+            </div>
+        </div>
+
+        <!-- Address Form -->
+        <div class="address-section">
+            <!-- Saved Addresses -->
+            <div id="savedAddressesSection" class="saved-addresses-section" style="display: none;">
+                <h2>Saved Addresses</h2>
+                <div id="savedAddressesList" class="saved-addresses-grid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <div class="divider">
+                    <span>OR ADD NEW ADDRESS</span>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="form-section">
+                <h2>Contact Information</h2>
+                <form id="checkoutForm">
+                    <div class="form-group">
+                        <label for="fullName">Full Name <span class="required">*</span></label>
+                        <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Primary Mobile Number <span class="required">*</span></label>
+                            <input type="tel" id="phone" name="phone" placeholder="10-digit number" required pattern="[0-9]{10}">
+                        </div>
+                        <div class="form-group">
+                            <label for="secondaryPhone">Secondary Number (Optional)</label>
+                            <input type="tel" id="secondaryPhone" name="secondaryPhone" placeholder="10-digit number" pattern="[0-9]{10}">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="form-section">
+                <h2>Shipping Address</h2>
+                <div class="form-group">
+                    <label for="address">Address <span class="required">*</span></label>
+                    <input type="text" id="address" name="address" placeholder="House No., Building, Street, Area" required>
+                    <small class="helper-text"><i class="fas fa-info-circle"></i> Enter your complete address</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="state">State <span class="required">*</span></label>
+                        <select id="state" name="state" required onchange="loadDistricts(this.value)">
+                        <option value="">Select State</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                        <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                        <option value="Assam">Assam</option>
+                        <option value="Bihar">Bihar</option>
+                        <option value="Chhattisgarh">Chhattisgarh</option>
+                        <option value="Goa">Goa</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Haryana">Haryana</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh</option>
+                        <option value="Jharkhand">Jharkhand</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Kerala">Kerala</option>
+                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Manipur">Manipur</option>
+                        <option value="Meghalaya">Meghalaya</option>
+                        <option value="Mizoram">Mizoram</option>
+                        <option value="Nagaland">Nagaland</option>
+                        <option value="Odisha">Odisha</option>
+                        <option value="Punjab">Punjab</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Sikkim">Sikkim</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Telangana">Telangana</option>
+                        <option value="Tripura">Tripura</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                        <option value="Uttarakhand">Uttarakhand</option>
+                        <option value="West Bengal">West Bengal</option>
+                        <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                        <option value="Chandigarh">Chandigarh</option>
+                        <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                        <option value="Ladakh">Ladakh</option>
+                        <option value="Lakshadweep">Lakshadweep</option>
+                        <option value="Puducherry">Puducherry</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="district">District <span class="required">*</span></label>
+                        <select id="district" name="district" required disabled>
+                            <option value="">Select State First</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pincode">Pincode <span class="required">*</span></label>
+                        <input type="text" id="pincode" name="pincode" placeholder="6-digit pincode" required pattern="[0-9]{6}">
+                        <small class="helper-text" id="pincodeHelper"><i class="fas fa-map-marker-alt"></i> Auto-fills state & district</small>
+                    </div>
+                </div>
+
+                <div class="save-address-option">
+                    <input type="checkbox" id="saveAddress" checked>
+                    <label for="saveAddress">
+                        <i class="fas fa-bookmark"></i>
+                        Save this address for future orders
+                    </label>
+                </div>
+            </div>
+
+            <!-- Checkout Actions -->
+            <div class="checkout-actions">
+                <button type="button" class="btn-secondary" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button type="button" class="btn-primary" onclick="submitCheckout()">
+                    <i class="fab fa-whatsapp"></i> Continue to WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-column">
+            <h4>QUICK LINKS</h4>
+            <a href="about.html">About Us</a>
+            <a href="terms.html">Terms & Conditions</a>
+            <a href="privacy-policy.html">Privacy Policy</a>
+        </div>
+        <div class="footer-column">
+            <h4>POLICIES</h4>
+            <a href="shipping-policy.html">Shipping Policy</a>
+            <a href="refund-policy.html">Refund Policy</a>
+            <a href="accessibility.html">Accessibility</a>
+        </div>
+        <div class="footer-column">
+            <h4>CONTACT</h4>
+            <a href="tel:+918138999550">8138999550</a>
+            <a href="https://wackykicks.in" target="_blank">wackykicks.in</a>
+        </div>
+        <div class="footer-column">
+            <h4>SOCIAL</h4>
+            <a href="https://instagram.com/wackykicks.in/" target="_blank">Instagram</a>
+            <a href="https://wa.me/918138999550" target="_blank">WhatsApp</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2025 by WackyKicks.</p>
+        <p class="built-by">Built by <a href="https://instagram.com/nexa.art_design" target="_blank">Nexa</a></p>
+    </div>
+</footer>
+
+<script src="christmas-theme.js"></script>
+<script src="address-manager.js"></script>
+<script src="india-districts.js"></script>
+<script src="checkout.js"></script>
+<script src="scripts.js"></script>
+</body>
+</html>

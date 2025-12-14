@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Products | WackyKicks Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2d3436;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="white" opacity="0.1"/><circle cx="80" cy="80" r="1" fill="white" opacity="0.1"/><circle cx="40" cy="60" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Section */
+        .admin-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .admin-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .admin-header .subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        /* Navigation */
+        .admin-nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .admin-nav a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .admin-nav a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Main Content Card */
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            color: #667eea;
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3436;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-top: 10px;
+        }
+
+        .upload-method-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 20px;
+            background: #f3f4f6;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .upload-section {
+            display: none;
+        }
+
+        .upload-section.active {
+            display: block;
+        }
+
+        .file-drop-zone {
+            border: 3px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-drop-zone:hover {
+            border-color: #667eea;
+            background: #f1f5f9;
+        }
+
+        .file-drop-zone.drag-over {
+            border-color: #667eea;
+            background: #eef2ff;
+            transform: scale(1.02);
+        }
+
+        .file-drop-zone i {
+            font-size: 3rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .file-drop-zone p {
+            color: #64748b;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .browse-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .image-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .preview-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .preview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .preview-card .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .preview-card .remove-btn:hover {
+            background: rgba(220, 38, 38, 1);
+            transform: scale(1.1);
+        }
+
+        .preview-card .file-info {
+            padding: 8px;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preview-card .compression-badge {
+            position: absolute;
+            bottom: 45px;
+            left: 8px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Button Styles */
+        .add-image-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: auto;
+        }
+
+        .add-image-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 40px auto 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            min-width: 200px;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn i {
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .submit-btn:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Product List Styles */
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .product-card img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .product-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin: 10px 0 8px;
+        }
+
+        .product-card p {
+            margin: 4px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .product-card .price {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1rem;
+            margin: 10px 0;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .actions button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Image Input Styles */
+        #imageInputs {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Search Section Styles */
+        .search-section {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 50px 14px 45px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            color: #6c757d;
+            font-size: 1rem;
+            z-index: 2;
+        }
+
+        .clear-search-btn {
+            position: absolute;
+            right: 15px;
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .clear-search-btn:hover {
+            background: rgba(220, 38, 38, 0.2);
+            transform: scale(1.1);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .search-results-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #1e40af;
+            font-weight: 500;
+        }
+
+        .show-all-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .show-all-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.sidebar-logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 30px;
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.sidebar-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-links li {
+    margin-bottom: 0;
+}
+
+.sidebar-links a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar-links a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.sidebar-links a:hover::before {
+    left: 100%;
+}
+
+.sidebar-links a:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-links a i {
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Bottom Nav Styles (Mobile) */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(102, 126, 234, 0.2);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav a {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 1.4rem;
+    padding: 12px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 60px;
+}
+
+.bottom-nav a:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Active State */
+.sidebar-links a.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-links a.active i {
+    color: white;
+}
+
+.bottom-nav a.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+.bottom-nav a.active i {
+    color: white;
+}
+
+/* Main content offset for sidebar */
+@media (min-width: 769px) {
+    body {
+        margin-left: 260px;
+    }
+    
+    .admin-container {
+        max-width: calc(1200px - 260px);
+        margin-left: 0;
+    }
+}
+
+/* Responsive: Hide sidebar on small screens, show bottom nav */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+
+    .bottom-nav {
+        display: flex !important;
+    }
+    
+    body {
+        margin-left: 0;
+        padding-bottom: 80px;
+    }
+    
+    .admin-container {
+        max-width: 100%;
+        padding: 15px;
+    }
+    
+    .admin-header {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .admin-header h1 {
+        font-size: 2rem;
+    }
+    
+    .main-card {
+        padding: 25px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .product-list {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    
+    .admin-nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .admin-nav a {
+        text-align: center;
+        padding: 10px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-container {
+        padding: 10px;
+    }
+    
+    .admin-header {
+        padding: 15px;
+    }
+    
+    .admin-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .main-card {
+        padding: 20px;
+    }
+    
+    .product-list {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+        padding: 12px;
+    }
+    
+    .submit-btn {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+        min-width: 180px;
+        margin: 30px auto 0;
+    }
+    
+    .submit-btn i {
+        font-size: 1rem;
+    }
+    
+    /* Search responsive styles */
+    .search-container {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .search-btn {
+        width: 100%;
+        padding: 12px 20px;
+    }
+    
+    .search-results-info {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
+
+/* Modern Color Selection Styles */
+.modern-color-selection {
+    position: relative;
+    width: 100%;
+}
+
+.color-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.color-dropdown-trigger:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+.color-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.color-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b46c1;
+    letter-spacing: 0.5px;
+}
+
+.selected-color-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dropdown-arrow {
+    font-size: 12px;
+    color: #6b7280;
+    transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+.color-dropdown-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(139, 92, 246, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.color-dropdown-panel.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.color-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-circle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.color-circle.selected {
+    border-color: #1d4ed8 !important;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.3);
+}
+
+.color-circle.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.custom-color-input-section {
+    border-top: 1px solid rgba(139, 92, 246, 0.2);
+    padding-top: 16px;
+}
+
+.custom-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.custom-color-text-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.custom-color-text-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+}
+
+.custom-color-picker {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.custom-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.custom-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+.add-custom-btn {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.add-custom-btn:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.custom-help-text {
+    color: #6b7280;
+    font-size: 11px;
+    font-style: italic;
+}
+
+.selected-colors-container {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.selected-colors-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.clear-all-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.clear-all-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.selected-colors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+}
+
+.selected-color-tag {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #6b46c1;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.selected-color-tag:hover {
+    background: rgba(139, 92, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+.tag-color-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tag-color-name {
+    font-weight: 600;
+}
+
+.remove-color {
+    cursor: pointer;
+    background: rgba(239, 68, 68, 0.2);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #dc2626;
+    transition: all 0.3s ease;
+    margin-left: 4px;
+}
+
+.remove-color:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .color-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .color-circle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .custom-input-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .custom-color-text-input {
+        width: 100%;
+    }
+}
+
+/* Legacy Color Selection Styles (keeping for compatibility) */
+.color-selection-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background: #f9f9f9;
+}
+
+.color-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.color-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.color-btn.selected {
+    transform: scale(0.95);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.selected-colors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+    padding: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.selected-color-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #8b5cf6;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 8px;
+}
+
+.selected-color-tag .remove-color {
+    cursor: pointer;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: background 0.3s;
+}
+
+.selected-color-tag .remove-color:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+.custom-color-section {
+    margin-top: 15px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border: 1px solid #e0e4ff;
+    border-radius: 8px;
+}
+
+.custom-color-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.custom-color-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.custom-color-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.custom-color-input:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+    outline: none;
+}
+
+.add-color-btn {
+    width: auto !important;
+    padding: 8px 16px !important;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.add-color-btn:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+}
+
+.add-color-btn:active {
+    transform: translateY(0) !important;
+}
+
+.quick-add-examples {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: rgba(139, 92, 246, 0.05);
+    border-radius: 4px;
+    border-left: 3px solid #8b5cf6;
+}
+
+@media (max-width: 768px) {
+    .color-buttons {
+        gap: 6px;
+    }
+    
+    .color-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+    
+    .selected-color-tag {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+}
+    </style>
+    <link rel="stylesheet" href="../floating-alerts.css">
+</head>
+<body>
+
+<!-- SIDEBAR NAV (Desktop) -->
+<nav class="sidebar">
+    <div class="sidebar-logo">WackyKicks Admin</div>
+    <ul class="sidebar-links">
+        <li><a href="./index.html" id="nav-admin"><i class="fa-solid fa-user-tie"></i> Dashboard</a></li>
+        <li><a href="./categories.html" id="nav-categories"><i class="fa-solid fa-tags"></i> Categories</a></li>
+        <li><a href="./photo-to-url.html" id="nav-converter"><i class="fa-solid fa-link"></i> Image Converter</a></li>
+    </ul>
+</nav>
+
+<!-- BOTTOM NAV (Mobile) -->
+<nav class="bottom-nav">
+    <a href="./index.html" id="bottom-admin"><i class="fa-solid fa-user-tie"></i></a>
+    <a href="./categories.html" id="bottom-categories"><i class="fa-solid fa-tags"></i></a>
+    <a href="./photo-to-url.html" id="bottom-converter"><i class="fa-solid fa-link"></i></a>
+</nav>
+
+<div class="admin-container">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <h1><i class="fas fa-cogs"></i> Product Management</h1>
+        <p class="subtitle">Add, edit, and manage your store products with ease</p>
+        
+        <!-- Navigation -->
+        <div class="admin-nav">
+            <a href="create-today-offer-category.html">
+                <i class="fas fa-fire"></i>
+                Today's Offers
+            </a>
+            <a href="manage-todays-offers.html">
+                <i class="fas fa-box"></i>
+                Manage Offers
+            </a>
+            <a href="./categories.html">
+                <i class="fas fa-tags"></i>
+                Categories
+            </a>
+            <a href="./photo-to-url.html">
+                <i class="fas fa-images"></i>
+                Image Converter
+            </a>
+            <a href="wackykicks.store">
+                <i class="fas fa-store"></i>
+                View Store
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="main-card">
+        <h2 class="section-title">
+            <i class="fas fa-plus-circle"></i>
+            Add New Product
+        </h2>
+        
+        <!-- Form Grid -->
+        <div class="form-grid">
+
+    <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="productName">
+    </div>
+
+    <div class="form-group">
+        <label>Old Price (MRP)</label>
+        <input type="text" id="productOldPrice" placeholder="Eg: 2999">
+    </div>
+    <div class="form-group">
+        <label>New Price (Selling Price)</label>
+        <input type="text" id="productNewPrice" placeholder="Eg: 1999">
+    </div>
+
+    <div class="form-group">
+        <label>Stock (leave 0 for out of stock)</label>
+        <input type="number" id="productStock" min="0" placeholder="Eg: 10">
+    </div>
+
+    <div class="form-group">
+    <label>Available Sizes (comma separated)</label>
+    <input type="text" id="productSizes" placeholder="Eg: 7, 8, 9, 10">
+    </div>
+
+    <div class="form-group">
+        <label>Available Colors</label>
+        <div class="modern-color-selection">
+            <!-- Color Dropdown Trigger -->
+            <div class="color-dropdown-trigger" onclick="toggleColorDropdown()">
+                <div class="color-display">
+                    <span class="color-label">COLOR</span>
+                    <div class="selected-color-preview" id="selectedColorPreview">
+                        <div class="color-circle selected" style="background: #3b82f6;"></div>
+                        <span class="color-name" id="selectedColorName">Blue</span>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-down dropdown-arrow" id="colorDropdownArrow"></i>
+            </div>
+            
+            <!-- Color Dropdown Panel -->
+            <div class="color-dropdown-panel" id="colorDropdownPanel">
+                <div class="color-grid">
+                    <!-- Row 1 - Reds and Pinks -->
+                    <div class="color-circle" data-color="Red" data-hex="#ef4444" style="background: #ef4444;" onclick="selectColor('Red', '#ef4444')"></div>
+                    <div class="color-circle" data-color="Pink" data-hex="#ec4899" style="background: #ec4899;" onclick="selectColor('Pink', '#ec4899')"></div>
+                    <div class="color-circle" data-color="Rose" data-hex="#f43f5e" style="background: #f43f5e;" onclick="selectColor('Rose', '#f43f5e')"></div>
+                    <div class="color-circle" data-color="Coral" data-hex="#ff6b6b" style="background: #ff6b6b;" onclick="selectColor('Coral', '#ff6b6b')"></div>
+                    
+                    <!-- Row 2 - Browns and Oranges -->
+                    <div class="color-circle" data-color="Orange" data-hex="#f97316" style="background: #f97316;" onclick="selectColor('Orange', '#f97316')"></div>
+                    <div class="color-circle" data-color="Brown" data-hex="#a3744c" style="background: #a3744c;" onclick="selectColor('Brown', '#a3744c')"></div>
+                    <div class="color-circle" data-color="Tan" data-hex="#d2b48c" style="background: #d2b48c;" onclick="selectColor('Tan', '#d2b48c')"></div>
+                    <div class="color-circle" data-color="Beige" data-hex="#f5f5dc" style="background: #f5f5dc;" onclick="selectColor('Beige', '#f5f5dc')"></div>
+                    
+                    <!-- Row 3 - Purples and Violets -->
+                    <div class="color-circle" data-color="Purple" data-hex="#8b5cf6" style="background: #8b5cf6;" onclick="selectColor('Purple', '#8b5cf6')"></div>
+                    <div class="color-circle" data-color="Violet" data-hex="#7c3aed" style="background: #7c3aed;" onclick="selectColor('Violet', '#7c3aed')"></div>
+                    <div class="color-circle" data-color="Indigo" data-hex="#6366f1" style="background: #6366f1;" onclick="selectColor('Indigo', '#6366f1')"></div>
+                    <div class="color-circle selected" data-color="Blue" data-hex="#3b82f6" style="background: #3b82f6; border: 3px solid #1d4ed8;" onclick="selectColor('Blue', '#3b82f6')"></div>
+                    
+                    <!-- Row 4 - Greens and Yellows -->
+                    <div class="color-circle" data-color="Green" data-hex="#22c55e" style="background: #22c55e;" onclick="selectColor('Green', '#22c55e')"></div>
+                    <div class="color-circle" data-color="Lime" data-hex="#84cc16" style="background: #84cc16;" onclick="selectColor('Lime', '#84cc16')"></div>
+                    <div class="color-circle" data-color="Yellow" data-hex="#eab308" style="background: #eab308;" onclick="selectColor('Yellow', '#eab308')"></div>
+                    <div class="color-circle" data-color="Gold" data-hex="#ffd700" style="background: #ffd700;" onclick="selectColor('Gold', '#ffd700')"></div>
+                    
+                    <!-- Row 5 - Neutrals and Basics -->
+                    <div class="color-circle" data-color="Gray" data-hex="#6b7280" style="background: #6b7280;" onclick="selectColor('Gray', '#6b7280')"></div>
+                    <div class="color-circle" data-color="Silver" data-hex="#c0c0c0" style="background: #c0c0c0;" onclick="selectColor('Silver', '#c0c0c0')"></div>
+                    <div class="color-circle" data-color="Black" data-hex="#000000" style="background: #000000;" onclick="selectColor('Black', '#000000')"></div>
+                    <div class="color-circle" data-color="White" data-hex="#ffffff" style="background: #ffffff; border: 2px solid #e5e7eb;" onclick="selectColor('White', '#ffffff')"></div>
+                    
+                    <!-- Row 6 - Additional dark/jewel tones -->
+                    <div class="color-circle" data-color="Maroon" data-hex="#991b1b" style="background: #991b1b;" onclick="selectColor('Maroon', '#991b1b')"></div>
+                    <div class="color-circle" data-color="Navy" data-hex="#1e3a8a" style="background: #1e3a8a;" onclick="selectColor('Navy', '#1e3a8a')"></div>
+                    <div class="color-circle" data-color="Teal" data-hex="#14b8a6" style="background: #14b8a6;" onclick="selectColor('Teal', '#14b8a6')"></div>
+                    <div class="color-circle" data-color="Turquoise" data-hex="#06b6d4" style="background: #06b6d4;" onclick="selectColor('Turquoise', '#06b6d4')"></div>
+                </div>
+                
+                <!-- Custom Color Input Section -->
+                <div class="custom-color-input-section">
+                    <div class="custom-input-row">
+                        <input type="text" id="customColorName" placeholder="Custom color name (e.g., Sky Blue)" class="custom-color-text-input">
+                        <input type="color" id="customColorPicker" value="#3b82f6" class="custom-color-picker">
+                        <button type="button" onclick="addCustomColorFromPicker()" class="add-custom-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <small class="custom-help-text">Add your own custom colors with hex values</small>
+                </div>
+            </div>
+            
+            <!-- Selected Colors List -->
+            <div class="selected-colors-container">
+                <div class="selected-colors-header">
+                    <span>Selected Colors:</span>
+                    <button type="button" onclick="clearAllColors()" class="clear-all-btn">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+                <div class="selected-colors-list" id="selectedColorsList">
+                    <!-- Default Blue selection -->
+                    <div class="selected-color-tag" data-color="Blue">
+                        <div class="tag-color-circle" style="background: #3b82f6;"></div>
+                        <span class="tag-color-name">Blue</span>
+                        <div class="remove-color" onclick="removeColor('Blue')">×</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hidden input for form submission -->
+            <input type="hidden" id="productColors" value="Blue">
+        </div>
+    </div>
+
+
+    <!-- Tag field removed - now using automatic discount percentage calculation -->
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea id="productDescription" placeholder="Enter product description"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Product Images</label>
+        <div class="image-upload-container">
+            <div class="upload-method-tabs">
+                <button type="button" class="tab-btn active" onclick="switchUploadMethod('file')">
+                    <i class="fas fa-upload"></i> Upload Images
+                </button>
+                <button type="button" class="tab-btn" onclick="switchUploadMethod('url')">
+                    <i class="fas fa-link"></i> Image URLs
+                </button>
+            </div>
+            
+            <!-- File Upload Section -->
+            <div id="fileUploadSection" class="upload-section active">
+                <div class="file-drop-zone" id="fileDropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag & drop images here or click to browse</p>
+                    <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
+                    <button type="button" class="browse-btn" onclick="event.stopPropagation(); document.getElementById('imageFileInput').click()">
+                        <i class="fas fa-folder-open"></i> Browse Files
+                    </button>
+                </div>
+                <div id="imagePreviewContainer" class="image-preview-grid"></div>
+            </div>
+            
+            <!-- URL Input Section -->
+            <div id="urlUploadSection" class="upload-section">
+                <input type="text" id="multiImageInput" placeholder="Eg: https://url1.jpg, https://url2.jpg">
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    <i class="fas fa-info-circle"></i> Enter comma-separated image URLs
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Product Categories</label>
+        <div id="productCategoriesSection" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #f9f9f9;">
+            <div id="productCategoriesCheckboxes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <!-- Categories will be loaded here -->
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                <i class="fas fa-info-circle"></i> Select categories for this product
+            </div>
+        </div>
+    </div>
+        
+        </div> <!-- Close form-grid -->
+        
+        <button class="submit-btn" onclick="submitProduct()">
+            <i class="fas fa-plus"></i>
+            Add Product
+        </button>
+
+        <!-- Products List Section -->
+        <div style="margin-top: 50px;">
+            <h2 class="section-title">
+                <i class="fas fa-list"></i>
+                Existing Products
+            </h2>
+            
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="productSearchInput" placeholder="Search products by name, price, or description..." class="search-input">
+                        <button type="button" id="clearSearchBtn" class="clear-search-btn" onclick="clearSearch()" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="search-btn" onclick="searchProducts()">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </button>
+                </div>
+                <div class="search-results-info" id="searchResultsInfo" style="display: none;">
+                    <span id="searchResultsText"></span>
+                    <button type="button" class="show-all-btn" onclick="showAllProducts()">
+                        <i class="fas fa-eye"></i>
+                        Show All
+                    </button>
+                </div>
+            </div>
+            
+            <div class="product-list" id="productList">
+                <div style="text-align: center; padding: 40px; color: #6c757d;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                    <p>Loading products...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+    authDomain: "wackykicks-65cbe.firebaseapp.com",
+    projectId: "wackykicks-65cbe",
+    storageBucket: "wackykicks-65cbe.appspot.com",
+    messagingSenderId: "911540684237",
+    appId: "1:911540684237:web:faa772c146ff4acfadb084",
+    measurementId: "G-7HWH0SEJN2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Form references
+const nameInput = document.getElementById("productName");
+const oldPriceInput = document.getElementById("productOldPrice");
+const newPriceInput = document.getElementById("productNewPrice");
+const stockInput = document.getElementById("productStock");
+const imageInputsContainer = document.getElementById("imageInputs");
+const productList = document.getElementById("productList");
+const sizesInput = document.getElementById("productSizes");
+const colorsInput = document.getElementById("productColors");
+const descriptionInput = document.getElementById("productDescription");
+
+let editMode = false;
+let editingProductId = null;
+let selectedColors = []; // Will store objects like {name: "Blue", hex: "#3b82f6"}
+let allProducts = []; // Store all products for search functionality
+let isSearchActive = false;
+
+// Add image input dynamically
+window.addImageInput = () => {
+    const div = document.createElement("div");
+    div.className = "form-group";
+    div.innerHTML = `<input type="text" class="image-url" placeholder="Image URL">`;
+    imageInputsContainer.appendChild(div);
+};
+
+// Modern Color Selection Functions
+let isColorDropdownOpen = false;
+
+window.toggleColorDropdown = () => {
+    const panel = document.getElementById('colorDropdownPanel');
+    const arrow = document.getElementById('colorDropdownArrow');
+    
+    isColorDropdownOpen = !isColorDropdownOpen;
+    
+    if (isColorDropdownOpen) {
+        panel.classList.add('open');
+        arrow.classList.add('rotated');
+    } else {
+        panel.classList.remove('open');
+        arrow.classList.remove('rotated');
+    }
+};
+
+window.selectColor = (colorName, hexValue) => {
+    console.log('Selecting color:', colorName, hexValue);
+    
+    // Check if color is already selected (by name)
+    const alreadySelected = selectedColors.some(color => 
+        (typeof color === 'string' ? color : color.name) === colorName
+    );
+    
+    if (!alreadySelected) {
+        // Store as object with both name and hex
+        selectedColors.push({name: colorName, hex: hexValue});
+        updateColorDisplay();
+        updateColorInput();
+        
+        // Update the selected color preview in the dropdown trigger
+        const preview = document.getElementById('selectedColorPreview');
+        const colorName_el = document.getElementById('selectedColorName');
+        const colorCircle = preview.querySelector('.color-circle');
+        
+        colorCircle.style.background = hexValue;
+        colorName_el.textContent = colorName;
+        
+        // Update visual selection in grid
+        document.querySelectorAll('.color-circle').forEach(circle => {
+            circle.classList.remove('selected');
+        });
+        
+        const selectedCircle = document.querySelector(`[data-color="${colorName}"]`);
+        if (selectedCircle) {
+            selectedCircle.classList.add('selected');
+            selectedCircle.style.borderColor = '#1d4ed8';
+        }
+        
+        // Visual feedback
+        if (window.FloatingAlertManager) {
+            window.alerts.success(`Added ${colorName} to selection`, 'Color Added');
+        }
+    } else {
+        if (window.FloatingAlertManager) {
+            window.alerts.warning(`${colorName} is already selected`, 'Color Already Selected');
+        }
+    }
+};
+
+window.addCustomColorFromPicker = () => {
+    const nameInput = document.getElementById('customColorName');
+    const colorPicker = document.getElementById('customColorPicker');
+    
+    const colorName = nameInput.value.trim();
+    const hexValue = colorPicker.value;
+    
+    if (!colorName) {
+        if (window.FloatingAlertManager) {
+            window.alerts.warning('Please enter a color name', 'Color Name Required');
+        } else {
+            alert('Please enter a color name');
+        }
+        return;
+    }
+    
+    // Check if color is already selected (by name)
+    const alreadySelected = selectedColors.some(color => 
+        (typeof color === 'string' ? color : color.name) === colorName
+    );
+    
+    if (!alreadySelected) {
+        // Store as object with both name and hex
+        selectedColors.push({name: colorName, hex: hexValue});
+        
+        // Add the custom color to the grid dynamically
+        const colorGrid = document.querySelector('.color-grid');
+        const newColorCircle = document.createElement('div');
+        newColorCircle.className = 'color-circle';
+        newColorCircle.setAttribute('data-color', colorName);
+        newColorCircle.setAttribute('data-hex', hexValue);
+        newColorCircle.style.background = hexValue;
+        newColorCircle.onclick = () => selectColor(colorName, hexValue);
+        colorGrid.appendChild(newColorCircle);
+        
+        updateColorDisplay();
+        updateColorInput();
+        
+        // Clear inputs
+        nameInput.value = '';
+        colorPicker.value = '#3b82f6';
+        
+        if (window.FloatingAlertManager) {
+            window.alerts.success(`Added custom color: ${colorName}`, 'Custom Color Added');
+        }
+    } else {
+        if (window.FloatingAlertManager) {
+            window.alerts.warning(`${colorName} is already selected`, 'Color Already Selected');
+        }
+    }
+};
+
+window.removeColor = (colorName) => {
+    selectedColors = selectedColors.filter(color => 
+        (typeof color === 'string' ? color : color.name) !== colorName
+    );
+    updateColorDisplay();
+    updateColorInput();
+    
+    // Remove visual selection if it was the active one
+    const selectedCircle = document.querySelector(`[data-color="${colorName}"].selected`);
+    if (selectedCircle) {
+        selectedCircle.classList.remove('selected');
+        selectedCircle.style.borderColor = 'transparent';
+        
+        // Reset to default blue selection if no colors left
+        if (selectedColors.length === 0) {
+            const preview = document.getElementById('selectedColorPreview');
+            const colorName_el = document.getElementById('selectedColorName');
+            const colorCircle = preview.querySelector('.color-circle');
+            
+            colorCircle.style.background = '#3b82f6';
+            colorName_el.textContent = 'Select Color';
+            
+            // Reset Blue as selected in grid
+            const blueCircle = document.querySelector(`[data-color="Blue"]`);
+            if (blueCircle) {
+                blueCircle.classList.add('selected');
+                blueCircle.style.borderColor = '#1d4ed8';
+            }
+        }
+    }
+};
+
+function updateColorDisplay() {
+    console.log('Updating color display. Selected colors:', selectedColors);
+    const container = document.getElementById('selectedColorsList');
+    
+    if (!container) {
+        console.error('selectedColorsList container not found');
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (selectedColors.length === 0) {
+        container.innerHTML = '<span style="color: #999; font-style: italic; padding: 10px; display: flex; align-items: center; justify-content: center; min-height: 40px;">No colors selected</span>';
+    } else {
+        selectedColors.forEach(colorData => {
+            // Handle both old string format and new object format
+            const colorName = typeof colorData === 'string' ? colorData : colorData.name;
+            const hexValue = typeof colorData === 'string' ? 
+                (document.querySelector(`[data-color="${colorData}"]`)?.getAttribute('data-hex') || '#6b7280') : 
+                colorData.hex;
+            
+            const tag = document.createElement('div');
+            tag.className = 'selected-color-tag';
+            tag.setAttribute('data-color', colorName);
+            tag.innerHTML = `
+                <div class="tag-color-circle" style="background: ${hexValue};"></div>
+                <span class="tag-color-name">${colorName}</span>
+                <div class="remove-color" onclick="removeColor('${colorName}')">×</div>
+            `;
+            container.appendChild(tag);
+        });
+    }
+    
+    console.log('Color display updated successfully');
+}
+
+function updateColorInput() {
+    // Create a string that preserves both color names and hex values
+    const colorString = selectedColors.map(colorData => {
+        if (typeof colorData === 'string') {
+            return colorData; // Backward compatibility for old format
+        } else {
+            return `${colorData.name}:${colorData.hex}`; // New format with hex
+        }
+    }).join(', ');
+    
+    document.getElementById('productColors').value = colorString;
+}
+
+// Clear all colors
+window.clearAllColors = () => {
+    selectedColors = [];
+    updateColorDisplay();
+    updateColorInput();
+};
+
+// Reset form
+function resetForm() {
+    nameInput.value = "";
+    oldPriceInput.value = "";
+    newPriceInput.value = "";
+    stockInput.value = "";
+    sizesInput.value = "";
+    descriptionInput.value = "";
+    document.getElementById("multiImageInput").value = "";
+    
+    // Reset color selection to default Blue
+    selectedColors = [{name: 'Blue', hex: '#3b82f6'}];
+    updateColorDisplay();
+    updateColorInput();
+    
+    // Reset color dropdown to blue selection
+    const preview = document.getElementById('selectedColorPreview');
+    const colorName_el = document.getElementById('selectedColorName');
+    const colorCircle = preview.querySelector('.color-circle');
+    
+    colorCircle.style.background = '#3b82f6';
+    colorName_el.textContent = 'Blue';
+    
+    // Reset visual selection in grid
+    document.querySelectorAll('.color-circle').forEach(circle => {
+        circle.classList.remove('selected');
+    });
+    
+    const blueCircle = document.querySelector(`[data-color="Blue"]`);
+    if (blueCircle) {
+        blueCircle.classList.add('selected');
+        blueCircle.style.borderColor = '#1d4ed8';
+    }
+    
+    // Close color dropdown if open
+    const panel = document.getElementById('colorDropdownPanel');
+    const arrow = document.getElementById('colorDropdownArrow');
+    panel.classList.remove('open');
+    arrow.classList.remove('rotated');
+    isColorDropdownOpen = false;
+    
+    // Clear category selections
+    clearCategorySelections();
+    
+    editMode = false;
+    editingProductId = null;
+    document.querySelector(".submit-btn").innerText = "Add Product";
+    
+    // Clear uploaded images
+    uploadedImages = [];
+    updateImagePreview();
+}
+
+// Image Upload Functionality
+let uploadedImages = [];
+let currentUploadMethod = 'file';
+
+window.switchUploadMethod = function(method) {
+    currentUploadMethod = method;
+    
+    // Update active tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Add active class to clicked button
+    if (method === 'file') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    } else {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    }
+    
+    // Show/hide sections
+    document.getElementById('fileUploadSection').classList.toggle('active', method === 'file');
+    document.getElementById('urlUploadSection').classList.toggle('active', method === 'url');
+}
+
+// File input handler
+document.getElementById('imageFileInput').addEventListener('change', async function(e) {
+    const files = Array.from(e.target.files);
+    await processImageFiles(files);
+});
+
+// Drag and drop handlers
+const dropZone = document.getElementById('fileDropZone');
+
+dropZone.addEventListener('click', function(e) {
+    // Only trigger if clicking the drop zone itself, not the button
+    if (e.target === dropZone || e.target.tagName === 'I' || e.target.tagName === 'P') {
+        document.getElementById('imageFileInput').click();
+    }
+});
+
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('drop', async function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    await processImageFiles(files);
+});
+
+// Process and compress images
+async function processImageFiles(files) {
+    if (files.length === 0) return;
+    
+    for (const file of files) {
+        try {
+            // Show loading state
+            const tempId = Date.now() + Math.random();
+            uploadedImages.push({
+                id: tempId,
+                loading: true,
+                name: file.name
+            });
+            updateImagePreview();
+            
+            // Compress and convert to base64
+            const base64 = await compressImage(file);
+            
+            // Replace loading state with actual image
+            const index = uploadedImages.findIndex(img => img.id === tempId);
+            uploadedImages[index] = {
+                id: tempId,
+                base64: base64,
+                name: file.name,
+                size: file.size,
+                compressedSize: Math.round((base64.length * 3) / 4) // Approximate size
+            };
+            
+            updateImagePreview();
+        } catch (error) {
+            console.error('Error processing image:', error);
+            if (window.FloatingAlertManager) {
+                window.alerts.error(`Failed to process ${file.name}`, 'Upload Error');
+            }
+        }
+    }
+}
+
+// Compress image to base64
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate new dimensions (max 1200px width/height)
+                let width = img.width;
+                let height = img.height;
+                const maxSize = 1200;
+                
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = (height / width) * maxSize;
+                        width = maxSize;
+                    } else {
+                        width = (width / height) * maxSize;
+                        height = maxSize;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to base64 with quality adjustment
+                let quality = 0.8;
+                let base64 = canvas.toDataURL('image/jpeg', quality);
+                
+                // If still too large (>400KB), reduce quality
+                while (base64.length > 400000 && quality > 0.3) {
+                    quality -= 0.1;
+                    base64 = canvas.toDataURL('image/jpeg', quality);
+                }
+                
+                resolve(base64);
+            };
+            
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Update image preview
+function updateImagePreview() {
+    const container = document.getElementById('imagePreviewContainer');
+    
+    if (uploadedImages.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = uploadedImages.map(img => {
+        if (img.loading) {
+            return `
+                <div class="preview-card">
+                    <div style="height: 150px; display: flex; align-items: center; justify-content: center; background: #f1f5f9;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+                    </div>
+                    <div class="file-info">${img.name}</div>
+                </div>
+            `;
+        }
+        
+        const compressionPercent = Math.round((1 - img.compressedSize / img.size) * 100);
+        
+        return `
+            <div class="preview-card">
+                <img src="${img.base64}" alt="${img.name}">
+                ${compressionPercent > 0 ? `<div class="compression-badge">-${compressionPercent}%</div>` : ''}
+                <button type="button" class="remove-btn" onclick="removeImage(${img.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="file-info">${formatFileSize(img.compressedSize)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Remove image
+window.removeImage = function(id) {
+    uploadedImages = uploadedImages.filter(img => img.id !== id);
+    updateImagePreview();
+};
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// Load products
+async function loadProducts() {
+    showLoadingState();
+    try {
+        const snapshot = await getDocs(collection(db, "products"));
+        allProducts = []; // Clear the array
+        
+        snapshot.forEach(docSnap => {
+            const product = docSnap.data();
+            allProducts.push({
+                id: docSnap.id,
+                ...product
+            });
+        });
+        
+        // Sort products: newest first (with createdAt), then existing products
+        allProducts.sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            } else if (a.createdAt) {
+                return -1; // a comes first
+            } else if (b.createdAt) {
+                return 1; // b comes first
+            }
+            return 0; // keep existing order for products without createdAt
+        });
+        
+        displayProducts(allProducts);
+        updateSearchInfo(allProducts.length, allProducts.length);
+    } catch (error) {
+        console.error("Error loading products:", error);
+        productList.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #dc2626;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                <p>Error loading products. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+function showLoadingState() {
+    productList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #6c757d;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 15px;"></i>
+            <p>Loading products...</p>
+        </div>
+    `;
+}
+
+function displayProducts(products) {
+    productList.innerHTML = "";
+    
+    if (products.length === 0) {
+        productList.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6c757d;">
+                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                <p>No products found matching your search.</p>
+            </div>
+        `;
+        return;
+    }
+
+    products.forEach(product => {
+        const firstImage = product.imgUrl?.[0] || "";
+
+        // Check if product is out of stock (by category or stock field)
+        const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+        const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && product.stock === 0;
+        const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+
+        // Calculate discount percentage for admin display
+        const discountPercentage = product.oldPrice && product.newPrice && product.oldPrice > product.newPrice 
+            ? Math.round(((product.oldPrice - product.newPrice) / product.oldPrice) * 100) 
+            : null;
+
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+            <img src="${firstImage}" alt="Product Image" onerror="this.src='../Logo/1000163691.jpg'">
+            <h3>${product.name}</h3>
+            <p>₹${product.price || product.newPrice}</p>
+            ${isOutOfStock ? `<p style="color: #ef4444; font-weight: bold;">OUT OF STOCK</p>` : 
+              discountPercentage ? `<p style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF</p>` : '<p style="color: #666;">In Stock</p>'}
+            <div class="actions">
+                <button class="edit-btn" onclick="editProduct('${product.id}')"><i class="fas fa-edit"></i> Edit</button>
+                <button class="delete-btn" onclick="deleteProduct('${product.id}')"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+        `;
+        productList.appendChild(card);
+    });
+}
+
+// Submit product (add or update)
+window.submitProduct = async () => {
+    const name = nameInput.value.trim();
+    const oldPrice = oldPriceInput.value.trim();
+    const newPrice = newPriceInput.value.trim();
+    const price = newPrice;
+    const stockValue = stockInput.value.trim();
+    const stock = stockValue !== '' ? parseInt(stockValue) : undefined;
+    
+    // Get images based on upload method
+    let imgUrl = [];
+    if (currentUploadMethod === 'file') {
+        imgUrl = uploadedImages
+            .filter(img => !img.loading && img.base64)
+            .map(img => img.base64);
+    } else {
+        imgUrl = document.getElementById("multiImageInput").value
+            .split(',')
+            .map(url => url.trim())
+            .filter(url => url);
+    }
+    
+    const sizes = sizesInput.value.split(",").map(s => s.trim()).filter(s => s);
+    const colors = selectedColors; // Use the selectedColors array instead
+    const description = descriptionInput.value.trim();
+    const categories = getSelectedProductCategories(); // Get selected categories
+
+    if (!name || !oldPrice || !newPrice || imgUrl.length === 0) {
+        if (window.FloatingAlertManager) {
+            window.alerts.warning('Name, Old Price, New Price, and at least one Image are required.', 'Missing Required Fields');
+        } else {
+            alert("Name, Old Price, New Price, and at least one Image URL are required.");
+        }
+        return;
+    }
+
+    try {
+        // Prepare product data, only include stock if it's defined
+        const productData = { 
+            name, 
+            price, 
+            oldPrice, 
+            newPrice, 
+            imgUrl, 
+            sizes, 
+            colors, 
+            description, 
+            categories 
+        };
+        
+        // Only add stock field if it's defined
+        if (stock !== undefined) {
+            productData.stock = stock;
+        }
+        
+        if (editMode && editingProductId) {
+            await updateDoc(doc(db, "products", editingProductId), productData);
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.productUpdated();
+            } else {
+                alert("Product updated successfully!");
+            }
+        } else {
+            // Add timestamp for new products
+            productData.createdAt = new Date().toISOString();
+            await addDoc(collection(db, "products"), productData);
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.productAdded();
+            } else {
+                alert("Product added successfully!");
+            }
+        }
+    } catch (err) {
+        if (window.FloatingAlertManager) {
+            window.alerts.error("Error saving product: " + err.message, 'Save Error');
+        } else {
+            alert("Error saving product: " + err.message);
+        }
+    }
+
+    resetForm();
+    loadProducts();
+};
+
+// Delete product
+window.deleteProduct = async (id) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    try {
+        await deleteDoc(doc(db, "products", id));
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.productDeleted();
+        } else {
+            alert("Product deleted successfully!");
+        }
+        loadProducts();
+    } catch (err) {
+        if (window.FloatingAlertManager) {
+            window.alerts.error("Error deleting product: " + err.message, 'Delete Error');
+        } else {
+            alert("Error deleting product: " + err.message);
+        }
+    }
+};
+
+// Edit product
+window.editProduct = async (id) => {
+    const docRef = doc(db, "products", id);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+        if (window.FloatingAlertManager) {
+            window.alerts.error("Product not found in database.", 'Product Not Found');
+        } else {
+            alert("Product not found.");
+        }
+        return;
+    }
+
+    const product = docSnap.data();
+    nameInput.value = product.name;
+    oldPriceInput.value = product.oldPrice || "";
+    newPriceInput.value = product.newPrice || "";
+    stockInput.value = product.stock || 0;
+    sizesInput.value = (product.sizes || []).join(", ");
+    descriptionInput.value = product.description || "";
+    
+    // Load colors into the color selection system
+    const productColors = product.colors || [];
+    selectedColors = [];
+    
+    // Convert colors to new format if needed
+    productColors.forEach(colorData => {
+        if (typeof colorData === 'string') {
+            // Handle both old format and new "name:hex" format
+            if (colorData.includes(':')) {
+                const [name, hex] = colorData.split(':');
+                selectedColors.push({name: name.trim(), hex: hex.trim()});
+            } else {
+                // Old format - try to get hex from predefined colors
+                const hex = getColorHexForAdmin(colorData);
+                selectedColors.push({name: colorData, hex: hex});
+            }
+        } else if (colorData && colorData.name && colorData.hex) {
+            // Already in new format
+            selectedColors.push(colorData);
+        }
+    });
+    
+    updateColorDisplay();
+    updateColorInput();
+    
+    // Set categories if available
+    if (product.categories) {
+        setProductCategories(product.categories);
+    }
+
+    // Handle images - check if they're base64 or URLs
+    const images = product.imgUrl || [];
+    const hasBase64 = images.some(url => url.startsWith('data:image'));
+    
+    if (hasBase64) {
+        // Switch to file upload method and show images
+        currentUploadMethod = 'file';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.tab-btn').classList.add('active');
+        document.getElementById('fileUploadSection').classList.add('active');
+        document.getElementById('urlUploadSection').classList.remove('active');
+        
+        // Load base64 images into uploaded array
+        uploadedImages = images.map((base64, index) => ({
+            id: Date.now() + index,
+            base64: base64,
+            name: `Image ${index + 1}`,
+            size: Math.round((base64.length * 3) / 4),
+            compressedSize: Math.round((base64.length * 3) / 4)
+        }));
+        updateImagePreview();
+    } else {
+        // Use URL method
+        currentUploadMethod = 'url';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('fileUploadSection').classList.remove('active');
+        document.getElementById('urlUploadSection').classList.add('active');
+        
+        document.getElementById("multiImageInput").value = images.join(', ');
+        uploadedImages = [];
+        updateImagePreview();
+    }
+
+    editMode = true;
+    editingProductId = id;
+    document.querySelector(".submit-btn").innerText = "Update Product";
+};
+
+// Helper function to get hex colors for admin (similar to product page)
+function getColorHexForAdmin(colorName) {
+    const colorMap = {
+        'Red': '#ef4444', 'Pink': '#ec4899', 'Blue': '#3b82f6', 'Green': '#22c55e',
+        'Yellow': '#eab308', 'Purple': '#8b5cf6', 'Orange': '#f97316', 'Black': '#000000',
+        'White': '#ffffff', 'Gray': '#6b7280', 'Brown': '#a3744c', 'Navy': '#1e3a8a',
+        'Maroon': '#991b1b', 'Teal': '#14b8a6', 'Turquoise': '#06b6d4', 'Gold': '#ffd700',
+        'Silver': '#c0c0c0', 'Lime': '#84cc16', 'Coral': '#ff6b6b', 'Rose': '#f43f5e',
+        'Violet': '#7c3aed', 'Indigo': '#6366f1', 'Tan': '#d2b48c', 'Beige': '#f5f5dc',
+        'Crimson': '#dc2626', 'Burgundy': '#7f1d1d'
+    };
+    
+    return colorMap[colorName] || colorMap[colorName.toLowerCase()] || '#6b7280';
+}
+
+// Categories for product form
+let availableCategories = [];
+
+// Load categories for product form
+async function loadProductCategories() {
+    try {
+        const categoriesRef = collection(db, 'category');
+        const categoriesSnapshot = await getDocs(categoriesRef);
+        
+        availableCategories = [];
+        categoriesSnapshot.forEach(doc => {
+            availableCategories.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log('Loaded categories for product form:', availableCategories);
+        renderProductCategoriesCheckboxes();
+        
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        // Use default categories if loading fails
+        availableCategories = [
+            { id: 'nike', name: 'Nike', color: '#000000' },
+            { id: 'adidas', name: 'Adidas', color: '#0066cc' },
+            { id: 'shoes', name: 'Shoes', color: '#ff6b35' },
+            { id: 'watches', name: 'Watches', color: '#28a745' },
+            { id: 'accessories', name: 'Accessories', color: '#6f42c1' },
+            { id: 'today-offer', name: "Today's Offers", color: '#6c757d' }
+        ];
+        renderProductCategoriesCheckboxes();
+    }
+}
+
+// Render category checkboxes in product form
+function renderProductCategoriesCheckboxes() {
+    const container = document.getElementById('productCategoriesCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = availableCategories.map(category => `
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+            <input type="checkbox" id="prod_cat_${category.id}" value="${category.id}" style="margin: 0;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: ${category.color || '#667eea'};"></div>
+            <label for="prod_cat_${category.id}" style="margin: 0; font-size: 13px; font-weight: 500; cursor: pointer;">${category.name}</label>
+        </div>
+    `).join('');
+}
+
+// Get selected categories from product form
+function getSelectedProductCategories() {
+    const selectedCategories = [];
+    const checkboxes = document.querySelectorAll('#productCategoriesCheckboxes input[type="checkbox"]:checked');
+    
+    checkboxes.forEach(checkbox => {
+        const category = availableCategories.find(cat => cat.id === checkbox.value);
+        if (category) {
+            // Use consistent naming (handle Today's Offers special case)
+            const categoryName = category.name === "Today's Offers" ? "today offer" : (category.categoryId || category.id);
+            selectedCategories.push(categoryName);
+        }
+    });
+    
+    return selectedCategories;
+}
+
+// Clear category selections
+function clearCategorySelections() {
+    const checkboxes = document.querySelectorAll('#productCategoriesCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// Set category selections (for edit mode)
+function setProductCategories(categories) {
+    if (!categories || !Array.isArray(categories)) return;
+    
+    // Clear all first
+    clearCategorySelections();
+    
+    // Check matching categories
+    categories.forEach(prodCat => {
+        const category = availableCategories.find(cat => {
+            const categoryId = cat.categoryId || cat.id;
+            return categoryId === prodCat || 
+                   cat.id === prodCat || 
+                   cat.name.toLowerCase() === prodCat.toLowerCase() ||
+                   (cat.name === "Today's Offers" && prodCat === "today offer");
+        });
+        
+        if (category) {
+            const checkbox = document.getElementById(`prod_cat_${category.id}`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        }
+    });
+}
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing color system');
+    
+    // Initialize with default Blue color
+    selectedColors = [{name: 'Blue', hex: '#3b82f6'}];
+    updateColorDisplay();
+    updateColorInput();
+    
+    // Load categories for product form
+    loadProductCategories();
+    
+    // Add click outside handler to close color dropdown
+    document.addEventListener('click', (event) => {
+        const colorSelection = document.querySelector('.modern-color-selection');
+        const panel = document.getElementById('colorDropdownPanel');
+        const arrow = document.getElementById('colorDropdownArrow');
+        
+        if (colorSelection && !colorSelection.contains(event.target) && isColorDropdownOpen) {
+            panel.classList.remove('open');
+            arrow.classList.remove('rotated');
+            isColorDropdownOpen = false;
+        }
+    });
+});
+
+// Search functionality
+window.searchProducts = () => {
+    const searchTerm = document.getElementById('productSearchInput').value.trim().toLowerCase();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    if (!searchTerm) {
+        if (window.FloatingAlertManager) {
+            window.alerts.warning('Please enter a search term', 'Search Required');
+        } else {
+            alert('Please enter something to search for');
+        }
+        return;
+    }
+    
+    // Show clear button
+    clearBtn.style.display = 'flex';
+    
+    // Filter products based on search term
+    const filteredProducts = allProducts.filter(product => {
+        const name = (product.name || '').toLowerCase();
+        const description = (product.description || '').toLowerCase();
+        const price = (product.price || product.newPrice || '').toString();
+        const oldPrice = (product.oldPrice || '').toString();
+        const categories = (product.categories || []).join(' ').toLowerCase();
+        
+        return name.includes(searchTerm) || 
+               description.includes(searchTerm) || 
+               price.includes(searchTerm) ||
+               oldPrice.includes(searchTerm) ||
+               categories.includes(searchTerm);
+    });
+    
+    displayProducts(filteredProducts);
+    updateSearchInfo(filteredProducts.length, allProducts.length);
+    isSearchActive = true;
+    
+    if (window.FloatingAlertManager) {
+        window.alerts.success(`Found ${filteredProducts.length} product(s)`, 'Search Complete');
+    }
+};
+
+window.clearSearch = () => {
+    const searchInput = document.getElementById('productSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    
+    displayProducts(allProducts);
+    hideSearchInfo();
+    isSearchActive = false;
+    
+    if (window.FloatingAlertManager) {
+        window.alerts.info('Search cleared', 'Search Reset');
+    }
+};
+
+window.showAllProducts = () => {
+    clearSearch();
+};
+
+function updateSearchInfo(found, total) {
+    const infoDiv = document.getElementById('searchResultsInfo');
+    const textSpan = document.getElementById('searchResultsText');
+    
+    if (found === total) {
+        hideSearchInfo();
+        return;
+    }
+    
+    textSpan.textContent = `Showing ${found} of ${total} products`;
+    infoDiv.style.display = 'flex';
+}
+
+function hideSearchInfo() {
+    const infoDiv = document.getElementById('searchResultsInfo');
+    infoDiv.style.display = 'none';
+}
+
+// Add enter key support for search
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('productSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchProducts();
+            }
+        });
+        
+        searchInput.addEventListener('input', (e) => {
+            if (e.target.value.trim()) {
+                clearBtn.style.display = 'flex';
+            } else {
+                clearBtn.style.display = 'none';
+                if (isSearchActive) {
+                    clearSearch();
+                }
+            }
+        });
+    }
+});
+
+// Initial load
+loadProducts();
+
+// Initialize color display (backup)
+setTimeout(() => {
+    if (selectedColors.length === 0) {
+        selectedColors = [{name: 'Blue', hex: '#3b82f6'}];
+    }
+    updateColorDisplay();
+    updateColorInput();
+}, 100);
+
+// Highlight active link
+    const path = window.location.pathname;
+    if (path.includes("admin.html")) {
+        document.getElementById("nav-admin").classList.add("active");
+    } else if (path.includes("photo-to-url.html")) {
+        document.getElementById("nav-converter").classList.add("active");
+    }
+</script>
+
+<script src="../floating-alerts.js"></script>
+
+
+</body>
+</html>

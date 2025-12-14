@@ -1,0 +1,221 @@
+<!-- Quick Christmas Banner Creator -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Banner Creator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #c41e3a;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .banner-container {
+            margin: 30px 0;
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .banner-container:hover {
+            transform: scale(1.01);
+        }
+        .banner {
+            width: 100%;
+            height: 400px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+        .banner-content {
+            z-index: 2;
+            padding: 40px;
+        }
+        .banner h2 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 8px rgba(0,0,0,0.5);
+            font-weight: bold;
+        }
+        .banner p {
+            font-size: 2rem;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+        }
+        .banner .shop-btn {
+            margin-top: 30px;
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            background: #c41e3a;
+            color: white;
+            border: 3px solid #FFD700;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        .banner .shop-btn:hover {
+            background: #165b33;
+            transform: scale(1.05);
+        }
+        .upload-section {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .upload-btn {
+            padding: 15px 40px;
+            background: #165b33;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .upload-btn:hover {
+            background: #0d4020;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .instructions {
+            background: #fffacd;
+            padding: 20px;
+            border-left: 5px solid #FFD700;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .download-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .download-btn {
+            padding: 15px 40px;
+            background: #c41e3a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px;
+        }
+        .download-btn:hover {
+            background: #8b0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎄 Christmas Banner Creator 🎄</h1>
+        
+        <div class="instructions">
+            <h3>📝 Instructions:</h3>
+            <ol>
+                <li>Use the banners below as-is (they work automatically)</li>
+                <li>OR upload your own Christmas image to replace them</li>
+                <li>Right-click on any banner and "Save Image As..."</li>
+                <li>Save as <code>christmas-banner-1.png</code> or <code>christmas-banner-2.png</code></li>
+                <li>Place in your website root folder</li>
+            </ol>
+        </div>
+
+        <div class="upload-section">
+            <h3>Upload Your Christmas Image (Optional)</h3>
+            <p>Upload your banner image to preview it:</p>
+            <label for="banner1Upload" class="upload-btn">📤 Upload Banner 1</label>
+            <input type="file" id="banner1Upload" accept="image/*">
+            <label for="banner2Upload" class="upload-btn">📤 Upload Banner 2</label>
+            <input type="file" id="banner2Upload" accept="image/*">
+        </div>
+
+        <h2>Banner 1 - Christmas Sale</h2>
+        <div class="banner-container">
+            <div class="banner" id="banner1" style="background: linear-gradient(135deg, rgba(196, 30, 58, 0.9) 0%, rgba(22, 91, 51, 0.9) 100%), url('https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=1920&h=400&fit=crop') center/cover;">
+                <div class="banner-content">
+                    <h2>🎄 CHRISTMAS SALE 🎄</h2>
+                    <p>Special Offers Till Jan 5th!</p>
+                    <button class="shop-btn">SHOP NOW</button>
+                </div>
+            </div>
+        </div>
+
+        <h2>Banner 2 - Holiday Specials</h2>
+        <div class="banner-container">
+            <div class="banner" id="banner2" style="background: linear-gradient(135deg, rgba(22, 91, 51, 0.9) 0%, rgba(196, 30, 58, 0.9) 100%), url('https://images.unsplash.com/photo-1543589077-47d81606c1bf?w=1920&h=400&fit=crop') center/cover;">
+                <div class="banner-content">
+                    <h2>🎅 HOLIDAY SPECIALS 🎁</h2>
+                    <p>Shop Now & Save Big!</p>
+                    <button class="shop-btn">SHOP NOW</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <h3>💾 Save Your Banners</h3>
+            <p>Right-click on each banner above and select "Save Image As..."</p>
+            <p>Name them: <strong>christmas-banner-1.png</strong> and <strong>christmas-banner-2.png</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Banner 1 upload
+        document.getElementById('banner1Upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('banner1').style.backgroundImage = `url(${e.target.result})`;
+                    document.getElementById('banner1').style.backgroundSize = 'cover';
+                    document.getElementById('banner1').style.backgroundPosition = 'center';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Banner 2 upload
+        document.getElementById('banner2Upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('banner2').style.backgroundImage = `url(${e.target.result})`;
+                    document.getElementById('banner2').style.backgroundSize = 'cover';
+                    document.getElementById('banner2').style.backgroundPosition = 'center';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
