@@ -133,39 +133,63 @@
 
 
 <!-- Firebase Scripts (add your Firebase config in JS) -->
-<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <!-- Initialize Firebase Config -->
-<script defer>
-window.addEventListener('DOMContentLoaded', function() {
-    // Firebase Config
-    const firebaseConfig = {
-        apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-        authDomain: "wackykicks-65cbe.firebaseapp.com",
-        projectId: "wackykicks-65cbe",
-        storageBucket: "wackykicks-65cbe.appspot.com",
-        messagingSenderId: "911540684237",
-        appId: "1:911540684237:web:faa772c146ff4acfadb084",
-        measurementId: "G-7HWH0SEJN2"
-    };
+<script>
+// Create callback queue for when Firebase is ready
+window.firebaseReadyCallbacks = [];
+window.isFirebaseReady = false;
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore();
-    
-    // Enable offline persistence for instant loading
-    firebase.firestore().enablePersistence({ synchronizeTabs: true })
-        .catch(function(err) {
-            if (err.code == 'failed-precondition') {
-                console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-            } else if (err.code == 'unimplemented') {
-                console.log('The current browser does not support persistence.');
+// Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+    authDomain: "wackykicks-65cbe.firebaseapp.com",
+    projectId: "wackykicks-65cbe",
+    storageBucket: "wackykicks-65cbe.appspot.com",
+    messagingSenderId: "911540684237",
+    appId: "1:911540684237:web:faa772c146ff4acfadb084",
+    measurementId: "G-7HWH0SEJN2"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+window.db = firebase.firestore();
+
+// Enable offline persistence for instant loading
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+    .catch(function(err) {
+        if (err.code == 'failed-precondition') {
+            console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+        } else if (err.code == 'unimplemented') {
+            console.log('The current browser does not support persistence.');
+        }
+    })
+    .finally(function() {
+        // Mark Firebase as ready and execute all callbacks
+        window.isFirebaseReady = true;
+        console.log('Firebase initialized with persistence');
+        
+        // Execute all queued callbacks
+        window.firebaseReadyCallbacks.forEach(function(callback) {
+            try {
+                callback();
+            } catch(e) {
+                console.error('Error in Firebase ready callback:', e);
             }
         });
-    
-    console.log('Firebase initialized with persistence');
-});
+        window.firebaseReadyCallbacks = [];
+    });
+
+// Helper function to run code when Firebase is ready
+window.onFirebaseReady = function(callback) {
+    if (window.isFirebaseReady) {
+        callback();
+    } else {
+        window.firebaseReadyCallbacks.push(callback);
+    }
+};
 </script>
 
 <script defer src="christmas-theme.js"></script>

@@ -1548,9 +1548,11 @@ function loadProducts() {
     console.log('📱 Firebase db available:', typeof db !== 'undefined');
     
     if (typeof db === 'undefined' || !db) {
-        console.log('Database not ready yet, retrying...');
+        console.log('Database not ready yet, waiting for Firebase...');
         showSkeletonLoading();
-        setTimeout(loadProducts, 100);
+        if (typeof window.onFirebaseReady === 'function') {
+            window.onFirebaseReady(loadProducts);
+        }
         return;
     }
 
@@ -1826,10 +1828,12 @@ function loadTodaysOffers() {
         </div>
     `;
 
-    // Check if db is ready, if not wait a bit and retry
+    // Check if db is ready, if not wait for Firebase callback
     if (typeof db === 'undefined' || !db) {
-        console.log('Database not ready, waiting...');
-        setTimeout(loadTodaysOffers, 100);
+        console.log('Database not ready, waiting for Firebase...');
+        if (typeof window.onFirebaseReady === 'function') {
+            window.onFirebaseReady(loadTodaysOffers);
+        }
         return;
     }
 
@@ -2175,7 +2179,12 @@ window.debugSmartwatchFilter = function() {
 document.addEventListener('DOMContentLoaded', () => {
     // Load today's offers if we're on the homepage
     if (document.getElementById('todaysOfferGrid')) {
-        loadTodaysOffers();
+        // Wait for Firebase to be ready before loading offers
+        if (typeof window.onFirebaseReady === 'function') {
+            window.onFirebaseReady(loadTodaysOffers);
+        } else {
+            loadTodaysOffers();
+        }
     }
 });
 
