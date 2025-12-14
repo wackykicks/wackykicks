@@ -1547,8 +1547,10 @@ function loadProducts() {
     console.log('🔄 Starting to load products...');
     console.log('📱 Firebase db available:', typeof db !== 'undefined');
     
-    if (typeof db === 'undefined') {
-        console.error('❌ Firebase database not initialized');
+    if (typeof db === 'undefined' || !db) {
+        console.log('Database not ready yet, retrying...');
+        showSkeletonLoading();
+        setTimeout(loadProducts, 100);
         return;
     }
 
@@ -1823,6 +1825,13 @@ function loadTodaysOffers() {
             <p>Loading today's special offers...</p>
         </div>
     `;
+
+    // Check if db is ready, if not wait a bit and retry
+    if (typeof db === 'undefined' || !db) {
+        console.log('Database not ready, waiting...');
+        setTimeout(loadTodaysOffers, 100);
+        return;
+    }
 
     // Query products from "today offer" category
     db.collection("products")
