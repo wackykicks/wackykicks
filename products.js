@@ -10,26 +10,28 @@ function calculateDiscountPercentage(oldPrice, newPrice) {
 }
 
 // ✅ WhatsApp Buy Now with User Information Modal
-function copyToWhatsApp(productName, productPrice) {
+function copyToWhatsApp(productName, productPrice, productImage = '') {
     console.log('🛍️ Buy Now clicked for:', productName);
     
     // Show user information modal
-    showUserInfoModal(productName, productPrice);
+    showUserInfoModal(productName, productPrice, 1, '', '', productImage);
 }
 
 // ✅ Show User Information Modal - Redirect to checkout page
 function showUserInfoModal(productName, productPrice, quantity = 1, size = '', color = '', image = '') {
-    // Redirect to checkout page with product details
-    const params = new URLSearchParams({
+    // Store product data in sessionStorage to avoid URL length limits
+    const orderData = {
         product: productName,
         price: productPrice,
         quantity: quantity,
         size: size || '',
         color: color || '',
         image: image || ''
-    });
+    };
+    sessionStorage.setItem('buyNowProduct', JSON.stringify(orderData));
     
-    window.location.href = `checkout.html?${params.toString()}`;
+    // Redirect to checkout page
+    window.location.href = 'checkout.html?source=buynow';
     return; // Exit function after redirect
     
     // Old modal code below (keeping for reference, won't execute)
@@ -1386,7 +1388,7 @@ function renderProducts(productsToShow = allProducts) {
             </a>
             ${outOfStock ? 
                 '<div class="out-of-stock-message">Currently Unavailable</div>' : 
-                `<button class="buy-now" onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}')">Buy Now</button>`
+                `<button class="buy-now" onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.img}')">Buy Now</button>`
             }
         `;
         fragment.appendChild(productCard);
@@ -1894,7 +1896,7 @@ function loadTodaysOffers() {
                         ${outOfStock ? 
                             '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
                             `<div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}')" 
+                                <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}', '${firstImage}')" 
                                         style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
                                     <i class="fab fa-whatsapp"></i> Buy Now
                                 </button>
@@ -2015,7 +2017,7 @@ function showAllTodaysOffers() {
                 ${outOfStock ? 
                     '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
                     `<div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}')" 
+                        <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}', '${firstImage}')" 
                                 style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
                             <i class="fab fa-whatsapp"></i> Buy Now
                         </button>

@@ -58,14 +58,29 @@ function getOrderData() {
             
             if (Array.isArray(cart) && cart.length > 0) {
                 // Ensure cart items have required fields
-                const items = cart.map(item => ({
-                    name: item.name || item.productName || 'Unknown Product',
-                    price: item.price || item.productPrice || '0',
-                    quantity: item.quantity || 1,
-                    size: item.size || '',
-                    color: item.color || '',
-                    image: item.image || item.imgUrl || item.photo || item.productImage || ''
-                }));
+                const items = cart.map(item => {
+                    // Handle image from various sources
+                    let imageUrl = item.image || item.img;
+                    
+                    // If image is still not found, check for imgUrl (might be array)
+                    if (!imageUrl && item.imgUrl) {
+                        imageUrl = Array.isArray(item.imgUrl) ? item.imgUrl[0] : item.imgUrl;
+                    }
+                    
+                    // Fallback to other possible fields
+                    if (!imageUrl) {
+                        imageUrl = item.photo || item.productImage || 'https://via.placeholder.com/80';
+                    }
+                    
+                    return {
+                        name: item.name || item.productName || 'Unknown Product',
+                        price: item.price || item.productPrice || '0',
+                        quantity: item.quantity || 1,
+                        size: item.size || '',
+                        color: item.color || '',
+                        image: imageUrl
+                    };
+                });
                 
                 console.log('Processed cart items:', items);
                 
@@ -112,7 +127,15 @@ function displayOrderSummary() {
         if (item.color) metaInfo.push(`Color: ${item.color}`);
         if (itemQty > 1) metaInfo.push(`Qty: ${itemQty}`);
         
-        const itemImage = item.image || item.imgUrl || item.photo || 'https://via.placeholder.com/80';
+        // Handle image from various sources, check if array
+        let itemImage = item.image || item.img;
+        if (!itemImage && item.imgUrl) {
+            itemImage = Array.isArray(item.imgUrl) ? item.imgUrl[0] : item.imgUrl;
+        }
+        if (!itemImage) {
+            itemImage = item.photo || 'https://via.placeholder.com/80';
+        }
+        
         const itemName = item.name || item.productName || 'Product';
         
         itemsHTML += `
