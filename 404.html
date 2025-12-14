@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found - Wackykicks</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        .bg-animation {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-animation span {
+            position: absolute;
+            display: block;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 15s infinite;
+            border-radius: 50%;
+        }
+
+        .bg-animation span:nth-child(1) {
+            left: 10%;
+            animation-delay: 0s;
+            animation-duration: 20s;
+        }
+
+        .bg-animation span:nth-child(2) {
+            left: 20%;
+            animation-delay: 2s;
+            animation-duration: 18s;
+            width: 30px;
+            height: 30px;
+        }
+
+        .bg-animation span:nth-child(3) {
+            left: 30%;
+            animation-delay: 4s;
+            animation-duration: 22s;
+        }
+
+        .bg-animation span:nth-child(4) {
+            left: 40%;
+            animation-delay: 0s;
+            animation-duration: 25s;
+            width: 25px;
+            height: 25px;
+        }
+
+        .bg-animation span:nth-child(5) {
+            left: 50%;
+            animation-delay: 3s;
+            animation-duration: 19s;
+        }
+
+        .bg-animation span:nth-child(6) {
+            left: 60%;
+            animation-delay: 7s;
+            animation-duration: 21s;
+            width: 35px;
+            height: 35px;
+        }
+
+        .bg-animation span:nth-child(7) {
+            left: 70%;
+            animation-delay: 1s;
+            animation-duration: 23s;
+        }
+
+        .bg-animation span:nth-child(8) {
+            left: 80%;
+            animation-delay: 5s;
+            animation-duration: 17s;
+            width: 28px;
+            height: 28px;
+        }
+
+        .bg-animation span:nth-child(9) {
+            left: 90%;
+            animation-delay: 2s;
+            animation-duration: 20s;
+        }
+
+        @keyframes float {
+            0% {
+                bottom: -50px;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                bottom: 110%;
+                opacity: 0;
+            }
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .icon-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+        }
+
+        .error-icon {
+            font-size: 80px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .error-code {
+            font-size: 72px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            letter-spacing: -2px;
+            line-height: 1;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        p {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #f093fb;
+            box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
+        }
+
+        .search-box button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .search-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .popular-links {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f3f4f6;
+        }
+
+        .popular-links h3 {
+            font-size: 18px;
+            color: #374151;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-width: 350px;
+            margin: 0 auto;
+        }
+
+        .link-card {
+            padding: 12px 15px;
+            background: #f9fafb;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .link-card:hover {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.2);
+        }
+
+        .link-card i {
+            font-size: 16px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .error-code {
+                font-size: 56px;
+            }
+
+            .icon-container {
+                width: 100px;
+                height: 100px;
+            }
+
+            .error-icon {
+                font-size: 60px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .link-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="container">
+        <div class="icon-container">
+            <i class="fas fa-exclamation-triangle error-icon"></i>
+        </div>
+
+        <div class="error-code">404</div>
+
+        <h1>Page Not Found</h1>
+        <p>Oops! The page you're looking for doesn't exist. It might have been moved or deleted.</p>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search for products..." onkeypress="handleSearchKeyPress(event)">
+            <button onclick="handleSearch()">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+
+        <div class="buttons">
+            <a href="index.html" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Back to Home
+            </a>
+            <button class="btn btn-secondary" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i>
+                Go Back
+            </button>
+        </div>
+
+        <div class="popular-links">
+            <h3>
+                <i class="fas fa-fire" style="color: #f5576c;"></i>
+                Popular Pages
+            </h3>
+            <div class="link-grid">
+                <a href="index.html" class="link-card">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="cart.html" class="link-card">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Cart</span>
+                </a>
+                <a href="about.html" class="link-card">
+                    <i class="fas fa-info-circle"></i>
+                    <span>About Us</span>
+                </a>
+                <a href="terms.html" class="link-card">
+                    <i class="fas fa-file-contract"></i>
+                    <span>Terms</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleSearch() {
+            const searchQuery = document.getElementById('searchInput').value.trim();
+            if (searchQuery) {
+                // Redirect to home page with search query
+                window.location.href = `index.html?search=${encodeURIComponent(searchQuery)}`;
+            } else {
+                // If empty, just go to home
+                window.location.href = 'index.html';
+            }
+        }
+
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                handleSearch();
+            }
+        }
+
+        // Auto-focus search input
+        document.getElementById('searchInput').focus();
+
+        // Log the attempted URL for debugging
+        console.log('404 Error - Attempted URL:', window.location.href);
+    </script>
+</body>
+</html>

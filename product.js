@@ -193,11 +193,11 @@ function loadProduct() {
                     ${sizesHTML}
                     <p class="description">${product.description || 'No description available.'}</p>
                     <div class="product-buttons">
-                        <button class="add-to-cart-btn" onclick="addProductToCart('${product.name}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] || ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
+                        <button class="add-to-cart-btn" onclick="addProductToCart('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] ? images[0].replace(/'/g, "\\'") : ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
                             <i class="fas fa-shopping-cart"></i>
                             Add to Cart
                         </button>
-                        <button class="buy-now" onclick="copyToWhatsApp('${product.name}', '${product.newPrice || product.price}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>Buy Now</button>
+                        <button class="buy-now" onclick="handleBuyNowClick()" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>Buy Now</button>
                     </div>
                 </div>
             </div>
@@ -283,6 +283,29 @@ function showSizeAlert() {
     }
 }
 
+// ✅ Handle Buy Now Click
+function handleBuyNowClick() {
+    console.log('🛍️ Buy Now clicked');
+    
+    // Get product data from currentProductData
+    if (!window.currentProductData) {
+        console.error('No product data available');
+        return;
+    }
+    
+    const productName = window.currentProductData.name;
+    const productPrice = window.currentProductData.newPrice || window.currentProductData.price;
+    
+    // Get quantity and options
+    const quantityInput = document.getElementById('quantity');
+    const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+    const size = window.selectedSize || '';
+    const color = window.selectedColor || '';
+
+    // Show user information modal
+    showUserInfoModal(productName, productPrice, quantity, size, color);
+}
+
 // ✅ WhatsApp Buy Now with User Information Modal
 function copyToWhatsApp(productName, productPrice) {
     console.log('🛍️ Buy Now clicked for:', productName);
@@ -302,17 +325,19 @@ function showUserInfoModal(productName, productPrice, quantity = 1, size = '', c
     // Get product image from current product data
     const productImage = window.currentProductData ? (window.currentProductData.photos && window.currentProductData.photos[0] ? window.currentProductData.photos[0] : '') : '';
     
-    // Redirect to checkout page with product details
-    const params = new URLSearchParams({
+    // Store product data in sessionStorage to avoid URL length limits
+    const orderData = {
         product: productName,
         price: productPrice,
         quantity: quantity,
         size: size || '',
         color: color || '',
         image: productImage
-    });
+    };
+    sessionStorage.setItem('buyNowProduct', JSON.stringify(orderData));
     
-    window.location.href = `checkout.html?${params.toString()}`;
+    // Redirect to checkout page
+    window.location.href = 'checkout.html?source=buynow';
     return; // Exit after redirect
     
     // Old modal code (won't execute)
@@ -1946,6 +1971,7 @@ function toggleMoreReviews() {
 // Make functions globally available
 window.toggleMoreReviews = toggleMoreReviews;
 window.copyToWhatsApp = copyToWhatsApp;
+window.handleBuyNowClick = handleBuyNowClick;
 window.closeUserInfoModal = closeUserInfoModal;
 window.submitUserInfo = submitUserInfo;
 window.showUserInfoModal = showUserInfoModal;

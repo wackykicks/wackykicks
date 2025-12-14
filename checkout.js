@@ -5,8 +5,35 @@ function getOrderData() {
     const urlParams = new URLSearchParams(window.location.search);
     
     // Check if coming from Buy Now button (single product)
+    if (urlParams.get('source') === 'buynow') {
+        // Try to get data from sessionStorage first
+        const buyNowData = sessionStorage.getItem('buyNowProduct');
+        if (buyNowData) {
+            try {
+                const productData = JSON.parse(buyNowData);
+                console.log('Loading order from Buy Now (sessionStorage):', productData.product);
+                // Clear after reading
+                sessionStorage.removeItem('buyNowProduct');
+                return {
+                    items: [{
+                        name: productData.product,
+                        price: productData.price,
+                        quantity: parseInt(productData.quantity || '1'),
+                        size: productData.size || '',
+                        color: productData.color || '',
+                        image: productData.image || 'https://via.placeholder.com/80'
+                    }],
+                    source: 'buynow'
+                };
+            } catch (e) {
+                console.error('Error parsing buyNowProduct:', e);
+            }
+        }
+    }
+    
+    // Fallback: Check URL parameters (for backward compatibility)
     if (urlParams.has('product')) {
-        console.log('Loading order from Buy Now:', urlParams.get('product'));
+        console.log('Loading order from Buy Now (URL params):', urlParams.get('product'));
         return {
             items: [{
                 name: urlParams.get('product'),
