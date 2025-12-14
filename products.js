@@ -1555,14 +1555,8 @@ function loadProducts() {
     // Show skeleton loading immediately
     showSkeletonLoading();
 
-    // Use cache first for faster loading, fallback to server
-    db.collection("products").get({ source: 'cache' }).then(snapshot => {
-        // If cache is empty, fetch from server
-        if (snapshot.empty || snapshot.metadata.fromCache === false) {
-            return db.collection("products").get({ source: 'server' });
-        }
-        return snapshot;
-    }).then(snapshot => {
+    // Fetch products - will use offline cache automatically with persistence enabled
+    db.collection("products").get().then(snapshot => {
         console.log('✅ Connected to Firebase successfully');
         console.log('📦 Number of products found:', snapshot.size);
         
