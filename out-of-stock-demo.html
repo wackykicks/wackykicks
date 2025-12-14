@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Out of Stock Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .demo-card { 
+            border: 1px solid #ddd; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            background: #f9f9f9;
+        }
+        .tag { 
+            display: inline-block; 
+            padding: 6px 12px; 
+            border-radius: 15px; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 0.8em;
+            margin: 5px 0;
+        }
+        .discount-tag { 
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); 
+        }
+        .out-stock-tag { 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+        }
+        .button { 
+            padding: 10px 20px; 
+            margin: 10px 5px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        .buy-btn { background: #007bff; color: white; }
+        .cart-btn { background: #28a745; color: white; }
+        .disabled { background: #ccc; color: #666; cursor: not-allowed; }
+        .code { background: #f4f4f4; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Out of Stock System Demo</h1>
+    
+    <h2>How it works:</h2>
+    <div class="code">
+        <strong>Method 1: Category Assignment</strong><br>
+        1. Admin assigns product to "Out of Stock" category<br>
+        2. System checks: product.categories.includes('out-of-stock')<br>
+        3. Automatically shows badge and disables buttons
+    </div>
+    
+    <div class="code">
+        <strong>Method 2: Stock Field (Backup)</strong><br>
+        1. Admin sets stock = 0 in product form<br>
+        2. System checks: product.stock === 0<br>
+        3. Same result as category method
+    </div>
+
+    <h2>Demo Examples:</h2>
+    
+    <div class="demo-card">
+        <h3>Regular Product (In Stock)</h3>
+        <span class="tag discount-tag">25% OFF</span><br>
+        <p><strong>Nike Air Max</strong> - ₹2,499</p>
+        <button class="button buy-btn">Buy Now</button>
+        <button class="button cart-btn">Add to Cart</button>
+        <p><em>Status: Available, shows discount badge</em></p>
+    </div>
+
+    <div class="demo-card">
+        <h3>Out of Stock Product (Category Method)</h3>
+        <span class="tag out-stock-tag">Out of Stock</span><br>
+        <p><strong>Adidas Boost</strong> - ₹3,299</p>
+        <button class="button disabled" disabled>Buy Now</button>
+        <button class="button disabled" disabled>Add to Cart</button>
+        <p><em>Status: categories: ['shoes', 'adidas', 'out-of-stock']</em></p>
+    </div>
+
+    <div class="demo-card">
+        <h3>Out of Stock Product (Stock Method)</h3>
+        <span class="tag out-stock-tag">Out of Stock</span><br>
+        <p><strong>Puma Runner</strong> - ₹1,899</p>
+        <button class="button disabled" disabled>Buy Now</button>
+        <button class="button disabled" disabled>Add to Cart</button>
+        <p><em>Status: stock: 0</em></p>
+    </div>
+
+    <h2>Admin Usage:</h2>
+    <ol>
+        <li>Go to <strong>Admin → Categories</strong></li>
+        <li>You'll see "Out of Stock" category in the list</li>
+        <li>In "Assign Products to Categories" section:
+            <ul>
+                <li>Select a product</li>
+                <li>Check the "Out of Stock" checkbox</li>
+                <li>Click "Save Assignments"</li>
+            </ul>
+        </li>
+        <li>Product will automatically show out-of-stock badge and disable buttons</li>
+        <li>To restock: uncheck "Out of Stock" category</li>
+    </ol>
+
+    <h2>Technical Implementation:</h2>
+    <div class="code">
+        <strong>JavaScript Logic:</strong><br>
+        const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');<br>
+        const isOutOfStockByStock = typeof product.stock !== 'undefined' && product.stock === 0;<br>
+        const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+    </div>
+
+    <p><a href="admin/categories.html">→ Go to Admin Categories</a></p>
+    <p><a href="index.html">→ Go to Main Store</a></p>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Demo Reviews</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <h1>Add Demo Reviews</h1>
+    <p>Enter a product ID to add demo reviews:</p>
+    <input type="text" id="productIdInput" placeholder="Product ID" style="padding: 10px; width: 300px;">
+    <button onclick="addDemoReviews()" style="padding: 10px 20px; margin-left: 10px;">Add Demo Reviews</button>
+    <button onclick="listProducts()" style="padding: 10px 20px; margin-left: 10px;">List All Products</button>
+    <div id="output" style="margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px; min-height: 100px;"></div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
+            messagingSenderId: "911540684237",
+            appId: "1:911540684237:web:faa772c146ff4acfadb084",
+            measurementId: "G-7HWH0SEJN2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function listProducts() {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Loading products...';
+            
+            try {
+                const snapshot = await db.collection("products").limit(10).get();
+                let productsHTML = `<h3>Available Products (showing first 10):</h3>`;
+                
+                snapshot.forEach(doc => {
+                    const product = doc.data();
+                    productsHTML += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <strong>ID:</strong> ${doc.id}<br>
+                        <strong>Name:</strong> ${product.name}<br>
+                        <strong>Price:</strong> ₹${product.price || product.newPrice}<br>
+                        <button onclick="document.getElementById('productIdInput').value='${doc.id}'" style="margin-top: 5px; padding: 5px 10px;">Use This ID</button>
+                    </div>`;
+                });
+                
+                output.innerHTML = productsHTML;
+            } catch (error) {
+                output.innerHTML = 'Error loading products: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        async function addDemoReviews() {
+            const productId = document.getElementById('productIdInput').value.trim();
+            const output = document.getElementById('output');
+            
+            if (!productId) {
+                output.innerHTML = 'Please enter a product ID first!';
+                return;
+            }
+            
+            output.innerHTML = 'Adding demo reviews for product: ' + productId;
+            
+            const demoReviews = [
+                {
+                    productId: productId,
+                    reviewerName: "Alex Johnson",
+                    reviewText: "Amazing sneakers! Super comfortable and great quality. Perfect fit and arrived quickly. Highly recommended!",
+                    rating: 5,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                {
+                    productId: productId,
+                    reviewerName: "Emma Wilson",
+                    reviewText: "Really nice shoes! Good quality and stylish design. Comfortable to wear all day. Worth the price.",
+                    rating: 4,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                {
+                    productId: productId,
+                    reviewerName: "Michael Brown",
+                    reviewText: "Decent shoes for the price. Not the best I've owned but certainly not the worst. Satisfied overall.",
+                    rating: 3,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                {
+                    productId: productId,
+                    reviewerName: "Sarah Davis",
+                    reviewText: "Excellent quality and super comfortable! Love the design and color. Fast shipping too. Will buy again!",
+                    rating: 5,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                {
+                    productId: productId,
+                    reviewerName: "David Miller",
+                    reviewText: "Good shoes, comfortable and well-made. Slightly expensive but the quality justifies the price. Happy with purchase.",
+                    rating: 4,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }
+            ];
+
+            try {
+                let successCount = 0;
+                for (const review of demoReviews) {
+                    await db.collection("reviews").add(review);
+                    successCount++;
+                    output.innerHTML = `Adding demo reviews... ${successCount}/${demoReviews.length} completed`;
+                }
+                
+                output.innerHTML = `<div style="color: green; font-weight: bold;">✅ Successfully added ${successCount} demo reviews for product: ${productId}</div>
+                <p>Now go to the product page to see the reviews!</p>
+                <p><strong>Product URL:</strong> <a href="product.html?id=${productId}" target="_blank">product.html?id=${productId}</a></p>`;
+                
+            } catch (error) {
+                output.innerHTML = '<div style="color: red;">❌ Error adding reviews: ' + error.message + '</div>';
+                console.error(error);
+            }
+        }
+
+        async function addReviewToExistingProduct() {
+            // I can see from your screenshot that there's a product with ID "0nGKhvNJIs6Ehojd8DFD"
+            const knownProductId = "0nGKhvNJIs6Ehojd8DFD";
+            document.getElementById('productIdInput').value = knownProductId;
+            await addMixedReviews();
+        }
+
+        async function addMixedReviews() {
+            const productId = document.getElementById('productIdInput').value;
+            if (!productId) {
+                alert('Please enter a product ID');
+                return;
+            }
+
+            const mixedReviews = [
+                // Good reviews (4-5 stars)
+                {
+                    reviewerName: "Sarah Johnson",
+                    rating: 5,
+                    reviewText: "Absolutely amazing sneakers! Super comfortable and the quality is outstanding. I've worn them for weeks and they still look brand new. Highly recommend!",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-01-15')),
+                    productId: productId,
+                    helpful: 15,
+                    verified: true
+                },
+                {
+                    reviewerName: "Mike Chen",
+                    rating: 4,
+                    reviewText: "Great sneakers overall. Love the design and they're very comfortable for daily wear. Only minor issue is they run slightly small, so order half a size up.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-01-20')),
+                    productId: productId,
+                    helpful: 12,
+                    verified: true
+                },
+                {
+                    reviewerName: "Emma Davis",
+                    rating: 5,
+                    reviewText: "Perfect fit and excellent quality! The colors are vibrant and exactly as shown. Fast shipping too. Will definitely buy more from this brand.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-01-25')),
+                    productId: productId,
+                    helpful: 9,
+                    verified: false
+                },
+
+                // Bad reviews (1-2 stars)
+                {
+                    reviewerName: "Alex Kumar",
+                    rating: 2,
+                    reviewText: "Not what I expected. The material feels cheap and they're not as comfortable as advertised. Also took longer to arrive than expected.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-02-01')),
+                    productId: productId,
+                    helpful: 4,
+                    verified: true
+                },
+                {
+                    reviewerName: "Jessica Wilson",
+                    rating: 1,
+                    reviewText: "Very disappointed. The shoes arrived damaged and the size was completely wrong. Customer service was unhelpful. Would not recommend.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-02-05')),
+                    productId: productId,
+                    helpful: 2,
+                    verified: true
+                },
+
+                // Average reviews (3 stars)
+                {
+                    reviewerName: "David Brown",
+                    rating: 3,
+                    reviewText: "Decent sneakers for the price. They're okay for casual wear but nothing special. Quality is average, comfort is acceptable.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-02-10')),
+                    productId: productId,
+                    helpful: 5,
+                    verified: false
+                },
+                {
+                    reviewerName: "Lisa Martinez",
+                    rating: 3,
+                    reviewText: "Mixed feelings about these. They look nice but the fit is weird. Not bad but not great either. Might work for some people.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-02-12')),
+                    productId: productId,
+                    helpful: 3,
+                    verified: true
+                },
+
+                // More good reviews
+                {
+                    reviewerName: "Tom Anderson",
+                    rating: 4,
+                    reviewText: "Really happy with these sneakers! They're stylish and comfortable. Great for both casual and semi-formal occasions.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-02-15')),
+                    productId: productId,
+                    helpful: 8,
+                    verified: true
+                },
+                {
+                    reviewerName: "Rachel Green",
+                    rating: 5,
+                    reviewText: "Love these shoes! They go with everything and are so comfortable. I get compliments every time I wear them.",
+                    reviewDate: firebase.firestore.Timestamp.fromDate(new Date('2024-02-18')),
+                    productId: productId,
+                    helpful: 11,
+                    verified: false
+                }
+            ];
+
+            try {
+                let addedCount = 0;
+                for (const review of mixedReviews) {
+                    await db.collection("reviews").add(review);
+                    addedCount++;
+                }
+
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px;">
+                        <h3>Success!</h3>
+                        <p>Added ${addedCount} mixed reviews (${mixedReviews.filter(r => r.rating >= 4).length} good, ${mixedReviews.filter(r => r.rating <= 2).length} bad, ${mixedReviews.filter(r => r.rating === 3).length} average) for product: <strong>${productId}</strong></p>
+                        <p>Now refresh your product page to see the strategic review display!</p>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                        <h3>Error</h3>
+                        <p>Failed to add reviews: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-load products on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            listProducts();
+            // Also add a quick button for the known product ID
+            document.body.insertAdjacentHTML('afterbegin', `
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>Quick Test</h3>
+                    <p>I can see you have a product with reviews. Click below to add more reviews to it:</p>
+                    <button onclick="addReviewToExistingProduct()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px;">
+                        Add Reviews to Existing Product (0nGKhvNJIs6Ehojd8DFD)
+                    </button>
+                </div>
+            `);
+        });
+    </script>
+</body>
+</html>

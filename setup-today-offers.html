@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Category and Product</title>
+    <style>
+        body {
+            font-family: 'Lucida Console', monospace;
+            margin: 40px;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Lucida Console', monospace;
+            font-size: 14px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .product-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Today's Offers Category & Product</h1>
+        <p>This will create the "Today's Offers" category and assign the specified product to it.</p>
+        
+        <div class="product-info">
+            <strong>Target Product ID:</strong> 0nGKhvNJls6Ehojd8DFD<br>
+            <strong>Product URL:</strong> <a href="http://127.0.0.1:5500/product.html?id=0nGKhvNJls6Ehojd8DFD" target="_blank">View Product</a>
+        </div>
+        
+        <button class="btn" onclick="executeFullSetup()" id="setupBtn">🚀 Complete Setup (Category + Product)</button>
+        <button class="btn" onclick="checkCategoryStatus()">Check Category Status</button>
+        <button class="btn" onclick="checkProductStatus()">Check Product Status</button>
+        <button class="btn" onclick="listTodayOfferProducts()">List Today's Offer Products</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGdGh5VvTmwpqaXojrKqZUhctFjIKOyJs",
+            authDomain: "wackykicks-59e50.firebaseapp.com",
+            projectId: "wackykicks-59e50",
+            storageBucket: "wackykicks-59e50.appspot.com",
+            messagingSenderId: "46712635171",
+            appId: "1:46712635171:web:1f9a5b7b1f3d5e2c8f9e10"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const PRODUCT_ID = '0nGKhvNJls6Ehojd8DFD';
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML += `<div class="status ${type}">${message}</div>`;
+        }
+
+        function clearStatus() {
+            document.getElementById('status').innerHTML = '';
+        }
+
+        async function executeFullSetup() {
+            const btn = document.getElementById('setupBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Setting up...';
+            clearStatus();
+            
+            try {
+                showStatus('🚀 Starting complete setup...', 'info');
+                
+                // Step 1: Create/Check Category
+                showStatus('📝 Step 1: Creating Today\'s Offers category...', 'info');
+                const categoryResult = await createTodayOffersCategory();
+                
+                if (categoryResult.success) {
+                    showStatus(`✅ Category ready: ${categoryResult.message}`, 'success');
+                    
+                    // Step 2: Assign Product
+                    showStatus('🏷️ Step 2: Assigning product to category...', 'info');
+                    const productResult = await assignProductToCategory();
+                    
+                    if (productResult.success) {
+                        showStatus(`✅ Product assigned: ${productResult.message}`, 'success');
+                        showStatus('🎉 COMPLETE! Category created and product assigned successfully!', 'success');
+                        
+                        // Step 3: Verify setup
+                        setTimeout(async () => {
+                            showStatus('🔍 Verifying setup...', 'info');
+                            await listTodayOfferProducts();
+                        }, 2000);
+                        
+                    } else {
+                        showStatus(`❌ Product assignment failed: ${productResult.message}`, 'error');
+                    }
+                } else {
+                    showStatus(`❌ Category creation failed: ${categoryResult.message}`, 'error');
+                }
+                
+            } catch (error) {
+                showStatus(`❌ Setup failed: ${error.message}`, 'error');
+                console.error('Setup error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Complete Setup (Category + Product)';
+            }
+        }
+
+        async function createTodayOffersCategory() {
+            try {
+                // Check if category already exists
+                const existingQuery = await db.collection("category").where("name", "==", "Today's Offers").get();
+                
+                if (!existingQuery.empty) {
+                    return { success: true, message: "Category already exists" };
+                }
+                
+                // Create the category
+                const categoryData = {
+                    name: "Today's Offers",
+                    id: "today offer",
+                    color: "#6c757d",
+                    image: "https://via.placeholder.com/60x60?text=OFFER",
+                    icon: "https://via.placeholder.com/60x60?text=OFFER",
+                    special: true,
+                    description: "Limited time special offers and exclusive deals",
+                    displayOrder: 1,
+                    isActive: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    categoryType: "special",
+                    isSystemCategory: true,
+                    features: {
+                        animated: true,
+                        priority: true,
+                        showCountdown: true,
+                        gradientBackground: true,
+                        limitedTime: true
+                    }
+                };
+                
+                const docRef = await db.collection("category").add(categoryData);
+                return { success: true, message: `Category created with ID: ${docRef.id}` };
+                
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
+        async function assignProductToCategory() {
+            try {
+                // First, get the current product data
+                const productDoc = await db.collection('products').doc(PRODUCT_ID).get();
+                
+                if (!productDoc.exists) {
+                    return { success: false, message: `Product ${PRODUCT_ID} not found` };
+                }
+                
+                const productData = productDoc.data();
+                let categories = productData.categories || [];
+                
+                // Add "today offer" to categories if not already present
+                if (!categories.includes('today offer')) {
+                    categories.push('today offer');
+                    
+                    // Update the product with new categories
+                    await db.collection('products').doc(PRODUCT_ID).update({
+                        categories: categories,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    return { success: true, message: `Product "${productData.name}" added to Today's Offers` };
+                } else {
+                    return { success: true, message: `Product "${productData.name}" already in Today's Offers` };
+                }
+                
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
+        async function checkCategoryStatus() {
+            clearStatus();
+            showStatus('🔍 Checking category status...', 'info');
+            
+            try {
+                const nameQuery = await db.collection("category").where("name", "==", "Today's Offers").get();
+                
+                if (!nameQuery.empty) {
+                    const category = nameQuery.docs[0].data();
+                    showStatus(`✅ Category found: "${category.name}" (Color: ${category.color}, Special: ${category.special ? 'Yes' : 'No'})`, 'success');
+                } else {
+                    showStatus('❌ Today\'s Offers category not found', 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Error checking category: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkProductStatus() {
+            clearStatus();
+            showStatus('🔍 Checking product status...', 'info');
+            
+            try {
+                const productDoc = await db.collection('products').doc(PRODUCT_ID).get();
+                
+                if (productDoc.exists) {
+                    const productData = productDoc.data();
+                    const categories = productData.categories || [];
+                    const inTodayOffers = categories.includes('today offer');
+                    
+                    showStatus(`✅ Product found: "${productData.name}"`, 'success');
+                    showStatus(`📂 Categories: ${categories.join(', ') || 'None'}`, 'info');
+                    showStatus(`🎯 In Today's Offers: ${inTodayOffers ? 'YES' : 'NO'}`, inTodayOffers ? 'success' : 'error');
+                } else {
+                    showStatus(`❌ Product ${PRODUCT_ID} not found`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Error checking product: ${error.message}`, 'error');
+            }
+        }
+
+        async function listTodayOfferProducts() {
+            showStatus('📋 Loading Today\'s Offer products...', 'info');
+            
+            try {
+                const productsQuery = await db.collection('products')
+                    .where('categories', 'array-contains', 'today offer')
+                    .get();
+                
+                if (productsQuery.empty) {
+                    showStatus('📭 No products found in Today\'s Offers category', 'info');
+                } else {
+                    showStatus(`🎯 Found ${productsQuery.size} product(s) in Today's Offers:`, 'success');
+                    
+                    productsQuery.docs.forEach((doc, index) => {
+                        const product = doc.data();
+                        showStatus(`${index + 1}. ${product.name} (ID: ${doc.id})`, 'info');
+                    });
+                }
+            } catch (error) {
+                showStatus(`❌ Error loading products: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-check status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                checkCategoryStatus();
+                setTimeout(checkProductStatus, 1000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Out of Stock Category</title>
+</head>
+<body>
+    <h1>Adding Out of Stock Category...</h1>
+    <div id="status">Initializing...</div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
+            messagingSenderId: "911540684237",
+            appId: "1:911540684237:web:faa772c146ff4acfadb084",
+            measurementId: "G-7HWH0SEJN2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const statusDiv = document.getElementById('status');
+
+        async function addOutOfStockCategory() {
+            try {
+                statusDiv.textContent = 'Checking if Out of Stock category already exists...';
+                
+                // Check if out-of-stock category already exists
+                const existingDoc = await db.collection('category').doc('out-of-stock').get();
+                
+                if (existingDoc.exists) {
+                    statusDiv.textContent = 'Out of Stock category already exists!';
+                    statusDiv.style.color = 'green';
+                    return;
+                }
+
+                statusDiv.textContent = 'Adding Out of Stock category to Firebase...';
+
+                // Add the out-of-stock category
+                await db.collection('category').doc('out-of-stock').set({
+                    name: 'Out of Stock',
+                    image: 'https://via.placeholder.com/200x200/ef4444/ffffff?text=OUT+OF+STOCK',
+                    color: '#ef4444',
+                    description: 'Products that are currently out of stock',
+                    createdAt: new Date().toISOString()
+                });
+
+                statusDiv.textContent = 'Successfully added Out of Stock category!';
+                statusDiv.style.color = 'green';
+                
+                // Add instructions
+                setTimeout(() => {
+                    statusDiv.innerHTML = `
+                        <div style="color: green; font-weight: bold;">✅ Successfully added Out of Stock category!</div>
+                        <br>
+                        <div><strong>How to use:</strong></div>
+                        <ol>
+                            <li>Go to Admin → Categories</li>
+                            <li>In the "Assign Products to Categories" section, select a product</li>
+                            <li>Check the "Out of Stock" category for products that are out of stock</li>
+                            <li>The product will automatically show "Out of Stock" badge and disable purchase buttons</li>
+                        </ol>
+                        <br>
+                        <div style="color: #666;">You can now close this page and go to the admin panel.</div>
+                    `;
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error adding category:', error);
+                statusDiv.textContent = 'Error: ' + error.message;
+                statusDiv.style.color = 'red';
+            }
+        }
+
+        // Run when page loads
+        window.addEventListener('load', addOutOfStockCategory);
+    </script>
+</body>
+</html>
