@@ -341,8 +341,49 @@ function submitCheckout() {
         console.log('Cart cleared after successful order');
     }
     
-    // Redirect to WhatsApp
-    window.location.href = whatsappURL;
+    // Redirect to WhatsApp with multi-device support
+    redirectToWhatsAppMultiDevice(whatsappURL);
+}
+
+// Enhanced WhatsApp redirect function with mobile and desktop support
+function redirectToWhatsAppMultiDevice(whatsappUrl) {
+    console.log('🚀 Starting WhatsApp redirect:', whatsappUrl);
+    
+    // Method 1: Try window.open (works best for desktop)
+    try {
+        const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        if (newWindow) {
+            console.log('✅ WhatsApp opened using window.open');
+            return;
+        }
+    } catch (error) {
+        console.warn('⚠️ window.open failed:', error);
+    }
+    
+    // Method 2: Direct navigation for mobile devices
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        console.log('📱 Mobile device detected, using direct navigation');
+        window.location.href = whatsappUrl;
+        return;
+    }
+    
+    // Method 3: Link click simulation (fallback for desktop)
+    try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('✅ WhatsApp redirect using link click');
+    } catch (error) {
+        console.error('❌ All redirect methods failed:', error);
+        // Last resort: show alert
+        alert(`Please open WhatsApp manually with this link: ${whatsappUrl}`);
+    }
 }
 
 // No longer using Google Maps Autocomplete - removed for faster page load
