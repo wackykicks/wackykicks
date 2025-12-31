@@ -1,7 +1,15 @@
 // Checkout Page JavaScript
 
+// Store order data globally to avoid re-fetching
+let cachedOrderData = null;
+
 // Get order data from URL parameters or localStorage
 function getOrderData() {
+    // Return cached data if available
+    if (cachedOrderData) {
+        return cachedOrderData;
+    }
+    
     const urlParams = new URLSearchParams(window.location.search);
     
     // Check if coming from Buy Now button (single product)
@@ -14,7 +22,7 @@ function getOrderData() {
                 console.log('Loading order from Buy Now (sessionStorage):', productData.product);
                 // Clear after reading
                 sessionStorage.removeItem('buyNowProduct');
-                return {
+                cachedOrderData = {
                     items: [{
                         name: productData.product,
                         price: productData.price,
@@ -25,6 +33,7 @@ function getOrderData() {
                     }],
                     source: 'buynow'
                 };
+                return cachedOrderData;
             } catch (e) {
                 console.error('Error parsing buyNowProduct:', e);
             }
@@ -34,7 +43,7 @@ function getOrderData() {
     // Fallback: Check URL parameters (for backward compatibility)
     if (urlParams.has('product')) {
         console.log('Loading order from Buy Now (URL params):', urlParams.get('product'));
-        return {
+        cachedOrderData = {
             items: [{
                 name: urlParams.get('product'),
                 price: urlParams.get('price'),
@@ -45,6 +54,7 @@ function getOrderData() {
             }],
             source: 'buynow'
         };
+        return cachedOrderData;
     }
     
     // Check if coming from cart (using correct localStorage key)
@@ -84,10 +94,11 @@ function getOrderData() {
                 
                 console.log('Processed cart items:', items);
                 
-                return {
+                cachedOrderData = {
                     items: items,
                     source: 'cart'
                 };
+                return cachedOrderData;
             } else {
                 console.warn('Cart is empty or not an array');
             }
@@ -250,6 +261,8 @@ function deleteAddress(id) {
 
 // Submit checkout
 function submitCheckout() {
+    console.log('🛒 Submit Checkout clicked');
+    
     const form = document.getElementById('checkoutForm');
     
     // Collect form data
@@ -263,10 +276,14 @@ function submitCheckout() {
         state: document.getElementById('state').value.trim()
     };
     
+    // Debug: Log collected form data
+    console.log('📋 Collected form data:', formData);
+    
     // Validate required fields
     if (!formData.fullName || !formData.phone || !formData.address || 
         !formData.district || !formData.state || !formData.pincode) {
         alert('Please fill in all required fields marked with *');
+        console.error('❌ Validation failed: Missing required fields');
         return;
     }
     
@@ -294,8 +311,14 @@ function submitCheckout() {
     }
     
     // Get order data
+    console.log('📦 Getting order data...');
     const orderData = getOrderData();
-    if (!orderData) return;
+    if (!orderData) {
+        console.error('❌ No order data found!');
+        alert('Error: Order data not found. Please try again.');
+        return;
+    }
+    console.log('✅ Order data retrieved:', orderData);
     
     // Create WhatsApp message
     let message = `🛍️ *New Order from WackyKicks*\n\n`;
