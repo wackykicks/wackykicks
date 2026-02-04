@@ -1,9 +1,52 @@
+
 // Categories Management System
 class CategoryManager {
     constructor() {
         this.categories = [];
         this.selectedCategories = [];
+        this.categoryDisplayOrder = []; // Will be loaded from Firebase
+
         this.init();
+    }
+
+    // Sort categories based on the defined display order
+    sortCategories() {
+        if (!this.categoryDisplayOrder || this.categoryDisplayOrder.length === 0) {
+            console.log('⚠️ No custom order found, using default order');
+            // Default fallback order if nothing in DB
+            const defaultOrder = ['all', 'today offer', 'smartwatch', 'gadgets', 'shoes', 'watches', 'wallet', 'belt', 'sunglasses', 'accessories'];
+
+            this.categories.sort((a, b) => {
+                const idA = a.id.toLowerCase();
+                const idB = b.id.toLowerCase();
+                let indexA = defaultOrder.indexOf(idA);
+                let indexB = defaultOrder.indexOf(idB);
+                if (indexA === -1) indexA = 9999;
+                if (indexB === -1) indexB = 9999;
+                return indexA - indexB;
+            });
+            return;
+        }
+
+        this.categories.sort((a, b) => {
+            const idA = a.id.toLowerCase();
+            const idB = b.id.toLowerCase();
+
+            let indexA = this.categoryDisplayOrder.indexOf(idA);
+            let indexB = this.categoryDisplayOrder.indexOf(idB);
+
+            // If category is not in the list, treat as lowest priority (put at the end)
+            if (indexA === -1) indexA = 9999;
+            if (indexB === -1) indexB = 9999;
+
+            // Sort by defined order first
+            if (indexA !== indexB) {
+                return indexA - indexB;
+            }
+            return 0;
+        });
+
+        console.log('✅ Categories sorted by custom order from DB');
     }
 
     // Initialize category manager
@@ -19,7 +62,7 @@ class CategoryManager {
                     this.loadCategories();
                 }
             }, 100);
-            
+
             // Fallback after 5 seconds if Firebase doesn't load
             setTimeout(() => {
                 clearInterval(checkFirebase);
@@ -27,6 +70,7 @@ class CategoryManager {
                     console.warn('Firebase not available, using default categories');
                     this.categories = this.getDefaultCategories();
                     this.renderCategories();
+                    this.setupEventListeners();
                 }
             }, 5000);
         }
@@ -36,42 +80,45 @@ class CategoryManager {
     // Load categories from Firebase
     async loadCategories() {
         console.log('🏷️ Loading categories...');
-        console.log('🔥 Firebase db available:', typeof db !== 'undefined');
-        
+
         try {
             if (typeof db !== 'undefined') {
-                console.log('📡 Fetching categories from Firebase...');
+                // 1. Fetch Categories
                 const categoriesSnapshot = await db.collection('category').get();
-                console.log('📦 Categories found:', categoriesSnapshot.size);
-                
+
+                // 2. Fetch Display Order
+                try {
+                    const settingsDoc = await db.collection('category').doc('CONFIG_display_order').get();
+                    if (settingsDoc.exists) {
+                        this.categoryDisplayOrder = settingsDoc.data().order || [];
+                        console.log('📋 Loaded category order:', this.categoryDisplayOrder);
+                    }
+                } catch (e) {
+                    console.warn('Could not load category order:', e);
+                }
+
                 this.categories = categoriesSnapshot.docs.map(doc => {
-                    const data = { 
-                        id: doc.id, 
+                    const data = {
+                        id: doc.id,
                         ...doc.data(),
                         name: doc.data().name || 'Unnamed Category',
                         image: doc.data().image || doc.data().icon || '',
                         color: doc.data().color || '#667eea'
                     };
-                    console.log('🏷️ Loaded category:', data.name);
                     return data;
                 });
-                
-                console.log('✅ Categories loaded successfully:', this.categories.length);
             } else {
-                console.log('⚠️ Firebase not available, using fallback categories');
                 this.categories = this.getDefaultCategories();
             }
-            
-            // If no categories found, use defaults
+
             if (this.categories.length === 0) {
-                console.log('📭 No categories found, using defaults');
                 this.categories = this.getDefaultCategories();
             }
-            
+
+            this.sortCategories();
             this.renderCategories();
         } catch (error) {
             console.error('❌ Error loading categories:', error);
-            console.log('🔄 Using default categories due to error');
             this.categories = this.getDefaultCategories();
             this.renderCategories();
         }
@@ -123,7 +170,7 @@ class CategoryManager {
     renderCategoryCard(category) {
         const isSelected = this.selectedCategories.includes(category.id);
         const isSpecialOffer = category.id === 'today offer';
-        
+
         return `
             <div class="category-card ${isSelected ? 'selected' : ''} ${isSpecialOffer ? 'special-offer-card' : ''}" 
                  data-category-id="${category.id}"
@@ -142,7 +189,7 @@ class CategoryManager {
     // Select/deselect category (single selection only)
     selectCategory(categoryId) {
         console.log('🎯 Category selected:', categoryId);
-        
+
         if (categoryId === 'all') {
             // Clear all selections when "All" is clicked
             this.selectedCategories = [];
@@ -159,7 +206,7 @@ class CategoryManager {
 
         this.renderCategories();
         this.filterProductsByCategory();
-        
+
         // Auto-scroll to products section after category selection
         this.scrollToProducts();
     }
@@ -167,7 +214,7 @@ class CategoryManager {
     // Filter products by selected categories
     filterProductsByCategory() {
         console.log('🏷️ CategoryManager filtering by categories:', this.selectedCategories);
-        
+
         if (typeof window.filterProducts === 'function') {
             // Get the actual category data to pass more information
             const selectedCategoryData = this.selectedCategories.map(categoryId => {
@@ -179,9 +226,9 @@ class CategoryManager {
                     originalName: category ? (category.originalName || category.name) : categoryId
                 };
             });
-            
+
             console.log('🏷️ Sending category data to filterProducts:', selectedCategoryData);
-            
+
             // Pass both the simple IDs and the full category data
             window.filterProducts(this.selectedCategories, selectedCategoryData);
         } else {
@@ -192,13 +239,13 @@ class CategoryManager {
     // Auto-scroll to products section
     scrollToProducts() {
         console.log('🔽 Auto-scrolling to products section...');
-        
+
         // Wait a short moment for the products to be filtered and rendered
         setTimeout(() => {
             const productSection = document.getElementById('product-grid');
             if (productSection) {
                 console.log('✅ Product section found, scrolling...');
-                productSection.scrollIntoView({ 
+                productSection.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start',
                     inline: 'nearest'
@@ -210,7 +257,7 @@ class CategoryManager {
                     const element = document.querySelector(selector);
                     if (element) {
                         console.log('✅ Found product section with selector:', selector);
-                        element.scrollIntoView({ 
+                        element.scrollIntoView({
                             behavior: 'smooth',
                             block: 'start',
                             inline: 'nearest'
@@ -218,7 +265,7 @@ class CategoryManager {
                         break;
                     }
                 }
-                
+
                 if (!document.querySelector('#product-grid, #productList, .product-grid-section, .products-section')) {
                     console.warn('⚠️ Product section not found for auto-scroll');
                 }
@@ -235,7 +282,7 @@ class CategoryManager {
             } else {
                 categoryData.id = Date.now().toString();
             }
-            
+
             this.categories.push(categoryData);
             this.renderCategories();
             return true;
@@ -251,7 +298,7 @@ class CategoryManager {
             if (typeof db !== 'undefined') {
                 await db.collection('category').doc(categoryId).update(updateData);
             }
-            
+
             const categoryIndex = this.categories.findIndex(cat => cat.id === categoryId);
             if (categoryIndex > -1) {
                 this.categories[categoryIndex] = { ...this.categories[categoryIndex], ...updateData };
@@ -270,7 +317,7 @@ class CategoryManager {
             if (typeof db !== 'undefined') {
                 await db.collection('category').doc(categoryId).delete();
             }
-            
+
             this.categories = this.categories.filter(cat => cat.id !== categoryId);
             this.selectedCategories = this.selectedCategories.filter(id => id !== categoryId);
             this.renderCategories();

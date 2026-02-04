@@ -95,14 +95,7 @@ class RamadanThemeController {
         // Update Promotional Banners
         this.updatePromotionalBanners(phase);
 
-        // Add Hanging Lantern Moon (ramdan_lantern_moon.png)
-        if (!document.querySelector('.ramadan-hanging-moon')) {
-            const hangingMoon = document.createElement('img');
-            hangingMoon.src = './ramdan_lantern_moon.png';
-            hangingMoon.className = 'ramadan-hanging-moon';
-            hangingMoon.alt = 'Ramadan Hanging Moon';
-            document.body.prepend(hangingMoon);
-        }
+
 
         // Add Mosque Background (ramdan_mosque.png)
         if (!document.querySelector('.ramadan-mosque-bg')) {
