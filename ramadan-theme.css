@@ -1,0 +1,354 @@
+/* Ramadan Theme CSS - Blue & White "Peaceful Dawn" Edition */
+/* Applied dynamically via JavaScript */
+
+:root {
+    --ramadan-blue-primary: #0056b3;
+    /* Royal Blue */
+    --ramadan-blue-dark: #003366;
+    /* Deep Navy */
+    --ramadan-blue-light: #e3f2fd;
+    /* Very light blue bg */
+    --ramadan-cyan: #0dcaf0;
+    /* Cyan accent */
+    --ramadan-white: #ffffff;
+    --ramadan-text-dark: #0a1f33;
+    /* Dark text for readability */
+    --ramadan-gold-accent: #d4af37;
+    /* Kept for subtle highlights */
+}
+
+/* Background - Light & Airy with Geometric Pattern Hint */
+body.ramadan-theme {
+    background-color: var(--ramadan-white);
+    background-image:
+        radial-gradient(circle at 50% 50%, #f0f7ff 0%, #ffffff 100%),
+        repeating-linear-gradient(45deg, rgba(0, 86, 179, 0.03) 0px, rgba(0, 86, 179, 0.03) 1px, transparent 1px, transparent 20px),
+        repeating-linear-gradient(-45deg, rgba(0, 86, 179, 0.03) 0px, rgba(0, 86, 179, 0.03) 1px, transparent 1px, transparent 20px);
+    position: relative;
+    color: var(--ramadan-text-dark);
+    overflow-x: hidden;
+    /* Prevent horizontal scroll from fixed elements */
+}
+
+/* Remove or soften the Stars animation (it's for night sky) */
+/* We'll replace it with a subtle "shimmer" or just remove it for the clean look */
+body.ramadan-theme::before {
+    display: none;
+}
+
+/* Navbar - Elegant White or Light Blue */
+.ramadan-theme .navbar {
+    background: white;
+    border-bottom: 2px solid var(--ramadan-blue-primary);
+    box-shadow: 0 4px 15px rgba(0, 86, 179, 0.1);
+}
+
+.ramadan-theme .logo {
+    color: var(--ramadan-blue-primary);
+    text-shadow: none;
+    font-family: 'Georgia', serif;
+}
+
+.ramadan-theme .nav-links a {
+    color: var(--ramadan-blue-dark) !important;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.ramadan-theme .nav-links a:hover {
+    color: var(--ramadan-blue-primary) !important;
+    text-shadow: 0 0 1px var(--ramadan-cyan);
+}
+
+/* Mosque BG - Dark Blue Silhouette on White BG */
+.ramadan-mosque-bg {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 350px;
+    background-image: url('./ramdan_mosque.png');
+    background-repeat: repeat-x;
+    background-position: bottom center;
+    background-size: auto 100%;
+    /* Ensure it fills height and repeats horizontally */
+    z-index: -1;
+    opacity: 0.15;
+    /* Reduced opacity significantly */
+    pointer-events: none;
+}
+
+/* Search Container - Clean Blue Border */
+.ramadan-theme .search-container {
+    border: 1px solid var(--ramadan-blue-primary);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.ramadan-theme .search-container input {
+    color: var(--ramadan-blue-dark);
+    background: transparent;
+    border: 1px solid rgba(0, 86, 179, 0.2);
+}
+
+.ramadan-theme .search-container input::placeholder {
+    color: rgba(0, 51, 102, 0.5);
+}
+
+.ramadan-theme .search-container i {
+    color: var(--ramadan-blue-primary) !important;
+}
+
+/* Cart Button */
+.ramadan-theme .cart-container button {
+    background: linear-gradient(135deg, var(--ramadan-blue-primary), var(--ramadan-blue-dark));
+    border: none;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 86, 179, 0.3);
+}
+
+.ramadan-theme .cart-container button i {
+    color: white;
+}
+
+.ramadan-theme .cart-count {
+    background: var(--ramadan-cyan);
+    color: var(--ramadan-blue-dark);
+    border: 1px solid white;
+    font-weight: bold;
+}
+
+/* MAIN CONTENT - Ensure transparency/background blend */
+.ramadan-theme .categories-section,
+.ramadan-theme .product-grid-section,
+.ramadan-theme .promotional-banners {
+    background: transparent !important;
+}
+
+.ramadan-theme .categories-section::before {
+    display: none;
+}
+
+/* Category Cards - White with Blue Accents */
+.ramadan-theme .category-card {
+    background: white !important;
+    border: 1px solid rgba(0, 86, 179, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 86, 179, 0.08) !important;
+    transition: all 0.3s ease !important;
+}
+
+.ramadan-theme .category-card .category-name {
+    color: var(--ramadan-blue-dark) !important;
+    text-shadow: none !important;
+    font-weight: 600 !important;
+}
+
+.ramadan-theme .category-card:hover {
+    border-color: var(--ramadan-blue-primary) !important;
+    transform: translateY(-5px) !important;
+    box-shadow: 0 8px 25px rgba(0, 86, 179, 0.2) !important;
+}
+
+.ramadan-theme .category-image {
+    background: linear-gradient(135deg, var(--ramadan-blue-primary), var(--ramadan-blue-dark)) !important;
+    box-shadow: 0 4px 10px rgba(0, 86, 179, 0.2) !important;
+}
+
+/* Product Cards */
+.ramadan-theme .product-card {
+    background: white !important;
+    border: 1px solid rgba(0, 86, 179, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    /* Softer shadow */
+    transition: all 0.3s ease;
+}
+
+.ramadan-theme .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 86, 179, 0.15);
+    /* Blue glow shadow */
+    border-color: var(--ramadan-blue-primary);
+}
+
+.ramadan-theme .product-card button {
+    background: var(--ramadan-blue-primary);
+    border: none;
+    color: white;
+}
+
+.ramadan-theme .product-card button:hover {
+    background: var(--ramadan-blue-dark);
+}
+
+/* Headings and Text */
+.ramadan-theme h2,
+.ramadan-theme h3,
+.ramadan-theme h1 {
+    color: var(--ramadan-blue-dark) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: none !important;
+}
+
+.ramadan-theme .product-card h3,
+.ramadan-theme .product-card p {
+    color: var(--ramadan-text-dark) !important;
+}
+
+.ramadan-theme .product-card .price {
+    color: var(--ramadan-blue-primary) !important;
+    font-weight: bold;
+}
+
+/* Promotional Banners */
+.ramadan-theme .promo-banner {
+    border: 2px solid var(--ramadan-blue-primary);
+    box-shadow: 0 5px 20px rgba(0, 86, 179, 0.15);
+    border-radius: 12px;
+    /* Soften edges */
+}
+
+/* Overlay corner (Blue instead of Gold) */
+.ramadan-theme .promo-banner::after {
+    background: var(--ramadan-blue-primary);
+    box-shadow: none;
+}
+
+/* Footer - Dark Blue Gradient */
+.ramadan-theme .footer {
+    background: linear-gradient(135deg, var(--ramadan-blue-dark), #002752);
+    border-top: 4px solid var(--ramadan-blue-primary);
+    color: var(--ramadan-blue-light);
+    position: relative;
+    z-index: 2;
+}
+
+.ramadan-theme .footer a {
+    color: var(--ramadan-cyan);
+}
+
+.ramadan-theme .footer a:hover {
+    color: white;
+}
+
+/* Decorative Lanterns - HIDDEN (Clashes with banner images) */
+.ramadan-lantern {
+    display: none;
+}
+
+.ramadan-lantern::before {
+    /* String color */
+    background: var(--ramadan-blue-dark);
+}
+
+.ramadan-lantern::after {
+    /* Light inside - Cool white/cyan glow */
+    background: radial-gradient(circle, #fff, #a2d9ff);
+    box-shadow: 0 0 10px #a2d9ff;
+    opacity: 0.9;
+}
+
+@keyframes swing {
+    from {
+        transform: rotate(-3deg);
+    }
+
+    to {
+        transform: rotate(3deg);
+    }
+}
+
+/* Banner Message - Blue & White */
+.ramadan-banner-message {
+    background: white;
+    color: var(--ramadan-blue-primary);
+    border-bottom: 2px solid var(--ramadan-blue-primary);
+    text-align: center;
+    padding: 15px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    font-family: 'Georgia', serif;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Image Elements Re-styling */
+.ramadan-deco-img {
+    filter: drop-shadow(0 4px 6px rgba(0, 86, 179, 0.2));
+}
+
+/* Hanging Moon - Make it Metallic Blue or Gold */
+.ramadan-hanging-moon {
+    position: fixed;
+    top: 90px;
+    left: 20px;
+    width: 140px;
+    height: auto;
+    z-index: 1002;
+    pointer-events: none;
+    z-index: 1002;
+    pointer-events: none;
+    /* Colorize to Rich Gold (#D4AF37) */
+    filter: invert(76%) sepia(35%) saturate(836%) hue-rotate(2deg) brightness(92%) contrast(87%) drop-shadow(0 5px 15px rgba(212, 175, 55, 0.3));
+    animation: gentle-sway 4s ease-in-out infinite alternate;
+}
+
+/* Mosque BG - Dark Blue Silhouette on White BG */
+.ramadan-mosque-bg {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 350px;
+    background-image: url('./ramdan_mosque.png');
+    background-repeat: repeat-x;
+    background-position: bottom center;
+    background-size: contain;
+    z-index: -1;
+    /* Invert colors or use opacity to make it look good on white. 
+       If image is dark, it looks good on white. 
+       If image was light (for dark bg), we need to invert.
+       Assuming it was adapted for the previous dark theme, let's ensure it pops. */
+    opacity: 0.8;
+    pointer-events: none;
+    /* If the original image is light-colored, this filter will make it dark blueish */
+    /* filter: brightness(0.2) sepia(1) hue-rotate(190deg) saturate(3); */
+}
+
+/* Today's Offer Section */
+.ramadan-theme .todays-offer-section {
+    background: white !important;
+    border: 2px solid var(--ramadan-blue-primary);
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 86, 179, 0.1);
+}
+
+.ramadan-theme .offer-header h2 {
+    color: var(--ramadan-blue-primary) !important;
+}
+
+.ramadan-theme .offer-header p {
+    color: var(--ramadan-text-dark) !important;
+}
+
+/* Pagination */
+.ramadan-theme .pagination button {
+    background-color: white;
+    color: var(--ramadan-blue-primary);
+    border: 1px solid var(--ramadan-blue-primary);
+}
+
+.ramadan-theme .pagination button:hover {
+    background-color: var(--ramadan-blue-primary);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .ramadan-hanging-moon {
+        width: 60px;
+        /* Adjusted size */
+        top: 110px;
+        /* Adjusted slightly up */
+        left: 10px;
+        /* Inherits position: fixed from main rule, so it floats on scroll */
+    }
+}

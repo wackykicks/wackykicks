@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <link rel="icon" href="Logo/1000163691.jpg" type="image/png">
     <link rel="icon" href="1000163691.jpg" type="image/png">
@@ -10,194 +11,202 @@
     <link rel="stylesheet" href="categories.css">
     <link rel="stylesheet" href="floating-alerts.css">
     <link rel="stylesheet" href="address-modal.css">
-    <link rel="stylesheet" href="christmas-theme.css">
+    <!-- <link rel="stylesheet" href="christmas-theme.css"> -->
+    <link rel="stylesheet" href="ramadan-theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q&libraries=places" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q&libraries=places"
+        async defer></script>
 </head>
+
 <body>
 
-<!-- Navbar -->
-<nav class="navbar">
-    <div class="logo">Wackykicks.in</div>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Wackykicks.in</div>
 
-    <ul class="nav-links">
-        <li><a href="#">Home</a></li>
-        <li><a href="#product-grid">Products</a></li>
-        <li><a href="about.html">About us</a></li>
-        <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i></a></li>
-        <li><a href="https://www.instagram.com/wackykicks.in/" target="_blank"><i class="fab fa-instagram"></i></a></li>
-    </ul>
+        <ul class="nav-links">
+            <li><a href="#">Home</a></li>
+            <li><a href="#product-grid">Products</a></li>
+            <li><a href="about.html">About us</a></li>
+            <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i></a></li>
+            <li><a href="https://www.instagram.com/wackykicks.in/" target="_blank"><i class="fab fa-instagram"></i></a>
+            </li>
+        </ul>
 
-  <div class="search-container" role="search">
-    <i class="fas fa-search" aria-hidden="true" style="color:#666"></i>
-    <input id="searchInput" type="text" placeholder="Search for a product" aria-label="Search products" autocomplete="off" />
-    <button type="button" id="clearSearchBtn" aria-label="Clear search" title="Clear" style="display:none">
-      <i class="fas fa-times"></i>
-    </button>
-    <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" style="display:none"></div>
-  </div>
-
-    <div class="cart-container">
-        <a href="cart.html" aria-label="Go to cart">
-            <button type="button">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count" id="cartCount">0</span>
+        <div class="search-container" role="search">
+            <i class="fas fa-search" aria-hidden="true" style="color:#666"></i>
+            <input id="searchInput" type="text" placeholder="Search for a product" aria-label="Search products"
+                autocomplete="off" />
+            <button type="button" id="clearSearchBtn" aria-label="Clear search" title="Clear" style="display:none">
+                <i class="fas fa-times"></i>
             </button>
-        </a>
+            <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions"
+                style="display:none"></div>
+        </div>
+
+        <div class="cart-container">
+            <a href="cart.html" aria-label="Go to cart">
+                <button type="button">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </button>
+            </a>
+        </div>
+
+        <div class="hamburger">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <!-- Categories Section -->
+    <div id="categoriesContainer">
+        <!-- Categories will be dynamically loaded here -->
     </div>
 
-    <div class="hamburger">
-        <i class="fas fa-bars"></i>
-    </div>
-</nav>
+    <!-- First Promotional Banner (after categories) -->
+    <section class="promotional-banners full-width" id="promotional-banners-1">
+        <!-- Smartwatch Banner -->
+        <div class="promo-banner smartwatch-banner image-only" onclick="redirectToCategoryEnhanced('smartwatch')">
+            <img src="./Smartwatch.png" alt="Smartwatch Collection" loading="lazy">
+        </div>
+    </section>
 
-<!-- Categories Section -->
-<div id="categoriesContainer">
-    <!-- Categories will be dynamically loaded here -->
-</div>
+    <!-- Today's Offer Section -->
+    <section class="todays-offer-section" id="todays-offer">
+        <div class="offer-header">
+            <h2>Today's Special Offers</h2>
+            <p>Limited time deals - Don't miss out!</p>
+        </div>
+        <div class="offer-grid" id="todaysOfferGrid">
+            <!-- Today's offer products will be dynamically loaded here -->
+        </div>
+    </section>
 
-<!-- First Promotional Banner (after categories) -->
-<section class="promotional-banners full-width" id="promotional-banners-1">
-    <!-- Smartwatch Banner -->
-    <div class="promo-banner smartwatch-banner image-only" onclick="redirectToCategoryEnhanced('smartwatch')">
-        <img src="./Smartwatch.png" alt="Smartwatch Collection" loading="lazy">
-    </div>
-</section>
+    <!-- Second Promotional Banner (after today's offers) -->
+    <section class="promotional-banners full-width" id="promotional-banners-2">
+        <!-- Smart Gadgets Banner -->
+        <div class="promo-banner gadgets-banner image-only" onclick="redirectToCategoryEnhanced('gadgets')">
+            <img src="./Smart Gadget.png" alt="Smart Gadgets Collection" loading="lazy">
+        </div>
+    </section>
 
-<!-- Today's Offer Section -->
-<section class="todays-offer-section" id="todays-offer">
-    <div class="offer-header">
-        <h2>Today's Special Offers</h2>
-        <p>Limited time deals - Don't miss out!</p>
-    </div>
-    <div class="offer-grid" id="todaysOfferGrid">
-        <!-- Today's offer products will be dynamically loaded here -->
-    </div>
-</section>
+    <!-- Product Grid Section -->
+    <section class="product-grid-section" id="product-grid">
+        <h2>products</h2>
+        <div class="product-grid" id="productList">
+            <!-- Products will be dynamically injected here -->
+        </div>
 
-<!-- Second Promotional Banner (after today's offers) -->
-<section class="promotional-banners full-width" id="promotional-banners-2">
-    <!-- Smart Gadgets Banner -->
-    <div class="promo-banner gadgets-banner image-only" onclick="redirectToCategoryEnhanced('gadgets')">
-        <img src="./Smart Gadget.png" alt="Smart Gadgets Collection" loading="lazy">
-    </div>
-</section>
+        <div class="product-pagination">
+            <button id="prevPage" disabled>&laquo; </button>
+            <span id="pageInfo"></span>
+            <button id="nextPage"> &raquo;</button>
+        </div>
 
-<!-- Product Grid Section -->
-<section class="product-grid-section" id="product-grid">
-    <h2>products</h2>
-    <div class="product-grid" id="productList">
-        <!-- Products will be dynamically injected here -->
-    </div>
+    </section>
 
-    <div class="product-pagination">
-        <button id="prevPage" disabled>&laquo; </button>
-        <span id="pageInfo"></span>
-        <button id="nextPage"> &raquo;</button>
-    </div>
-    
-</section>
-
-<footer class="footer">
-  <div class="footer-container">
-    <div class="footer-column">
-      <h4>SHOP</h4>
-      <a href="/index.html">All Products</a>
-      <a href="/about.html">About Us</a>
-    </div>
-    <div class="footer-column">
-      <h4>POLICIES</h4>
-      <a href="/terms.html">Terms & Conditions</a>
-      <a href="/privacy-policy.html">Privacy Policy</a>
-      <a href="/shipping-policy.html">Shipping Policy</a>
-      <a href="/refund-policy.html">Refund Policy</a>
-      <a href="/accessibility.html">Accessibility Statement</a>
-    </div>
-    <div class="footer-column">
-      <h4>CONTACT</h4>
-      <a href="mailto:wackykicks.in@gmail.com">wackykicks.in@gmail.com</a>
-      <a href="tel:+918138999550">8138999550</a>
-      <a href="https://wackykicks.in" target="_blank">wackykicks.in</a>
-    </div>
-    <div class="footer-column">
-      <h4>SOCIAL</h4>
-      <a href="https://instagram.com/wackykicks.store" target="_blank">Instagram</a>
-      <a href="https://wa.me/918138999550" target="_blank">WhatsApp</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <p>© 2025 by WackyKicks. </p>
-    <p class="built-by">Built by <a href="https://instagram.com/nexa.art_design" target="_blank">Nexa</a></p>
-  </div>
-</footer>
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-column">
+                <h4>SHOP</h4>
+                <a href="/index.html">All Products</a>
+                <a href="/about.html">About Us</a>
+            </div>
+            <div class="footer-column">
+                <h4>POLICIES</h4>
+                <a href="/terms.html">Terms & Conditions</a>
+                <a href="/privacy-policy.html">Privacy Policy</a>
+                <a href="/shipping-policy.html">Shipping Policy</a>
+                <a href="/refund-policy.html">Refund Policy</a>
+                <a href="/accessibility.html">Accessibility Statement</a>
+            </div>
+            <div class="footer-column">
+                <h4>CONTACT</h4>
+                <a href="mailto:wackykicks.in@gmail.com">wackykicks.in@gmail.com</a>
+                <a href="tel:+918138999550">8138999550</a>
+                <a href="https://wackykicks.in" target="_blank">wackykicks.in</a>
+            </div>
+            <div class="footer-column">
+                <h4>SOCIAL</h4>
+                <a href="https://instagram.com/wackykicks.store" target="_blank">Instagram</a>
+                <a href="https://wa.me/918138999550" target="_blank">WhatsApp</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 by WackyKicks. </p>
+            <p class="built-by">Built by <a href="https://instagram.com/nexa.art_design" target="_blank">Nexa</a></p>
+        </div>
+    </footer>
 
 
-<!-- Firebase Scripts (add your Firebase config in JS) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase Scripts (add your Firebase config in JS) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-<!-- Initialize Firebase Config -->
-<script>
-// Create callback queue for when Firebase is ready
-window.firebaseReadyCallbacks = [];
-window.isFirebaseReady = false;
-
-// Firebase Config
-const firebaseConfig = {
-    apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-    authDomain: "wackykicks-65cbe.firebaseapp.com",
-    projectId: "wackykicks-65cbe",
-    storageBucket: "wackykicks-65cbe.appspot.com",
-    messagingSenderId: "911540684237",
-    appId: "1:911540684237:web:faa772c146ff4acfadb084",
-    measurementId: "G-7HWH0SEJN2"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-window.db = firebase.firestore();
-
-// Enable offline persistence for instant loading
-firebase.firestore().enablePersistence({ synchronizeTabs: true })
-    .catch(function(err) {
-        if (err.code == 'failed-precondition') {
-            console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-        } else if (err.code == 'unimplemented') {
-            console.log('The current browser does not support persistence.');
-        }
-    })
-    .finally(function() {
-        // Mark Firebase as ready and execute all callbacks
-        window.isFirebaseReady = true;
-        console.log('Firebase initialized with persistence');
-        
-        // Execute all queued callbacks
-        window.firebaseReadyCallbacks.forEach(function(callback) {
-            try {
-                callback();
-            } catch(e) {
-                console.error('Error in Firebase ready callback:', e);
-            }
-        });
+    <!-- Initialize Firebase Config -->
+    <script>
+        // Create callback queue for when Firebase is ready
         window.firebaseReadyCallbacks = [];
-    });
+        window.isFirebaseReady = false;
 
-// Helper function to run code when Firebase is ready
-window.onFirebaseReady = function(callback) {
-    if (window.isFirebaseReady) {
-        callback();
-    } else {
-        window.firebaseReadyCallbacks.push(callback);
-    }
-};
-</script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
+            messagingSenderId: "911540684237",
+            appId: "1:911540684237:web:faa772c146ff4acfadb084",
+            measurementId: "G-7HWH0SEJN2"
+        };
 
-<script defer src="christmas-theme.js"></script>
-<script defer src="floating-alerts.js"></script>
-<script defer src="address-manager.js"></script>
-<script defer src="categories.js"></script>
-<script defer src="cart.js"></script>
-<script defer src="products.js"></script>
-<script defer src="scripts.js"></script>
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        window.db = firebase.firestore();
+
+        // Enable offline persistence for instant loading
+        firebase.firestore().enablePersistence({ synchronizeTabs: true })
+            .catch(function (err) {
+                if (err.code == 'failed-precondition') {
+                    console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                } else if (err.code == 'unimplemented') {
+                    console.log('The current browser does not support persistence.');
+                }
+            })
+            .finally(function () {
+                // Mark Firebase as ready and execute all callbacks
+                window.isFirebaseReady = true;
+                console.log('Firebase initialized with persistence');
+
+                // Execute all queued callbacks
+                window.firebaseReadyCallbacks.forEach(function (callback) {
+                    try {
+                        callback();
+                    } catch (e) {
+                        console.error('Error in Firebase ready callback:', e);
+                    }
+                });
+                window.firebaseReadyCallbacks = [];
+            });
+
+        // Helper function to run code when Firebase is ready
+        window.onFirebaseReady = function (callback) {
+            if (window.isFirebaseReady) {
+                callback();
+            } else {
+                window.firebaseReadyCallbacks.push(callback);
+            }
+        };
+    </script>
+
+    <!-- <script defer src="christmas-theme.js"></script> -->
+    <script defer src="ramadan-theme.js"></script>
+    <script defer src="floating-alerts.js"></script>
+    <script defer src="address-manager.js"></script>
+    <script defer src="categories.js"></script>
+    <script defer src="cart.js"></script>
+    <script defer src="products.js"></script>
+    <script defer src="scripts.js"></script>
 </body>
+
 </html>
