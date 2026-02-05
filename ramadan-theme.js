@@ -110,7 +110,7 @@ class RamadanThemeController {
     updatePromotionalBanners(phase) {
         // Define Images based on Phase
         let banner1Src = './ramdan-1.png';
-        let banner2Src = './ramdan-2.png';
+        let banner2Src = 'https://i.pinimg.com/736x/b4/0d/1c/b40d1c6d4cba21382c0cfcd572cb2734.jpg';
         let bannerAlt = 'Ramadan Sale';
 
         if (phase === 'EID') {
