@@ -184,7 +184,7 @@ class RamadanThemeController {
                 // Let's update it to eid-2.jpg as well for consistency if it fits, or keep as ramdan-2 if generic.
                 // Let's update Banner 2 to eid-2.jpg as well for uniform "Eid Sale" look effectively replacing the campaign.
                 if (phase === 'EID') {
-                    banner2Img.src = './eid-2.jpg';
+                    banner2Img.src = './eid-2.jpeg';
                 } else {
                     banner2Img.src = banner2Src;
                 }
