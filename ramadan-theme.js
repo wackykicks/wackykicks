@@ -13,8 +13,8 @@ class RamadanThemeController {
         // For testing purposes, if today is before Feb 15, we can set start date to today, OR just assume user wants strict logic.
         // Given previous interaction, user wants specific dates logic.
 
-        this.eidStartDate = new Date('2026-02-01');
         this.ramadanStartDate = new Date('2026-02-15');
+        this.eidStartDate = new Date('2026-03-05');
         this.endDate = new Date('2026-03-16');
 
         // FOR DEMO: If you need to see it NOW (Feb 4), we might need to fake the start date. 

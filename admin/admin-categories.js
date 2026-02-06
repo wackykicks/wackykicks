@@ -80,7 +80,7 @@ class AdminCategoryManager {
 
         // Fetch display order logic
         this.fetchCurrentDisplayOrder().then(order => {
-            let sortedCats = [...this.categories];
+            let sortedCats = [...this.categories].filter(c => c.id !== 'CONFIG_display_order'); // Filter config doc
 
             // Sort locally based on order array
             if (order && order.length > 0) {
@@ -342,7 +342,7 @@ class AdminCategoryManager {
                     };
                     console.log('Loaded category:', data.name, 'with Firebase ID:', doc.id, 'Category ID:', data.categoryId);
                     return data;
-                });
+                }).filter(c => c.id !== 'CONFIG_display_order'); // Filter config doc
 
                 console.log('Successfully loaded from Firebase:', this.categories.length, 'categories');
             } else {
@@ -657,50 +657,184 @@ class AdminCategoryManager {
 
     renderCategoriesTable() {
         const tbody = document.getElementById('categoriesTableBody');
+        const countHeader = document.querySelector('.categories-list-section h2');
+
         if (!tbody) return;
 
-        tbody.innerHTML = this.categories.map(category => `
-            <tr data-category-id="${category.id}">
-                <td>
-                    <div class="category-preview">
-                        <div class="category-preview-image" style="background-color: ${category.color || '#667eea'}">
-                            <img src="${category.image || category.icon || 'https://via.placeholder.com/40x40?text=' + (category.name ? category.name.charAt(0) : 'C')}" 
-                                 alt="${category.name || 'Category'}" 
-                                 style="width: 30px; height: 30px; border-radius: 6px; object-fit: cover;"
-                                 onerror="this.src='https://via.placeholder.com/40x40?text=' + '${category.name ? category.name.charAt(0) : 'C'}'">
+        // Add Save Order Button to Header if missing
+        if (countHeader && !document.getElementById('tableSaveOrderBtn')) {
+            countHeader.style.display = 'flex';
+            countHeader.style.justifyContent = 'space-between';
+            countHeader.style.alignItems = 'center';
+            countHeader.innerHTML = `
+                <span><i class="fas fa-list"></i> Existing Categories</span>
+                <button id="tableSaveOrderBtn" class="btn btn-primary btn-sm" onclick="adminCategoryManager.saveCategoryOrderFromTable()">
+                    <i class="fas fa-save"></i> Save Display Order
+                </button>
+            `;
+        }
+
+        // Add Order column header if missing
+        const headerRow = document.querySelector('.categories-table thead tr');
+        if (headerRow && !headerRow.querySelector('.order-header')) {
+            const orderHeader = document.createElement('th');
+            orderHeader.className = 'order-header';
+            orderHeader.style.width = '100px';
+            orderHeader.innerHTML = 'Order <i class="fas fa-sort" style="cursor:pointer;opacity:0.6" onclick="adminCategoryManager.reorderByTableInput()" title="Sort table by input numbers"></i>';
+            headerRow.insertBefore(orderHeader, headerRow.firstElementChild);
+        }
+
+        // Fetch and apply display order
+        this.fetchCurrentDisplayOrder().then(order => {
+            let sortedCats = [...this.categories].filter(c => c.id !== 'CONFIG_display_order'); // Filter config doc
+
+            // Sort categories based on saved order
+            if (order && order.length > 0) {
+                sortedCats.sort((a, b) => {
+                    const idA = a.id.toLowerCase();
+                    const idB = b.id.toLowerCase();
+                    let indexA = order.indexOf(idA);
+                    let indexB = order.indexOf(idB);
+                    if (indexA === -1) indexA = 9999;
+                    if (indexB === -1) indexB = 9999;
+                    return indexA - indexB;
+                });
+            }
+
+            tbody.innerHTML = sortedCats.map((category, index) => `
+                <tr data-category-id="${category.id}">
+                    <td>
+                        <input type="number" 
+                               class="form-control form-control-sm table-order-input" 
+                               value="${index + 1}" 
+                               min="1" 
+                               data-id="${category.id}"
+                               style="width: 60px; text-align: center;">
+                    </td>
+                    <td>
+                        <div class="category-preview">
+                            <div class="category-preview-image" style="background-color: ${category.color || '#667eea'}">
+                                <img src="${category.image || category.icon || 'https://via.placeholder.com/40x40?text=' + (category.name ? category.name.charAt(0) : 'C')}" 
+                                     alt="${category.name || 'Category'}" 
+                                     style="width: 30px; height: 30px; border-radius: 6px; object-fit: cover;"
+                                     onerror="this.src='https://via.placeholder.com/40x40?text=' + '${category.name ? category.name.charAt(0) : 'C'}'">
+                            </div>
+                            <span class="category-preview-name">${category.name || 'Unnamed Category'}</span>
                         </div>
-                        <span class="category-preview-name">${category.name || 'Unnamed Category'}</span>
-                    </div>
-                </td>
-                <td><strong>${category.name || 'Unnamed Category'}</strong></td>
-                <td>
-                    <img src="${category.image || category.icon || 'https://via.placeholder.com/40x40?text=' + (category.name ? category.name.charAt(0) : 'C')}" 
-                         alt="${category.name || 'Category'}" 
-                         style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;"
-                         onerror="this.src='https://via.placeholder.com/40x40?text=' + '${category.name ? category.name.charAt(0) : 'C'}'">
-                </td>
-                <td>
-                    <div class="color-preview" style="background-color: ${category.color || '#667eea'}"></div>
-                    <small style="display: block; margin-top: 4px;">${category.color || '#667eea'}</small>
-                </td>
-                <td>
-                    <span class="badge">${this.getProductCountForCategory(category.id)} products</span>
-                </td>
-                <td>
-                    <div class="actions-cell">
-                        <button class="action-btn btn-info" onclick="adminCategoryManager.viewCategoryProducts('${category.id}', '${category.name || 'Unnamed Category'}')">
-                            <i class="fas fa-eye"></i> View Products
-                        </button>
-                        <button class="action-btn btn-warning" onclick="adminCategoryManager.editCategory('${category.id}')">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="action-btn btn-danger" onclick="adminCategoryManager.deleteCategory('${category.id}', '${category.name || 'Unnamed Category'}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+                    </td>
+                    <td><strong>${category.name || 'Unnamed Category'}</strong></td>
+                    <td>
+                        <img src="${category.image || category.icon || 'https://via.placeholder.com/40x40?text=' + (category.name ? category.name.charAt(0) : 'C')}" 
+                             alt="${category.name || 'Category'}" 
+                             style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;"
+                             onerror="this.src='https://via.placeholder.com/40x40?text=' + '${category.name ? category.name.charAt(0) : 'C'}'">
+                    </td>
+                    <td>
+                        <div class="color-preview" style="background-color: ${category.color || '#667eea'}"></div>
+                        <small style="display: block; margin-top: 4px;">${category.color || '#667eea'}</small>
+                    </td>
+                    <td>
+                        <span class="badge">${this.getProductCountForCategory(category.id)} products</span>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn btn-info" onclick="adminCategoryManager.viewCategoryProducts('${category.id}', '${category.name || 'Unnamed Category'}')">
+                                <i class="fas fa-eye"></i> View Products
+                            </button>
+                            <button class="action-btn btn-warning" onclick="adminCategoryManager.editCategory('${category.id}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="action-btn btn-danger" onclick="adminCategoryManager.deleteCategory('${category.id}', '${category.name || 'Unnamed Category'}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        });
+    }
+
+    reorderByTableInput() {
+        const tbody = document.getElementById('categoriesTableBody');
+        const rows = [...tbody.querySelectorAll('tr')];
+
+        rows.sort((a, b) => {
+            const inputA = a.querySelector('.table-order-input');
+            const inputB = b.querySelector('.table-order-input');
+            const valA = parseInt(inputA.value) || 9999;
+            const valB = parseInt(inputB.value) || 9999;
+            return valA - valB;
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+
+        // Renumber to handle duplicates or gaps
+        rows.forEach((row, index) => {
+            const input = row.querySelector('.table-order-input');
+            input.value = index + 1;
+        });
+
+        this.showMessage('Table resorted. Click "Save Display Order" to apply.', 'info');
+    }
+
+    async saveCategoryOrderFromTable() {
+        const inputs = [...document.querySelectorAll('.table-order-input')];
+
+        // Sort inputs by their numeric value
+        inputs.sort((a, b) => (parseInt(a.value) || 9999) - (parseInt(b.value) || 9999));
+
+        // Extract IDs in sorted order (normalized to lowercase)
+        const newOrder = inputs.map(input => input.dataset.id.trim().toLowerCase());
+
+        console.log('💾 Saving category order:', newOrder);
+
+        const saveBtn = document.getElementById('tableSaveOrderBtn');
+        const originalText = saveBtn ? saveBtn.innerHTML : '<i class="fas fa-save"></i> Save Display Order';
+
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+        }
+
+        try {
+            if (typeof db !== 'undefined') {
+                await db.collection('category').doc('CONFIG_display_order').set({
+                    order: newOrder,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                    saveBtn.classList.remove('btn-primary');
+                    saveBtn.classList.add('btn-success');
+                }
+
+                this.showMessage('Order saved successfully!', 'success');
+
+                setTimeout(() => {
+                    if (saveBtn) {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.classList.remove('btn-success');
+                        saveBtn.classList.add('btn-primary');
+                        saveBtn.disabled = false;
+                    }
+                }, 2000);
+
+            } else {
+                this.showMessage('Cannot save: Firebase not available.', 'error');
+                if (saveBtn) {
+                    saveBtn.innerHTML = 'Error';
+                    saveBtn.disabled = false;
+                }
+            }
+        } catch (error) {
+            console.error('Error saving order:', error);
+            this.showMessage('Failed to save order: ' + error.message, 'error');
+            if (saveBtn) {
+                saveBtn.innerHTML = 'Error';
+                saveBtn.disabled = false;
+            }
+        }
     }
 
     renderProductsList() {

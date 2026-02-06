@@ -12,19 +12,7 @@ class CategoryManager {
     // Sort categories based on the defined display order
     sortCategories() {
         if (!this.categoryDisplayOrder || this.categoryDisplayOrder.length === 0) {
-            console.log('⚠️ No custom order found, using default order');
-            // Default fallback order if nothing in DB
-            const defaultOrder = ['all', 'today offer', 'smartwatch', 'gadgets', 'shoes', 'watches', 'wallet', 'belt', 'sunglasses', 'accessories'];
-
-            this.categories.sort((a, b) => {
-                const idA = a.id.toLowerCase();
-                const idB = b.id.toLowerCase();
-                let indexA = defaultOrder.indexOf(idA);
-                let indexB = defaultOrder.indexOf(idB);
-                if (indexA === -1) indexA = 9999;
-                if (indexB === -1) indexB = 9999;
-                return indexA - indexB;
-            });
+            console.log('⚠️ No custom order found, using default alphabetical order');
             return;
         }
 
@@ -35,18 +23,14 @@ class CategoryManager {
             let indexA = this.categoryDisplayOrder.indexOf(idA);
             let indexB = this.categoryDisplayOrder.indexOf(idB);
 
-            // If category is not in the list, treat as lowest priority (put at the end)
+            // If category is not in the order list, put it at the end
             if (indexA === -1) indexA = 9999;
             if (indexB === -1) indexB = 9999;
 
-            // Sort by defined order first
-            if (indexA !== indexB) {
-                return indexA - indexB;
-            }
-            return 0;
+            return indexA - indexB;
         });
 
-        console.log('✅ Categories sorted by custom order from DB');
+        console.log('✅ Categories sorted by custom order');
     }
 
     // Initialize category manager
@@ -92,21 +76,27 @@ class CategoryManager {
                     if (settingsDoc.exists) {
                         this.categoryDisplayOrder = settingsDoc.data().order || [];
                         console.log('📋 Loaded category order:', this.categoryDisplayOrder);
+                    } else {
+                        console.log('📋 No saved category order found');
+                        this.categoryDisplayOrder = [];
                     }
                 } catch (e) {
                     console.warn('Could not load category order:', e);
+                    this.categoryDisplayOrder = [];
                 }
 
-                this.categories = categoriesSnapshot.docs.map(doc => {
-                    const data = {
-                        id: doc.id,
-                        ...doc.data(),
-                        name: doc.data().name || 'Unnamed Category',
-                        image: doc.data().image || doc.data().icon || '',
-                        color: doc.data().color || '#667eea'
-                    };
-                    return data;
-                });
+                this.categories = categoriesSnapshot.docs
+                    .map(doc => {
+                        const data = {
+                            id: doc.id,
+                            ...doc.data(),
+                            name: doc.data().name || 'Unnamed Category',
+                            image: doc.data().image || doc.data().icon || '',
+                            color: doc.data().color || '#667eea'
+                        };
+                        return data;
+                    })
+                    .filter(cat => cat.id !== 'CONFIG_display_order'); // Exclude config doc
             } else {
                 this.categories = this.getDefaultCategories();
             }
