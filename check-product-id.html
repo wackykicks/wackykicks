@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,31 +13,36 @@
             padding: 20px;
             background-color: #f8f9fa;
         }
+
         .info-box {
             background: white;
             padding: 20px;
             border-radius: 8px;
             margin: 15px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .highlight {
             background-color: #fff3cd;
             color: #856404;
             padding: 10px;
             border-left: 4px solid #ffc107;
         }
+
         .success {
             background-color: #d4edda;
             color: #155724;
             padding: 10px;
             border-left: 4px solid #28a745;
         }
+
         .error {
             background-color: #f8d7da;
             color: #721c24;
             padding: 10px;
             border-left: 4px solid #dc3545;
         }
+
         input[type="text"] {
             width: 100%;
             padding: 10px;
@@ -44,6 +50,7 @@
             border-radius: 4px;
             margin: 10px 0;
         }
+
         button {
             background: #8b5cf6;
             color: white;
@@ -53,14 +60,16 @@
             cursor: pointer;
             margin: 5px;
         }
+
         button:hover {
             background: #7c3aed;
         }
     </style>
 </head>
+
 <body>
     <h1>Product ID Checker & Fixer</h1>
-    
+
     <div class="info-box">
         <h3>Step 1: Enter Product URL</h3>
         <p>Paste the URL of your product page (the one where reviews aren't showing):</p>
@@ -93,9 +102,9 @@
 
         const firebaseConfig = {
             apiKey: "AIzaSyAOb0e1UIz_xgNd-n-_YWB7HXRCQFKjvGA",
-            authDomain: "wackykicks-in.firebaseapp.com",
-            projectId: "wackykicks-in",
-            storageBucket: "wackykicks-in.appspot.com",
+            authDomain: "vexior-in.firebaseapp.com",
+            projectId: "vexior-in",
+            storageBucket: "vexior-in.appspot.com",
             messagingSenderId: "717025532779",
             appId: "1:717025532779:web:de33d7fe70a6aed7e8b2cd"
         };
@@ -105,7 +114,7 @@
 
         let currentProductId = null;
 
-        window.extractProductId = function() {
+        window.extractProductId = function () {
             const url = document.getElementById('productUrl').value;
             if (!url) {
                 alert('Please enter a product URL');
@@ -115,7 +124,7 @@
             try {
                 const urlObj = new URL(url);
                 const productId = urlObj.searchParams.get('id');
-                
+
                 if (productId) {
                     currentProductId = productId;
                     document.getElementById('currentProductId').textContent = `Product ID: ${productId}`;
@@ -130,7 +139,7 @@
             }
         };
 
-        window.checkReviews = async function() {
+        window.checkReviews = async function () {
             if (!currentProductId) {
                 alert('Please extract a product ID first');
                 return;
@@ -144,9 +153,9 @@
                     collection(db, "reviews"),
                     where("productId", "==", currentProductId)
                 );
-                
+
                 const snapshot = await getDocs(reviewsQuery);
-                
+
                 if (snapshot.empty) {
                     resultDiv.innerHTML = `
                         <div class="error">
@@ -163,7 +172,7 @@
                         </div>
                         <h4>Review Details:</h4>
                     `;
-                    
+
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         reviewsHTML += `
@@ -175,7 +184,7 @@
                             </div>
                         `;
                     });
-                    
+
                     resultDiv.innerHTML = reviewsHTML;
                 }
             } catch (error) {
@@ -183,7 +192,7 @@
             }
         };
 
-        window.addReviewsForCurrentProduct = async function() {
+        window.addReviewsForCurrentProduct = async function () {
             if (!currentProductId) {
                 alert('Please extract a product ID first');
                 return;
@@ -251,4 +260,5 @@
         };
     </script>
 </body>
+
 </html>

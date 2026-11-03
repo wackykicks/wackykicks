@@ -58,8 +58,8 @@ function getOrderData() {
     }
     
     // Check if coming from cart (using correct localStorage key)
-    const cartData = localStorage.getItem('wackykicks_cart');
-    console.log('Checking for cart data with key "wackykicks_cart"');
+    const cartData = localStorage.getItem('vexior_cart');
+    console.log('Checking for cart data with key "vexior_cart"');
     
     if (cartData) {
         try {
@@ -106,7 +106,7 @@ function getOrderData() {
             console.error('Error parsing cart data:', e);
         }
     } else {
-        console.log('No cart data in localStorage with key "wackykicks_cart"');
+        console.log('No cart data in localStorage with key "vexior_cart"');
     }
     
     // No order data, redirect to home
@@ -321,7 +321,7 @@ function submitCheckout() {
     console.log('✅ Order data retrieved:', orderData);
     
     // Create WhatsApp message
-    let message = `🛍️ *New Order from WackyKicks*\n\n`;
+    let message = `🛍️ *New Order from vexior*\n\n`;
     
     // Order items
     message += `*📦 ORDER DETAILS*\n`;
@@ -360,7 +360,7 @@ function submitCheckout() {
     
     // Clear cart if order came from cart
     if (orderData.source === 'cart') {
-        localStorage.removeItem('wackykicks_cart');
+        localStorage.removeItem('vexior_cart');
         console.log('Cart cleared after successful order');
     }
     
@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPincodeListener();
     
     // Update cart count
-    const cartData = localStorage.getItem('wackykicks_cart');
+    const cartData = localStorage.getItem('vexior_cart');
     const cart = cartData ? JSON.parse(cartData) : [];
     const cartCount = document.getElementById('cart-count');
     if (cartCount) {

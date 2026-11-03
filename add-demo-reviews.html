@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,21 +8,23 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
+
 <body>
     <h1>Add Demo Reviews</h1>
     <p>Enter a product ID to add demo reviews:</p>
     <input type="text" id="productIdInput" placeholder="Product ID" style="padding: 10px; width: 300px;">
     <button onclick="addDemoReviews()" style="padding: 10px 20px; margin-left: 10px;">Add Demo Reviews</button>
     <button onclick="listProducts()" style="padding: 10px 20px; margin-left: 10px;">List All Products</button>
-    <div id="output" style="margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px; min-height: 100px;"></div>
+    <div id="output"
+        style="margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px; min-height: 100px;"></div>
 
     <script>
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-            authDomain: "wackykicks-65cbe.firebaseapp.com",
-            projectId: "wackykicks-65cbe",
-            storageBucket: "wackykicks-65cbe.appspot.com",
+            authDomain: "vexior-65cbe.firebaseapp.com",
+            projectId: "vexior-65cbe",
+            storageBucket: "vexior-65cbe.appspot.com",
             messagingSenderId: "911540684237",
             appId: "1:911540684237:web:faa772c146ff4acfadb084",
             measurementId: "G-7HWH0SEJN2"
@@ -34,11 +37,11 @@
         async function listProducts() {
             const output = document.getElementById('output');
             output.innerHTML = 'Loading products...';
-            
+
             try {
                 const snapshot = await db.collection("products").limit(10).get();
                 let productsHTML = `<h3>Available Products (showing first 10):</h3>`;
-                
+
                 snapshot.forEach(doc => {
                     const product = doc.data();
                     productsHTML += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
@@ -48,7 +51,7 @@
                         <button onclick="document.getElementById('productIdInput').value='${doc.id}'" style="margin-top: 5px; padding: 5px 10px;">Use This ID</button>
                     </div>`;
                 });
-                
+
                 output.innerHTML = productsHTML;
             } catch (error) {
                 output.innerHTML = 'Error loading products: ' + error.message;
@@ -59,14 +62,14 @@
         async function addDemoReviews() {
             const productId = document.getElementById('productIdInput').value.trim();
             const output = document.getElementById('output');
-            
+
             if (!productId) {
                 output.innerHTML = 'Please enter a product ID first!';
                 return;
             }
-            
+
             output.innerHTML = 'Adding demo reviews for product: ' + productId;
-            
+
             const demoReviews = [
                 {
                     productId: productId,
@@ -112,11 +115,11 @@
                     successCount++;
                     output.innerHTML = `Adding demo reviews... ${successCount}/${demoReviews.length} completed`;
                 }
-                
+
                 output.innerHTML = `<div style="color: green; font-weight: bold;">✅ Successfully added ${successCount} demo reviews for product: ${productId}</div>
                 <p>Now go to the product page to see the reviews!</p>
                 <p><strong>Product URL:</strong> <a href="product.html?id=${productId}" target="_blank">product.html?id=${productId}</a></p>`;
-                
+
             } catch (error) {
                 output.innerHTML = '<div style="color: red;">❌ Error adding reviews: ' + error.message + '</div>';
                 console.error(error);
@@ -268,4 +271,5 @@
         });
     </script>
 </body>
+
 </html>

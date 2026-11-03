@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
+
 <body>
     <h1>Test Reviews System</h1>
     <button onclick="addTestReviews()">Add Test Reviews</button>
@@ -17,9 +19,9 @@
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-            authDomain: "wackykicks-65cbe.firebaseapp.com",
-            projectId: "wackykicks-65cbe",
-            storageBucket: "wackykicks-65cbe.appspot.com",
+            authDomain: "vexior-65cbe.firebaseapp.com",
+            projectId: "vexior-65cbe",
+            storageBucket: "vexior-65cbe.appspot.com",
             messagingSenderId: "911540684237",
             appId: "1:911540684237:web:faa772c146ff4acfadb084",
             measurementId: "G-7HWH0SEJN2"
@@ -32,10 +34,10 @@
         async function addTestReviews() {
             const output = document.getElementById('output');
             output.innerHTML = 'Adding test reviews...';
-            
+
             // Get a sample product ID (you'll need to replace this with an actual product ID)
             const testProductId = "test-product-123"; // Replace with actual product ID
-            
+
             const testReviews = [
                 {
                     productId: testProductId,
@@ -74,11 +76,11 @@
         async function checkReviews() {
             const output = document.getElementById('output');
             output.innerHTML = 'Checking reviews...';
-            
+
             try {
                 const snapshot = await db.collection("reviews").get();
                 output.innerHTML = `Found ${snapshot.size} reviews in database:<br>`;
-                
+
                 snapshot.forEach(doc => {
                     const review = doc.data();
                     output.innerHTML += `<br>ID: ${doc.id}<br>Product: ${review.productId}<br>Reviewer: ${review.reviewerName}<br>Rating: ${review.rating}/5<br>Text: ${review.reviewText}<br>---<br>`;
@@ -90,4 +92,5 @@
         }
     </script>
 </body>
+
 </html>

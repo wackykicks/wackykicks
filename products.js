@@ -498,7 +498,7 @@ function submitUserInfo(productName, productPrice) {
     }
     
     // Create WhatsApp message
-    let message = `Hey WackyKicks! I'm interested in buying:\n\n`;
+    let message = `Hey vexior! I'm interested in buying:\n\n`;
     message += `🛍️ *Product Details*\n`;
     message += `Product: ${productName}\n`;
     message += `Price: ₹${productPrice}\n\n`;
@@ -599,7 +599,7 @@ function proceedWithoutAddress() {
     
     const qtyMsg = quantity > 1 ? `\nQuantity: ${quantity}` : '';
     
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${qtyMsg}`;
+    const message = `Hey vexior! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${qtyMsg}`;
     
     console.log('📱 Using simple redirect with message:', message);
     
@@ -647,7 +647,7 @@ function proceedWithAddress() {
         if (addressData.landmark) addressMsg += `\nLandmark: ${addressData.landmark}`;
     }
     
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${qtyMsg}${addressMsg}`;
+    const message = `Hey vexior! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${qtyMsg}${addressMsg}`;
     
     console.log('📱 Using simple redirect with message:', message);
     
@@ -962,7 +962,7 @@ function getAddressFormData() {
 // ✅ Address Storage Functions
 function saveAddressToStorage(addressData) {
     try {
-        localStorage.setItem('wackykicks_saved_address', JSON.stringify(addressData));
+        localStorage.setItem('vexior_saved_address', JSON.stringify(addressData));
         console.log('Address saved to localStorage');
     } catch (error) {
         console.error('Error saving address:', error);
@@ -971,7 +971,7 @@ function saveAddressToStorage(addressData) {
 
 function loadSavedAddress() {
     try {
-        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        const savedAddress = localStorage.getItem('vexior_saved_address');
         if (savedAddress) {
             const addressData = JSON.parse(savedAddress);
             
@@ -996,7 +996,7 @@ function loadSavedAddress() {
 
 function hasSavedAddress() {
     try {
-        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        const savedAddress = localStorage.getItem('vexior_saved_address');
         return savedAddress !== null;
     } catch (error) {
         console.error('Error checking saved address:', error);

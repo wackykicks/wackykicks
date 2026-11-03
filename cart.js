@@ -37,7 +37,7 @@ class ShoppingCart {
     // Load cart from localStorage
     loadCart() {
         try {
-            const saved = localStorage.getItem('wackykicks_cart');
+            const saved = localStorage.getItem('vexior_cart');
             return saved ? JSON.parse(saved) : [];
         } catch (error) {
             console.error('Error loading cart:', error);
@@ -48,7 +48,7 @@ class ShoppingCart {
     // Save cart to localStorage
     saveCart() {
         try {
-            localStorage.setItem('wackykicks_cart', JSON.stringify(this.cart));
+            localStorage.setItem('vexior_cart', JSON.stringify(this.cart));
             this.updateCartCount();
         } catch (error) {
             console.error('Error saving cart:', error);
@@ -737,7 +737,7 @@ function submitCartUserInfo() {
     const finalTotal = total + shipping;
     
     // Create WhatsApp message
-    let message = `Hey WackyKicks! I'm interested in buying:\n\n`;
+    let message = `Hey vexior! I'm interested in buying:\n\n`;
     message += `🛍️ *Order Details*\n${cartItems}\n\n`;
     message += `💰 *Order Summary*\n`;
     message += `Subtotal: ₹${total}\n`;

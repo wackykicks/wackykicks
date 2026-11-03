@@ -1,4 +1,4 @@
-# 🎄 Christmas Theme - Wackykicks.in
+# 🎄 Christmas Theme - vexior.in
 
 ## Overview
 Your website now has an automatic Christmas theme that activates from **December 1st to January 5th** every year and automatically switches back to the normal design afterward.

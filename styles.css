@@ -1,5 +1,3 @@
-@import url('watermark.css');
-
 .product-card .tag.out-stock-tag {
     background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
     color: #fff;

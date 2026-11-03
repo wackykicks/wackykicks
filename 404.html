@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found | Wackykicks</title>
+    <title>404 - Page Not Found | vexior</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="watermark.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -45,7 +46,7 @@
             height: 200%;
             top: -50%;
             left: -50%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
             background-size: 50px 50px;
             animation: grid-move 20s linear infinite;
         }
@@ -54,6 +55,7 @@
             0% {
                 transform: translate(0, 0);
             }
+
             100% {
                 transform: translate(50px, 50px);
             }
@@ -114,12 +116,15 @@
                 opacity: 0;
                 transform: translateX(0) rotate(0deg);
             }
+
             10% {
                 opacity: 1;
             }
+
             90% {
                 opacity: 0.8;
             }
+
             100% {
                 bottom: 110%;
                 opacity: 0;
@@ -132,7 +137,7 @@
             backdrop-filter: blur(20px);
             border-radius: 30px;
             box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3),
-                        0 0 1px rgba(255, 255, 255, 0.5) inset;
+                0 0 1px rgba(255, 255, 255, 0.5) inset;
             padding: 70px 50px;
             text-align: center;
             max-width: 650px;
@@ -148,6 +153,7 @@
                 opacity: 0;
                 transform: translateY(50px) scale(0.9);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
@@ -191,27 +197,36 @@
         }
 
         @keyframes glitch {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translate(0);
             }
+
             20% {
                 transform: translate(-2px, 2px);
             }
+
             40% {
                 transform: translate(-2px, -2px);
             }
+
             60% {
                 transform: translate(2px, 2px);
             }
+
             80% {
                 transform: translate(2px, -2px);
             }
         }
 
         @keyframes glitch-shadow {
-            0%, 100% {
+
+            0%,
+            100% {
                 text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
             }
+
             50% {
                 text-shadow: 0 0 30px rgba(118, 75, 162, 0.8);
             }
@@ -246,9 +261,12 @@
         }
 
         @keyframes float-shoe {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0) rotate(0deg);
             }
+
             50% {
                 transform: translateY(-15px) rotate(5deg);
             }
@@ -321,7 +339,7 @@
             transition: all 0.3s ease;
         }
 
-        .search-box input:focus + .search-icon {
+        .search-box input:focus+.search-icon {
             color: #667eea;
         }
 
@@ -614,6 +632,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="bg-animation">
         <span></span>
@@ -633,12 +652,14 @@
 
         <div class="subtitle">ERROR 404</div>
         <h1>Page Not Found</h1>
-        <p>The page you're looking for seems to have wandered off. Don't worry, we'll help you find your way back to shopping!</p>
+        <p>The page you're looking for seems to have wandered off. Don't worry, we'll help you find your way back to
+            shopping!</p>
 
         <div class="divider"></div>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search for products, categories..." onkeypress="handleSearchKeyPress(event)">
+            <input type="text" id="searchInput" placeholder="Search for products, categories..."
+                onkeypress="handleSearchKeyPress(event)">
             <i class="fas fa-search search-icon"></i>
             <button onclick="handleSearch()">
                 <span>Search</span>
@@ -706,6 +727,6 @@
         // Log the attempted URL for debugging
         console.log('404 Error - Attempted URL:', window.location.href);
     </script>
-    <script defer src="watermark.js"></script>
 </body>
+
 </html>

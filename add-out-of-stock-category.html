@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Out of Stock Category</title>
 </head>
+
 <body>
     <h1>Adding Out of Stock Category...</h1>
     <div id="status">Initializing...</div>
@@ -17,9 +19,9 @@
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-            authDomain: "wackykicks-65cbe.firebaseapp.com",
-            projectId: "wackykicks-65cbe",
-            storageBucket: "wackykicks-65cbe.appspot.com",
+            authDomain: "vexior-65cbe.firebaseapp.com",
+            projectId: "vexior-65cbe",
+            storageBucket: "vexior-65cbe.appspot.com",
             messagingSenderId: "911540684237",
             appId: "1:911540684237:web:faa772c146ff4acfadb084",
             measurementId: "G-7HWH0SEJN2"
@@ -34,10 +36,10 @@
         async function addOutOfStockCategory() {
             try {
                 statusDiv.textContent = 'Checking if Out of Stock category already exists...';
-                
+
                 // Check if out-of-stock category already exists
                 const existingDoc = await db.collection('category').doc('out-of-stock').get();
-                
+
                 if (existingDoc.exists) {
                     statusDiv.textContent = 'Out of Stock category already exists!';
                     statusDiv.style.color = 'green';
@@ -57,7 +59,7 @@
 
                 statusDiv.textContent = 'Successfully added Out of Stock category!';
                 statusDiv.style.color = 'green';
-                
+
                 // Add instructions
                 setTimeout(() => {
                     statusDiv.innerHTML = `
@@ -86,4 +88,5 @@
         window.addEventListener('load', addOutOfStockCategory);
     </script>
 </body>
+
 </html>

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floating Alerts Demo | Wackykicks</title>
+    <title>Floating Alerts Demo | vexior</title>
     <link rel="stylesheet" href="floating-alerts.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
@@ -15,7 +16,7 @@
             min-height: 100vh;
             color: white;
         }
-        
+
         .demo-container {
             max-width: 800px;
             margin: 0 auto;
@@ -25,42 +26,42 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .demo-title {
             text-align: center;
             font-size: 2.5rem;
             margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
-        
+
         .demo-subtitle {
             text-align: center;
             font-size: 1.2rem;
             margin-bottom: 40px;
             opacity: 0.9;
         }
-        
+
         .alert-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
         }
-        
+
         .alert-category {
             background: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .category-title {
             font-size: 1.3rem;
             margin-bottom: 15px;
             text-align: center;
             font-weight: 600;
         }
-        
+
         .demo-btn {
             display: block;
             width: 100%;
@@ -75,18 +76,29 @@
             background: rgba(255, 255, 255, 0.9);
             color: #333;
         }
-        
+
         .demo-btn:hover {
             background: white;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
-        
-        .success-btn { border-left: 4px solid #10b981; }
-        .error-btn { border-left: 4px solid #ef4444; }
-        .warning-btn { border-left: 4px solid #f59e0b; }
-        .info-btn { border-left: 4px solid #3b82f6; }
-        
+
+        .success-btn {
+            border-left: 4px solid #10b981;
+        }
+
+        .error-btn {
+            border-left: 4px solid #ef4444;
+        }
+
+        .warning-btn {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .info-btn {
+            border-left: 4px solid #3b82f6;
+        }
+
         .instructions {
             background: rgba(255, 255, 255, 0.1);
             padding: 20px;
@@ -94,7 +106,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
         }
-        
+
         .back-link {
             display: inline-block;
             margin-top: 20px;
@@ -105,57 +117,78 @@
             border-radius: 25px;
             transition: all 0.3s ease;
         }
-        
+
         .back-link:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
         }
     </style>
 </head>
+
 <body>
     <div class="demo-container">
         <h1 class="demo-title">🎯 Floating Alerts Demo</h1>
-        <p class="demo-subtitle">Test all the beautiful floating alert types used across Wackykicks</p>
-        
+        <p class="demo-subtitle">Test all the beautiful floating alert types used across vexior</p>
+
         <div class="alert-grid">
             <!-- Success Alerts -->
             <div class="alert-category">
                 <h3 class="category-title">✅ Success Alerts</h3>
-                <button class="demo-btn success-btn" onclick="FloatingAlertManager.addedToCart('Nike Air Max')">Added to Cart</button>
-                <button class="demo-btn success-btn" onclick="FloatingAlertManager.productAdded()">Product Added</button>
-                <button class="demo-btn success-btn" onclick="FloatingAlertManager.productUpdated()">Product Updated</button>
-                <button class="demo-btn success-btn" onclick="FloatingAlertManager.reviewSubmitted()">Review Submitted</button>
+                <button class="demo-btn success-btn" onclick="FloatingAlertManager.addedToCart('Nike Air Max')">Added to
+                    Cart</button>
+                <button class="demo-btn success-btn" onclick="FloatingAlertManager.productAdded()">Product
+                    Added</button>
+                <button class="demo-btn success-btn" onclick="FloatingAlertManager.productUpdated()">Product
+                    Updated</button>
+                <button class="demo-btn success-btn" onclick="FloatingAlertManager.reviewSubmitted()">Review
+                    Submitted</button>
                 <button class="demo-btn success-btn" onclick="FloatingAlertManager.linkCopied()">Link Copied</button>
-                <button class="demo-btn success-btn" onclick="FloatingAlertManager.uploadSuccess(3)">Upload Success (3 images)</button>
+                <button class="demo-btn success-btn" onclick="FloatingAlertManager.uploadSuccess(3)">Upload Success (3
+                    images)</button>
             </div>
 
             <!-- Error Alerts -->
             <div class="alert-category">
                 <h3 class="category-title">❌ Error Alerts</h3>
                 <button class="demo-btn error-btn" onclick="FloatingAlertManager.reviewError()">Review Error</button>
-                <button class="demo-btn error-btn" onclick="FloatingAlertManager.uploadError('File too large')">Upload Error</button>
-                <button class="demo-btn error-btn" onclick="FloatingAlertManager.operationError('Delete', 'Permission denied')">Operation Error</button>
-                <button class="demo-btn error-btn" onclick="alerts.error('Network connection failed', 'Connection Error')">Network Error</button>
-                <button class="demo-btn error-btn" onclick="alerts.error('Product not found in database', 'Not Found')">Not Found Error</button>
+                <button class="demo-btn error-btn" onclick="FloatingAlertManager.uploadError('File too large')">Upload
+                    Error</button>
+                <button class="demo-btn error-btn"
+                    onclick="FloatingAlertManager.operationError('Delete', 'Permission denied')">Operation
+                    Error</button>
+                <button class="demo-btn error-btn"
+                    onclick="alerts.error('Network connection failed', 'Connection Error')">Network Error</button>
+                <button class="demo-btn error-btn"
+                    onclick="alerts.error('Product not found in database', 'Not Found')">Not Found Error</button>
             </div>
 
             <!-- Warning Alerts -->
             <div class="alert-category">
                 <h3 class="category-title">⚠️ Warning Alerts</h3>
-                <button class="demo-btn warning-btn" onclick="FloatingAlertManager.pleaseSelectSize()">Please Select Size</button>
-                <button class="demo-btn warning-btn" onclick="FloatingAlertManager.pleaseSelectRating()">Please Select Rating</button>
-                <button class="demo-btn warning-btn" onclick="FloatingAlertManager.pleaseFillAllFields()">Fill All Fields</button>
+                <button class="demo-btn warning-btn" onclick="FloatingAlertManager.pleaseSelectSize()">Please Select
+                    Size</button>
+                <button class="demo-btn warning-btn" onclick="FloatingAlertManager.pleaseSelectRating()">Please Select
+                    Rating</button>
+                <button class="demo-btn warning-btn" onclick="FloatingAlertManager.pleaseFillAllFields()">Fill All
+                    Fields</button>
                 <button class="demo-btn warning-btn" onclick="FloatingAlertManager.cartEmpty()">Cart Empty</button>
-                <button class="demo-btn warning-btn" onclick="alerts.warning('This action cannot be undone', 'Are you sure?')">Confirmation Warning</button>
+                <button class="demo-btn warning-btn"
+                    onclick="alerts.warning('This action cannot be undone', 'Are you sure?')">Confirmation
+                    Warning</button>
             </div>
 
             <!-- Info Alerts -->
             <div class="alert-category">
                 <h3 class="category-title">ℹ️ Info Alerts</h3>
-                <button class="demo-btn info-btn" onclick="alerts.info('Your order is being processed', 'Processing Order')">Processing Info</button>
-                <button class="demo-btn info-btn" onclick="alerts.info('New products have been added to the store', 'New Arrivals')">New Arrivals</button>
-                <button class="demo-btn info-btn" onclick="alerts.info('Free shipping on orders over ₹999', 'Shipping Info')">Shipping Info</button>
-                <button class="demo-btn info-btn" onclick="FloatingAlertManager.removedFromCart('Adidas Superstar')">Removed from Cart</button>
+                <button class="demo-btn info-btn"
+                    onclick="alerts.info('Your order is being processed', 'Processing Order')">Processing Info</button>
+                <button class="demo-btn info-btn"
+                    onclick="alerts.info('New products have been added to the store', 'New Arrivals')">New
+                    Arrivals</button>
+                <button class="demo-btn info-btn"
+                    onclick="alerts.info('Free shipping on orders over ₹999', 'Shipping Info')">Shipping Info</button>
+                <button class="demo-btn info-btn"
+                    onclick="FloatingAlertManager.removedFromCart('Adidas Superstar')">Removed from Cart</button>
             </div>
         </div>
 
@@ -163,18 +196,24 @@
         <div class="alert-grid">
             <div class="alert-category">
                 <h3 class="category-title">🎨 Special Effects</h3>
-                <button class="demo-btn" onclick="demoMultipleAlerts()" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); color: white;">Multiple Alerts</button>
+                <button class="demo-btn" onclick="demoMultipleAlerts()"
+                    style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); color: white;">Multiple Alerts</button>
                 <button class="demo-btn" onclick="demoLongMessage()">Long Message Test</button>
                 <button class="demo-btn" onclick="demoNoAutoHide()">Persistent Alert</button>
-                <button class="demo-btn" onclick="alert('Old School Alert!')" style="background: #666; color: white;">Original Alert (Replaced)</button>
+                <button class="demo-btn" onclick="alert('Old School Alert!')"
+                    style="background: #666; color: white;">Original Alert (Replaced)</button>
             </div>
 
             <div class="alert-category">
                 <h3 class="category-title">🛒 E-commerce Specific</h3>
-                <button class="demo-btn success-btn" onclick="FloatingAlertManager.buyNowSuccess('Ray-Ban Sunglasses')">Buy Now Success</button>
-                <button class="demo-btn info-btn" onclick="alerts.info('Item saved to wishlist', 'Wishlist')">Add to Wishlist</button>
-                <button class="demo-btn warning-btn" onclick="alerts.warning('Only 2 items left in stock!', 'Low Stock')">Low Stock Warning</button>
-                <button class="demo-btn error-btn" onclick="alerts.error('Payment failed. Please try again.', 'Payment Error')">Payment Error</button>
+                <button class="demo-btn success-btn"
+                    onclick="FloatingAlertManager.buyNowSuccess('Ray-Ban Sunglasses')">Buy Now Success</button>
+                <button class="demo-btn info-btn" onclick="alerts.info('Item saved to wishlist', 'Wishlist')">Add to
+                    Wishlist</button>
+                <button class="demo-btn warning-btn"
+                    onclick="alerts.warning('Only 2 items left in stock!', 'Low Stock')">Low Stock Warning</button>
+                <button class="demo-btn error-btn"
+                    onclick="alerts.error('Payment failed. Please try again.', 'Payment Error')">Payment Error</button>
             </div>
         </div>
 
@@ -186,8 +225,8 @@
             <p>• Click the × button to close manually</p>
             <p>• Multiple alerts stack beautifully</p>
             <p>• All native alert() calls are now replaced with floating alerts!</p>
-            
-            <a href="index.html" class="back-link">← Back to Wackykicks</a>
+
+            <a href="index.html" class="back-link">← Back to vexior</a>
         </div>
     </div>
 
@@ -215,4 +254,5 @@
         console.log('Floating alerts active:', typeof window.alerts !== 'undefined');
     </script>
 </body>
+
 </html>

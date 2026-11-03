@@ -1,9 +1,9 @@
 // ✅ Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-    authDomain: "wackykicks-65cbe.firebaseapp.com",
-    projectId: "wackykicks-65cbe",
-    storageBucket: "wackykicks-65cbe.appspot.com",
+    authDomain: "vexior-65cbe.firebaseapp.com",
+    projectId: "vexior-65cbe",
+    storageBucket: "vexior-65cbe.appspot.com",
     messagingSenderId: "911540684237",
     appId: "1:911540684237:web:faa772c146ff4acfadb084",
     measurementId: "G-7HWH0SEJN2"
@@ -694,7 +694,7 @@ function submitUserInfo(productName, productPrice, quantity, size, color) {
     console.log('✅ Form data validated:', formData);
 
     // Create WhatsApp message
-    let message = `Hey WackyKicks! I'm interested in buying:\n\n`;
+    let message = `Hey vexior! I'm interested in buying:\n\n`;
     message += `🛍️ *Product Details*\n`;
     message += `Product: ${productName}\n`;
     message += `Price: ₹${productPrice}\n`;
@@ -806,7 +806,7 @@ function proceedWithoutAddress() {
     let colorMsg = selectedColor ? `\nColor: ${selectedColor}` : '';
     const qtyMsg = `\nQuantity: ${quantity}`;
 
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}`;
+    const message = `Hey vexior! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}`;
 
     console.log('📱 Product: Sending message to WhatsApp');
 
@@ -853,7 +853,7 @@ function proceedWithAddress() {
         if (addressData.landmark) addressMsg += `\nLandmark: ${addressData.landmark}`;
     }
 
-    const message = `Hey WackyKicks! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}${addressMsg}`;
+    const message = `Hey vexior! I'm interested in buying:\n${productName}\nPrice: ₹${productPrice}${sizeMsg}${colorMsg}${qtyMsg}${addressMsg}`;
 
     console.log('📱 Product: Sending message to WhatsApp with address');
 
@@ -1104,7 +1104,7 @@ function getAddressFormData() {
 // ✅ Address Storage Functions
 function saveAddressToStorage(addressData) {
     try {
-        localStorage.setItem('wackykicks_saved_address', JSON.stringify(addressData));
+        localStorage.setItem('vexior_saved_address', JSON.stringify(addressData));
         console.log('Address saved to localStorage');
     } catch (error) {
         console.error('Error saving address:', error);
@@ -1113,7 +1113,7 @@ function saveAddressToStorage(addressData) {
 
 function loadSavedAddress() {
     try {
-        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        const savedAddress = localStorage.getItem('vexior_saved_address');
         if (savedAddress) {
             const addressData = JSON.parse(savedAddress);
 
@@ -1138,7 +1138,7 @@ function loadSavedAddress() {
 
 function hasSavedAddress() {
     try {
-        const savedAddress = localStorage.getItem('wackykicks_saved_address');
+        const savedAddress = localStorage.getItem('vexior_saved_address');
         return savedAddress !== null;
     } catch (error) {
         console.error('Error checking saved address:', error);
@@ -1212,7 +1212,7 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
 // ✅ Address Storage Functions
 function saveAddressToStorage(addressInfo) {
     try {
-        localStorage.setItem('wackykicks_saved_address', JSON.stringify(addressInfo));
+        localStorage.setItem('vexior_saved_address', JSON.stringify(addressInfo));
         console.log('Address saved to localStorage');
     } catch (error) {
         console.error('Error saving address:', error);
@@ -1221,7 +1221,7 @@ function saveAddressToStorage(addressInfo) {
 
 function loadSavedAddressFromStorage() {
     try {
-        const saved = localStorage.getItem('wackykicks_saved_address');
+        const saved = localStorage.getItem('vexior_saved_address');
         return saved ? JSON.parse(saved) : null;
     } catch (error) {
         console.error('Error loading saved address:', error);
@@ -1250,7 +1250,7 @@ function loadAddressIntoForm() {
 
 function clearSavedAddress() {
     try {
-        localStorage.removeItem('wackykicks_saved_address');
+        localStorage.removeItem('vexior_saved_address');
         console.log('Saved address cleared');
     } catch (error) {
         console.error('Error clearing saved address:', error);
@@ -1761,7 +1761,7 @@ window.selectProductColor = function (colorName, hexValue, element) {
 };
 
 function shareProduct(name, price, url) {
-    const message = `Check out this product on WackyKicks!\n${name}\nPrice: ₹${price}\n${url}`;
+    const message = `Check out this product on vexior!\n${name}\nPrice: ₹${price}\n${url}`;
 
     if (navigator.share) {
         navigator.share({
