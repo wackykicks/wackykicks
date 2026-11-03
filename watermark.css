@@ -1,0 +1,116 @@
+/* ==========================================================================
+   WackyKicks - Preview Mode Watermark Stylesheet
+   Covers the entire site with a repeated diagonal preview watermark overlay
+   and an elegant top-floating preview status badge.
+   Pointer-events are disabled so all site interactions remain 100% functional.
+   ========================================================================== */
+
+/* Universal pure CSS watermark overlay via body::after fallback */
+body::after,
+#preview-watermark-overlay,
+.preview-watermark-overlay {
+    content: "" !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    z-index: 2147483647 !important; /* Maximum possible 32-bit z-index */
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-repeat: repeat !important;
+    background-position: 0 0 !important;
+    background-size: 380px 240px !important;
+    /* High-contrast dual-tone SVG watermark (crisp across all DPIs & light/dark modes) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='240' viewBox='0 0 380 240'%3E%3Cstyle%3E.t%7Bfont-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:900;text-anchor:middle;text-transform:uppercase;%7D.m%7Bfont-size:18px;letter-spacing:4px;fill:rgba(100,100,100,0.18);%7D.s%7Bfont-size:10px;font-weight:700;letter-spacing:2.5px;fill:rgba(100,100,100,0.14);%7D%3C/style%3E%3Cg transform='rotate(-28 190 120)'%3E%3Ctext x='190' y='112' class='t m'%3EPREVIEW ONLY%3C/text%3E%3Ctext x='190' y='132' class='t s'%3EWACKYKICKS.IN %E2%80%A2 CONFIDENTIAL%3C/text%3E%3C/g%3E%3Cg transform='rotate(-28 0 0)'%3E%3Ctext x='0' y='-8' class='t m'%3EPREVIEW ONLY%3C/text%3E%3Ctext x='0' y='12' class='t s'%3EWACKYKICKS.IN %E2%80%A2 CONFIDENTIAL%3C/text%3E%3C/g%3E%3Cg transform='rotate(-28 380 0)'%3E%3Ctext x='380' y='-8' class='t m'%3EPREVIEW ONLY%3C/text%3E%3Ctext x='380' y='12' class='t s'%3EWACKYKICKS.IN %E2%80%A2 CONFIDENTIAL%3C/text%3E%3C/g%3E%3Cg transform='rotate(-28 0 240)'%3E%3Ctext x='0' y='232' class='t m'%3EPREVIEW ONLY%3C/text%3E%3Ctext x='0' y='252' class='t s'%3EWACKYKICKS.IN %E2%80%A2 CONFIDENTIAL%3C/text%3E%3C/g%3E%3Cg transform='rotate(-28 380 240)'%3E%3Ctext x='380' y='232' class='t m'%3EPREVIEW ONLY%3C/text%3E%3Ctext x='380' y='252' class='t s'%3EWACKYKICKS.IN %E2%80%A2 CONFIDENTIAL%3C/text%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+/* Floating Preview Badge at the top center */
+#preview-badge,
+.preview-watermark-badge {
+    position: fixed !important;
+    top: 12px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    z-index: 2147483647 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 16px !important;
+    border-radius: 9999px !important;
+    background: rgba(20, 20, 20, 0.78) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    color: #ffffff !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.5px !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    animation: previewBadgePulse 3s ease-in-out infinite alternate !important;
+}
+
+.preview-watermark-badge .preview-pulse-dot {
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background-color: #ffaa00 !important;
+    box-shadow: 0 0 10px #ffaa00 !important;
+    display: inline-block !important;
+    animation: previewDotBlink 1.5s infinite !important;
+}
+
+@keyframes previewBadgePulse {
+    0% {
+        opacity: 0.88;
+        transform: translateX(-50%) scale(1);
+    }
+    100% {
+        opacity: 0.98;
+        transform: translateX(-50%) scale(1.02);
+    }
+}
+
+@keyframes previewDotBlink {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+    }
+}
+
+/* Print protection: make sure watermark prints clearly if someone tries to Print to PDF */
+@media print {
+    body::after,
+    #preview-watermark-overlay,
+    .preview-watermark-overlay {
+        position: fixed !important;
+        display: block !important;
+        opacity: 0.35 !important;
+        background-size: 300px 200px !important;
+    }
+
+    #preview-badge,
+    .preview-watermark-badge {
+        position: fixed !important;
+        top: 10px !important;
+        background: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #000000 !important;
+    }
+}
