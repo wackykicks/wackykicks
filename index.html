@@ -2,12 +2,11 @@
 <html lang="en">
 
 <head>
-    <link rel="icon" href="Logo/1000163691.jpg" type="image/png">
-    <link rel="icon" href="1000163691.jpg" type="image/png">
+    <link rel="icon" href="Logo/VEXIOR_logo.png" type="image/png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vexior.in</title>
-    <link rel="stylesheet" href="styles.css?v=1.2">
+    <title>Vexior | Official Store</title>
+    <link rel="stylesheet" href="styles.css?v=2.0">
     <link rel="stylesheet" href="categories.css">
     <link rel="stylesheet" href="floating-alerts.css">
     <link rel="stylesheet" href="address-modal.css">
@@ -22,39 +21,42 @@
 
     <!-- Navbar -->
     <nav class="navbar">
-        <div class="logo">vexior.in</div>
+        <div class="nav-top">
+            <a href="index.html" class="logo-brand" aria-label="Vexior Home">
+                <img src="Logo/VEXIOR_logo.png" alt="Vexior" class="brand-logo">
+            </a>
+
+            <div class="nav-actions">
+                <div class="cart-container">
+                    <a href="cart.html" aria-label="Go to cart">
+                        <button type="button" aria-label="Shopping Cart">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count" id="cartCount">0</span>
+                        </button>
+                    </a>
+                </div>
+
+                <div class="hamburger" aria-label="Toggle menu" role="button" tabindex="0">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
 
         <ul class="nav-links">
-            <li><a href="#">Home</a></li>
-            <li><a href="#product-grid">Products</a></li>
-            <li><a href="about.html">About us</a></li>
-            <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i></a></li>
-            <li><a href="https://www.instagram.com/vexior.in/" target="_blank"><i class="fab fa-instagram"></i></a>
-            </li>
+            <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="#product-grid"><i class="fas fa-th-large"></i> Products</a></li>
+            <li><a href="about.html"><i class="fas fa-info-circle"></i> About us</a></li>
+            <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a></li>
+            <li><a href="https://www.instagram.com/vexior.in/" target="_blank"><i class="fab fa-instagram"></i> Instagram</a></li>
         </ul>
 
         <div class="search-container" role="search">
-            <i class="fas fa-search" aria-hidden="true" style="color:#666"></i>
-            <input id="searchInput" type="text" placeholder="Search for a product" aria-label="Search products"
-                autocomplete="off" />
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <input id="searchInput" type="text" placeholder="Search for shoes, watches, gadgets..." aria-label="Search products" autocomplete="off" />
             <button type="button" id="clearSearchBtn" aria-label="Clear search" title="Clear" style="display:none">
                 <i class="fas fa-times"></i>
             </button>
-            <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions"
-                style="display:none"></div>
-        </div>
-
-        <div class="cart-container">
-            <a href="cart.html" aria-label="Go to cart">
-                <button type="button">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count" id="cartCount">0</span>
-                </button>
-            </a>
-        </div>
-
-        <div class="hamburger">
-            <i class="fas fa-bars"></i>
+            <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" style="display:none"></div>
         </div>
     </nav>
 
@@ -152,9 +154,9 @@
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-            authDomain: "vexior-65cbe.firebaseapp.com",
-            projectId: "vexior-65cbe",
-            storageBucket: "vexior-65cbe.appspot.com",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
             messagingSenderId: "911540684237",
             appId: "1:911540684237:web:faa772c146ff4acfadb084",
             measurementId: "G-7HWH0SEJN2"
@@ -164,30 +166,31 @@
         firebase.initializeApp(firebaseConfig);
         window.db = firebase.firestore();
 
-        // Enable offline persistence for instant loading
-        firebase.firestore().enablePersistence({ synchronizeTabs: true })
-            .catch(function (err) {
-                if (err.code == 'failed-precondition') {
-                    console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-                } else if (err.code == 'unimplemented') {
-                    console.log('The current browser does not support persistence.');
-                }
-            })
-            .finally(function () {
-                // Mark Firebase as ready and execute all callbacks
-                window.isFirebaseReady = true;
-                console.log('Firebase initialized with persistence');
+        // Mark Firebase as ready immediately
+        window.isFirebaseReady = true;
+        console.log('Firebase initialized successfully');
 
-                // Execute all queued callbacks
-                window.firebaseReadyCallbacks.forEach(function (callback) {
-                    try {
-                        callback();
-                    } catch (e) {
-                        console.error('Error in Firebase ready callback:', e);
+        // Clean up legacy/corrupted IndexedDB cache from prior runs to prevent transaction abort errors
+        if (typeof indexedDB !== 'undefined' && indexedDB.databases) {
+            indexedDB.databases().then(function(dbs) {
+                (dbs || []).forEach(function(dbInfo) {
+                    if (dbInfo.name && (dbInfo.name.includes('firestore') || dbInfo.name.includes('wackykicks') || dbInfo.name.includes('vexior'))) {
+                        console.log('Cleaning legacy firestore cache:', dbInfo.name);
+                        try { indexedDB.deleteDatabase(dbInfo.name); } catch(e){}
                     }
                 });
-                window.firebaseReadyCallbacks = [];
-            });
+            }).catch(function() {});
+        }
+
+        // Execute all queued callbacks
+        window.firebaseReadyCallbacks.forEach(function (callback) {
+            try {
+                callback();
+            } catch (e) {
+                console.error('Error in Firebase ready callback:', e);
+            }
+        });
+        window.firebaseReadyCallbacks = [];
 
         // Helper function to run code when Firebase is ready
         window.onFirebaseReady = function (callback) {
@@ -200,13 +203,13 @@
     </script>
 
     <!-- <script defer src="christmas-theme.js"></script> -->
-    <script defer src="ramadan-theme.js?v=2"></script>
-    <script defer src="floating-alerts.js?v=2"></script>
-    <script defer src="address-manager.js?v=2"></script>
-    <script defer src="categories.js?v=5"></script>
-    <script defer src="cart.js?v=2"></script>
-    <script defer src="products.js?v=2"></script>
-    <script defer src="scripts.js?v=2"></script>
+    <script defer src="ramadan-theme.js?v=3"></script>
+    <script defer src="floating-alerts.js?v=3"></script>
+    <script defer src="address-manager.js?v=3"></script>
+    <script defer src="categories.js?v=6"></script>
+    <script defer src="cart.js?v=3"></script>
+    <script defer src="products.js?v=3"></script>
+    <script defer src="scripts.js?v=3"></script>
 </body>
 
 </html>

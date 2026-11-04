@@ -847,9 +847,9 @@ class AdminCategoryManager {
                 <div class="product-item ${isSelected ? 'selected' : ''}" 
                      data-product-id="${product.id}" 
                      onclick="adminCategoryManager.selectProduct('${product.id}')">
-                    <img src="${product.img || product.imgUrl?.[0] || 'Logo/1000163691.jpg'}" 
+                    <img src="${product.img || product.imgUrl?.[0] || '../Logo/VEXIOR_logo.png'}" 
                          alt="${product.name}" 
-                         onerror="this.src='../Logo/1000163691.jpg'">
+                         onerror="this.src='../Logo/VEXIOR_logo.png'">
                     <div class="product-item-name">${product.name}</div>
                 </div>
             `;
@@ -995,7 +995,7 @@ class AdminCategoryManager {
             productsHTML = `
                 <div class="category-products-grid">
                     ${products.map(product => {
-                const firstImage = (product.imgUrl && product.imgUrl[0]) || product.img || '../Logo/1000163691.jpg';
+                const firstImage = (product.imgUrl && product.imgUrl[0]) || product.img || '../Logo/VEXIOR_logo.png';
                 const price = product.newPrice || product.price || 'N/A';
                 const oldPrice = product.oldPrice;
 
@@ -1005,7 +1005,7 @@ class AdminCategoryManager {
                 return `
                             <div class="category-product-card">
                                 <div class="category-product-image">
-                                    <img src="${firstImage}" alt="${product.name}" onerror="this.src='../Logo/1000163691.jpg'">
+                                    <img src="${firstImage}" alt="${product.name}" onerror="this.src='../Logo/VEXIOR_logo.png'">
                                     ${isOutOfStock ? '<div class="out-of-stock-badge">Out of Stock</div>' : ''}
                                 </div>
                                 <div class="category-product-info">
@@ -1227,9 +1227,9 @@ class AdminCategoryManager {
                         <h4>1 Product Selected</h4>
                         <div class="selected-products-list">
                             <div class="selected-product-item">
-                                <img src="${product.img || product.imgUrl?.[0] || '../Logo/1000163691.jpg'}" 
+                                <img src="${product.img || product.imgUrl?.[0] || '../Logo/VEXIOR_logo.png'}" 
                                      alt="${product.name}"
-                                     onerror="this.src='../Logo/1000163691.jpg'">
+                                     onerror="this.src='../Logo/VEXIOR_logo.png'">
                                 <span>${product.name}</span>
                             </div>
                         </div>
@@ -1243,9 +1243,9 @@ class AdminCategoryManager {
                 .slice(0, 5) // Show max 5 products
                 .map(product => `
                     <div class="selected-product-item">
-                        <img src="${product.img || product.imgUrl?.[0] || '../Logo/1000163691.jpg'}" 
+                        <img src="${product.img || product.imgUrl?.[0] || '../Logo/VEXIOR_logo.png'}" 
                              alt="${product.name}"
-                             onerror="this.src='../Logo/1000163691.jpg'">
+                             onerror="this.src='../Logo/VEXIOR_logo.png'">
                         <span>${product.name}</span>
                     </div>
                 `).join('');

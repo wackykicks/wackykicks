@@ -105,7 +105,10 @@ class RamadanThemeController {
         }
     }
 
-    // ... (removeRamadanElements remains mostly same but restoring state logic is generic) ...
+    removeRamadanElements() {
+        document.querySelectorAll('.ramadan-lantern, .ramadan-hanging-moon, .ramadan-mosque-bg, .ramadan-banner-message').forEach(el => el.remove());
+        this.restorePromotionalBanners();
+    }
 
     updatePromotionalBanners(phase) {
         // Define Images based on Phase

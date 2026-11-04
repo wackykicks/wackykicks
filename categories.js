@@ -67,8 +67,11 @@ class CategoryManager {
 
         try {
             if (typeof db !== 'undefined') {
-                // 1. Fetch Categories
-                const categoriesSnapshot = await db.collection('category').get();
+                // 1. Fetch Categories with server fallback
+                const categoriesSnapshot = await db.collection('category').get().catch(err => {
+                    console.warn('⚠️ Category fetch failed, trying server directly:', err);
+                    return db.collection('category').get({ source: 'server' });
+                });
 
                 // 2. Fetch Display Order
                 try {

@@ -1,9 +1,9 @@
 // ✅ Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-    authDomain: "vexior-65cbe.firebaseapp.com",
-    projectId: "vexior-65cbe",
-    storageBucket: "vexior-65cbe.appspot.com",
+    authDomain: "wackykicks-65cbe.firebaseapp.com",
+    projectId: "wackykicks-65cbe",
+    storageBucket: "wackykicks-65cbe.appspot.com",
     messagingSenderId: "911540684237",
     appId: "1:911540684237:web:faa772c146ff4acfadb084",
     measurementId: "G-7HWH0SEJN2"
@@ -1411,10 +1411,11 @@ async function loadRelatedProducts() {
             }
 
             // Color similarity - 5 points
-            if (currentProduct.colors && product.colors) {
-                const matchingColors = currentProduct.colors.filter(color =>
-                    product.colors.some(pColor => pColor.toLowerCase() === color.toLowerCase())
-                );
+            if (Array.isArray(currentProduct.colors) && Array.isArray(product.colors)) {
+                const getColorName = (c) => (typeof c === 'string' ? c : (c && c.name ? c.name : '')).toLowerCase();
+                const currentColors = currentProduct.colors.map(getColorName).filter(Boolean);
+                const productColors = product.colors.map(getColorName).filter(Boolean);
+                const matchingColors = currentColors.filter(color => productColors.includes(color));
                 score += matchingColors.length * 5;
             }
 
@@ -1454,7 +1455,7 @@ async function loadRelatedProducts() {
                 <a href="product.html?id=${product.id}">
                     ${relatedDiscountPercentage && !isOutOfStock ? `<span class="discount-tag">${relatedDiscountPercentage}% OFF</span>` : ''}
                     ${isOutOfStock ? `<span class="discount-tag" style="background: linear-gradient(135deg, #ef4444, #dc2626);">Out of Stock</span>` : ''}
-                    <img src="${(Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl) || 'Logo/1000163691.jpg'}" alt="${product.name}" onerror="this.src='Logo/1000163691.jpg'">
+                    <img src="${(Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl) || 'Logo/VEXIOR_logo.png'}" alt="${product.name}" onerror="this.src='Logo/VEXIOR_logo.png'">
                     <h4>${product.name}</h4>
                     <div class="price">
                         ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}

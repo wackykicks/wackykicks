@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Manage Products | vexior Admin</title>
+    <title>Manage Products | Vexior Admin</title>
+    <link rel="icon" href="../Logo/VEXIOR_logo.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <style>
@@ -15,7 +16,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #072e14 0%, #021a0a 100%);
             min-height: 100vh;
             color: #2d3436;
             position: relative;
@@ -57,7 +58,7 @@
         .admin-header h1 {
             font-size: 2.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00b140 0%, #00872e 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -83,18 +84,19 @@
             align-items: center;
             gap: 8px;
             padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00b140 0%, #00872e 100%);
             color: white;
             text-decoration: none;
             border-radius: 12px;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 168, 62, 0.3);
         }
 
         .admin-nav a:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #00c848 0%, #009e36 100%);
+            box-shadow: 0 8px 25px rgba(0, 168, 62, 0.4);
         }
 
         /* Main Content Card */
@@ -1423,6 +1425,9 @@
     <div class="admin-container">
         <!-- Header Section -->
         <div class="admin-header">
+            <a href="../index.html" style="display: inline-block; margin-bottom: 15px;">
+                <img src="../Logo/VEXIOR_logo.png" alt="Vexior" style="height: 48px; object-fit: contain;">
+            </a>
             <h1><i class="fas fa-cogs"></i> Product Management</h1>
             <p class="subtitle">Add, edit, and manage your store products with ease</p>
 
@@ -1720,9 +1725,9 @@
 
         const firebaseConfig = {
             apiKey: "AIzaSyDogBkY_Xgx8Fw_3P0iOlVgciVArJHjy5Q",
-            authDomain: "vexior-65cbe.firebaseapp.com",
-            projectId: "vexior-65cbe",
-            storageBucket: "vexior-65cbe.appspot.com",
+            authDomain: "wackykicks-65cbe.firebaseapp.com",
+            projectId: "wackykicks-65cbe",
+            storageBucket: "wackykicks-65cbe.appspot.com",
             messagingSenderId: "911540684237",
             appId: "1:911540684237:web:faa772c146ff4acfadb084",
             measurementId: "G-7HWH0SEJN2"
@@ -2289,7 +2294,7 @@
                 const card = document.createElement("div");
                 card.className = "product-card";
                 card.innerHTML = `
-            <img src="${firstImage}" alt="Product Image" onerror="this.src='../Logo/1000163691.jpg'">
+            <img src="${firstImage}" alt="Product Image" onerror="this.src='../Logo/VEXIOR_logo.png'">
             <h3>${product.name}</h3>
             <p>₹${product.price || product.newPrice}</p>
             ${isOutOfStock ? `<p style="color: #ef4444; font-weight: bold;">OUT OF STOCK</p>` :

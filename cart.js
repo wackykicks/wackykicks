@@ -212,7 +212,7 @@ class ShoppingCart {
         cartItems.innerHTML = this.cart.map(item => `
             <div class="cart-item" data-item-id="${item.itemId}">
                 <a href="product.html?id=${item.id}" class="product-link">
-                    <img src="${item.image}" alt="${item.name}" onerror="this.src='Logo/1000163691.jpg'">
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='Logo/VEXIOR_logo.png'">
                 </a>
                 <div class="item-details">
                     <a href="product.html?id=${item.id}" class="product-link">

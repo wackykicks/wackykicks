@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>About Us | vexior</title>
+  <title>About Us | Vexior</title>
+  <link rel="icon" href="Logo/VEXIOR_logo.png" type="image/png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -11,6 +12,31 @@
       font-family: "Times New Roman", Times, serif;
       background-color: #fefefc;
       color: #222;
+    }
+
+    .about-topbar {
+      padding: 14px 40px;
+      background: rgba(255, 255, 255, 0.98);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 168, 62, 0.2);
+    }
+
+    .about-topbar a {
+      text-decoration: none;
+    }
+
+    .about-topbar .back-link {
+      color: #00a83e;
+      font-weight: 600;
+      font-size: 15px;
+      font-family: sans-serif;
+      transition: color 0.2s;
+    }
+
+    .about-topbar .back-link:hover {
+      color: #00872e;
     }
 
     header {
@@ -154,7 +180,7 @@
     .contact-form button {
       width: 100%;
       padding: 12px;
-      background-color: #0074d9;
+      background: linear-gradient(135deg, #00b140 0%, #00872e 100%);
       border: none;
       color: white;
       font-weight: bold;
@@ -163,7 +189,8 @@
     }
 
     footer {
-      background-color: #1c1c1c;
+      background-color: #081a0e;
+      border-top: 1px solid rgba(0, 168, 62, 0.2);
       color: #fff;
       padding: 40px 20px;
       display: flex;
@@ -179,6 +206,7 @@
     footer h4 {
       margin-bottom: 10px;
       text-transform: uppercase;
+      color: #00e65b;
     }
 
     footer a {
@@ -187,6 +215,11 @@
       margin-bottom: 6px;
       text-decoration: none;
       font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    footer a:hover {
+      color: #00e65b;
     }
 
     footer .bottom-note {
@@ -212,6 +245,13 @@
 </head>
 
 <body>
+
+  <div class="about-topbar">
+    <a href="index.html">
+      <img src="Logo/VEXIOR_logo.png" alt="Vexior" style="height: 36px; object-fit: contain; vertical-align: middle;">
+    </a>
+    <a href="index.html" class="back-link">&larr; Back to Shop</a>
+  </div>
 
   <header>
     <h1>ABOUT US</h1>

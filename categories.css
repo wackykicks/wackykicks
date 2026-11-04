@@ -1,10 +1,11 @@
 /* Modern Category Cards - Inspired by App Design */
 .categories-section {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, #f0fdf4 0%, #e6f7ec 100%);
     padding: 40px 20px;
     margin-bottom: 20px;
     position: relative;
     overflow: hidden;
+    border-bottom: 1px solid rgba(0, 168, 62, 0.1);
 }
 
 .categories-section::before {
@@ -14,17 +15,17 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    background: linear-gradient(45deg, rgba(0, 168, 62, 0.05) 0%, rgba(255, 255, 255, 0.6) 100%);
     pointer-events: none;
 }
 
 .categories-section h2 {
     font-size: 1.8rem;
-    color: #2c3e50;
+    color: #072612;
     margin-bottom: 30px;
     text-align: center;
     font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-shadow: 0 2px 4px rgba(0, 168, 62, 0.08);
     position: relative;
     z-index: 1;
 }
@@ -70,8 +71,8 @@
     text-align: center;
     padding: 20px 16px;
     box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.08);
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        0 2px 8px rgba(0, 168, 62, 0.06);
     position: relative;
     overflow: hidden;
     transform-origin: center;
@@ -86,7 +87,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, var(--category-color, #667eea) 0%, rgba(118, 75, 162, 0.1) 100%);
+    background: linear-gradient(135deg, var(--category-color, #00b140) 0%, rgba(0, 168, 62, 0.1) 100%);
     opacity: 0;
     transition: opacity 0.4s ease;
     border-radius: 28px;
@@ -94,27 +95,27 @@
 }
 
 .category-card:hover::before {
-    opacity: 0.08;
+    opacity: 0.1;
 }
 
 .category-card.selected::before {
-    opacity: 0.12;
+    opacity: 0.15;
 }
 
 /* Hover and interaction states */
 .category-card:hover {
     box-shadow: 
-        0 20px 48px rgba(0, 0, 0, 0.18),
-        0 8px 24px rgba(0, 0, 0, 0.12);
+        0 20px 48px rgba(0, 168, 62, 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.1);
     background: rgba(255, 255, 255, 1);
 }
 
 .category-card.selected {
     background: white;
     box-shadow: 
-        0 16px 40px rgba(0, 0, 0, 0.15),
-        0 4px 16px rgba(0, 0, 0, 0.1),
-        inset 0 0 0 2px var(--category-color, #667eea);
+        0 16px 40px rgba(0, 168, 62, 0.18),
+        0 4px 16px rgba(0, 0, 0, 0.08),
+        inset 0 0 0 2px var(--category-color, #00a83e);
 }
 
 /* Category Icon Container */
@@ -130,8 +131,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #0d381c 0%, #062410 100%);
+    box-shadow: 0 4px 16px rgba(0, 168, 62, 0.15);
 }
 
 .category-image::after {
@@ -158,7 +159,7 @@
 }
 
 .category-card:hover .category-image {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 168, 62, 0.25);
 }
 
 .category-card:hover .category-image img {
@@ -166,7 +167,7 @@
 }
 
 .category-card.selected .category-image {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 168, 62, 0.2);
 }
 
 /* Category Name */
@@ -184,12 +185,12 @@
 }
 
 .category-card:hover .category-name {
-    color: var(--category-color, #667eea);
+    color: var(--category-color, #00a83e);
     font-weight: 700;
 }
 
 .category-card.selected .category-name {
-    color: var(--category-color, #667eea);
+    color: var(--category-color, #00a83e);
     font-weight: 700;
 }
 
@@ -201,7 +202,7 @@
     right: 12px;
     width: 24px;
     height: 24px;
-    background: var(--category-color, #667eea);
+    background: var(--category-color, #00a83e);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -210,7 +211,7 @@
     font-size: 12px;
     font-weight: bold;
     z-index: 3;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 168, 62, 0.35);
     animation: checkmarkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

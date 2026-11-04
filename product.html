@@ -2,10 +2,11 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" href="Logo/VEXIOR_logo.png" type="image/png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product | vexior</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Product | Vexior</title>
+    <link rel="stylesheet" href="styles.css?v=2.0">
     <link rel="stylesheet" href="product.css">
     <link rel="stylesheet" href="floating-alerts.css">
     <link rel="stylesheet" href="address-modal.css">
@@ -29,26 +30,34 @@
 
     <!-- Navbar -->
     <nav class="navbar">
-        <div class="logo">vexior.in</div>
-        <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="index.html#product-grid">Products</a></li>
-            <li><a href="https://wa.me/918138999550" target="_blank">WhatsApp</a></li>
-            <li><a href="https://www.instagram.com/vexior.in/" target="_blank">Instagram</a></li>
-        </ul>
-
-        <div class="cart-container">
-            <a href="cart.html" aria-label="Go to cart">
-                <button type="button">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count" id="cartCount">0</span>
-                </button>
+        <div class="nav-top">
+            <a href="index.html" class="logo-brand" aria-label="Vexior Home">
+                <img src="Logo/VEXIOR_logo.png" alt="Vexior" class="brand-logo">
             </a>
+
+            <div class="nav-actions">
+                <div class="cart-container">
+                    <a href="cart.html" aria-label="Go to cart">
+                        <button type="button" aria-label="Shopping Cart">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count" id="cartCount">0</span>
+                        </button>
+                    </a>
+                </div>
+
+                <div class="hamburger" aria-label="Toggle menu" role="button" tabindex="0">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
         </div>
 
-        <div class="hamburger">
-            <i class="fas fa-bars"></i>
-        </div>
+        <ul class="nav-links">
+            <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="index.html#product-grid"><i class="fas fa-th-large"></i> Products</a></li>
+            <li><a href="about.html"><i class="fas fa-info-circle"></i> About us</a></li>
+            <li><a href="https://wa.me/918138999550" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a></li>
+            <li><a href="https://www.instagram.com/vexior.in/" target="_blank"><i class="fab fa-instagram"></i> Instagram</a></li>
+        </ul>
     </nav>
 
     <!-- Product Details Section -->

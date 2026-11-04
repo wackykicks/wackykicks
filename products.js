@@ -1561,8 +1561,21 @@ function loadProducts() {
     // Show skeleton loading immediately
     showSkeletonLoading();
 
-    // Fetch products - will use offline cache automatically with persistence enabled
-    db.collection("products").get().then(snapshot => {
+    // Fetch products with resilient fallback
+    const fetchWithFallback = () => {
+        return db.collection("products").get().then(snapshot => {
+            if (snapshot.empty) {
+                console.warn('⚠️ Default get returned 0 products, retrying with { source: "server" }...');
+                return db.collection("products").get({ source: "server" });
+            }
+            return snapshot;
+        }).catch(err => {
+            console.warn('⚠️ Default get failed, retrying directly from server...', err);
+            return db.collection("products").get({ source: "server" });
+        });
+    };
+
+    fetchWithFallback().then(snapshot => {
         console.log('✅ Connected to Firebase successfully');
         console.log('📦 Number of products found:', snapshot.size);
         
@@ -1839,10 +1852,20 @@ function loadTodaysOffers() {
         return;
     }
 
-    // Query products from "today offer" category
-    db.collection("products")
-        .where("categories", "array-contains", "today offer")
-        .get()
+    // Query products from "today offer" category with resilient fallback
+    const fetchOffersWithFallback = () => {
+        const query = db.collection("products").where("categories", "array-contains", "today offer");
+        return query.get().then(snapshot => {
+            if (snapshot.empty) {
+                return query.get({ source: "server" }).catch(() => snapshot);
+            }
+            return snapshot;
+        }).catch(err => {
+            return query.get({ source: "server" });
+        });
+    };
+
+    fetchOffersWithFallback()
         .then(snapshot => {
             if (snapshot.empty) {
                 todaysOfferGrid.innerHTML = `
