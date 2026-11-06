@@ -1374,21 +1374,21 @@ function renderProducts(productsToShow = allProducts) {
         const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
         const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
         productCard.innerHTML = `
-            <a href="product.html?id=${product.id}" class="product-link">
-                ${discountPercentage && !outOfStock ? `<span class=\"tag discount-tag\">${discountPercentage}% OFF</span>` : ''}
-                ${outOfStock ? `<span class=\"tag out-stock-tag\">Out of Stock</span>` : ''}
+            <a href="product.html?id=${product.id}" class="product-link" onclick="saveActiveProduct('${product.id}')">
+                ${discountPercentage && !outOfStock ? `<span class="tag discount-tag">${discountPercentage}% OFF</span>` : ''}
+                ${outOfStock ? `<span class="tag out-stock-tag">Out of Stock</span>` : ''}
                 <div class="img-wrapper">
                     <img src="${product.img}" alt="${product.name}" loading="lazy" decoding="async">
                 </div>
                 <h3>${product.name}</h3>
                 <div class="price">
-                    ${product.oldPrice ? `<span class=\"old-price\">₹${product.oldPrice}</span>` : ''}
+                    ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
                     <span class="new-price">₹${product.newPrice || product.price}</span>
                 </div>
             </a>
             ${outOfStock ? 
                 '<div class="out-of-stock-message">Currently Unavailable</div>' : 
-                `<button class="buy-now" onclick="event.stopPropagation(); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.img}')">Buy Now</button>`
+                `<button class="buy-now" onclick="event.stopPropagation(); saveActiveProduct('${product.id}'); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.img}')">Buy Now</button>`
             }
         `;
         fragment.appendChild(productCard);
@@ -1545,33 +1545,95 @@ function showSkeletonLoading() {
     productList.appendChild(fragment);
 }
 
+// ✅ Local Cache and Session Handlers for Instant Loading
+const PRODUCTS_CACHE_KEY = 'vexior_products_cache';
+
+function getCachedProducts() {
+    try {
+        const cached = localStorage.getItem(PRODUCTS_CACHE_KEY);
+        if (!cached) return null;
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) return parsed.data;
+    } catch (e) {
+        console.warn('Error reading products cache:', e);
+    }
+    return null;
+}
+
+function setCachedProducts(products) {
+    try {
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({
+            timestamp: Date.now(),
+            data: products
+        }));
+    } catch (e) {
+        console.warn('Error saving products cache:', e);
+    }
+}
+
+function saveActiveProduct(productId) {
+    try {
+        if (!allProducts || !allProducts.length) return;
+        const product = allProducts.find(p => p.id === productId);
+        if (product) {
+            sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(product));
+        }
+    } catch (e) {
+        console.warn('Could not save active product to sessionStorage:', e);
+    }
+}
+window.saveActiveProduct = saveActiveProduct;
+
 function loadProducts() {
     console.log('🔄 Starting to load products...');
-    console.log('📱 Firebase db available:', typeof db !== 'undefined');
     
-    if (typeof db === 'undefined' || !db) {
-        console.log('Database not ready yet, waiting for Firebase...');
+    // ⚡ 1. INSTANT RENDER: Render from cache immediately (0ms response time)
+    const cachedProducts = getCachedProducts();
+    let hasRenderedFromCache = false;
+
+    if (cachedProducts && cachedProducts.length > 0) {
+        console.log('⚡ Rendered', cachedProducts.length, 'products INSTANTLY from cache');
+        allProducts = cachedProducts;
+        renderProducts(allProducts);
+        window.productsLoaded = true;
+        hasRenderedFromCache = true;
+
+        if (window.pendingCategoryFilter) {
+            filterProducts(window.pendingCategoryFilter);
+            delete window.pendingCategoryFilter;
+        }
+
+        // Also instantly render Today's Offers from cached data
+        if (typeof renderTodaysOffersFromList === 'function') {
+            renderTodaysOffersFromList(allProducts);
+        }
+    } else {
+        // Only show skeleton loader if no cache is present
         showSkeletonLoading();
+    }
+
+    const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+    
+    if (!dbInstance) {
+        console.log('Database not ready yet, waiting for Firebase...');
         if (typeof window.onFirebaseReady === 'function') {
             window.onFirebaseReady(loadProducts);
         }
         return;
     }
 
-    // Show skeleton loading immediately
-    showSkeletonLoading();
-
-    // Fetch products with resilient fallback
+    // ⚡ 2. STALE-WHILE-REVALIDATE: Fetch latest products from Firebase in background
     const fetchWithFallback = () => {
-        return db.collection("products").get().then(snapshot => {
+        return dbInstance.collection("products").get().then(snapshot => {
             if (snapshot.empty) {
                 console.warn('⚠️ Default get returned 0 products, retrying with { source: "server" }...');
-                return db.collection("products").get({ source: "server" });
+                return dbInstance.collection("products").get({ source: "server" });
             }
             return snapshot;
         }).catch(err => {
             console.warn('⚠️ Default get failed, retrying directly from server...', err);
-            return db.collection("products").get({ source: "server" });
+            return dbInstance.collection("products").get({ source: "server" });
         });
     };
 
@@ -1579,13 +1641,13 @@ function loadProducts() {
         console.log('✅ Connected to Firebase successfully');
         console.log('📦 Number of products found:', snapshot.size);
         
-        allProducts = [];
+        const freshProducts = [];
         snapshot.forEach(doc => {
             const product = doc.data();
             const productId = doc.id;
-            const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : product.imgUrl;
+            const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : (product.imgUrl || product.img || '');
             
-            allProducts.push({ 
+            freshProducts.push({ 
                 ...product, 
                 id: productId, 
                 img: firstImage,
@@ -1594,7 +1656,7 @@ function loadProducts() {
         });
         
         // Sort products: newest first (with createdAt), then existing products
-        allProducts.sort((a, b) => {
+        freshProducts.sort((a, b) => {
             if (a.createdAt && b.createdAt) {
                 return new Date(b.createdAt) - new Date(a.createdAt);
             } else if (a.createdAt) {
@@ -1605,12 +1667,14 @@ function loadProducts() {
             return 0; // keep existing order for products without createdAt
         });
         
-        console.log('🎯 Products loaded:', allProducts.length);
+        console.log('🎯 Fresh products loaded:', freshProducts.length);
+        
+        // Update memory and save to local cache
+        allProducts = freshProducts;
+        setCachedProducts(allProducts);
         
         // Render products
         renderProducts(allProducts);
-        
-        // Notify category system that products are loaded
         window.productsLoaded = true;
         
         // Trigger any pending category filters
@@ -1619,32 +1683,37 @@ function loadProducts() {
             filterProducts(window.pendingCategoryFilter);
             delete window.pendingCategoryFilter;
         }
+
+        // Update Today's Offers with fresh products
+        if (typeof renderTodaysOffersFromList === 'function') {
+            renderTodaysOffersFromList(allProducts);
+        }
     }).catch(error => {
         console.error("❌ Error fetching products: ", error);
-        console.log('🔄 Loading fallback demo data...');
-        
-        // Fallback to demo data if Firebase fails
-        allProducts = [
-            {
-                id: '1',
-                name: 'Nike Zoom Vomero 5 White',
-                price: 850,
-                newPrice: 850,
-                img: 'https://via.placeholder.com/200x200?text=Nike+Shoe',
-                categories: ['nike', 'shoes']
-            },
-            {
-                id: '2',
-                name: 'Fossil Watch Classic',
-                price: 1200,
-                newPrice: 950,
-                oldPrice: 1200,
-                img: 'https://via.placeholder.com/200x200?text=Fossil+Watch',
-                categories: ['fossil', 'watches']
-            }
-        ];
-        console.log('✅ Demo products loaded:', allProducts.length);
-        renderProducts(allProducts);
+        if (!hasRenderedFromCache && (!allProducts || allProducts.length === 0)) {
+            console.log('🔄 Loading fallback demo data...');
+            allProducts = [
+                {
+                    id: '1',
+                    name: 'Apple Watch Ultra 2 Titanium',
+                    price: 2499,
+                    newPrice: 1999,
+                    oldPrice: 2499,
+                    img: 'https://via.placeholder.com/200x200?text=Apple+Watch',
+                    categories: ['smart-watches', 'gadgets']
+                },
+                {
+                    id: '2',
+                    name: 'Fossil Watch Classic',
+                    price: 1200,
+                    newPrice: 950,
+                    oldPrice: 1200,
+                    img: 'https://via.placeholder.com/200x200?text=Fossil+Watch',
+                    categories: ['watches']
+                }
+            ];
+            renderProducts(allProducts);
+        }
     });
 }
 
@@ -1830,12 +1899,109 @@ window.addEventListener('resize', () => {
     window.resizeTimeout = setTimeout(equalizeCardHeights, 250);
 });
 
+// ✅ Render Today's Offers from an array of products (0ms instant render)
+function renderTodaysOffersFromList(productsList) {
+    const todaysOfferGrid = document.getElementById('todaysOfferGrid');
+    if (!todaysOfferGrid) return;
+
+    if (!productsList || productsList.length === 0) return;
+
+    // Filter products matching today offer
+    const offerProducts = productsList.filter(product => {
+        if (!product.categories || !Array.isArray(product.categories)) return false;
+        return product.categories.some(cat => {
+            if (!cat || typeof cat !== 'string') return false;
+            const c = cat.toLowerCase().trim();
+            return c === 'today offer' || c === "today's offer" || c === "todays offer" || c === "todays offers" || c === "special offer";
+        });
+    });
+
+    if (offerProducts.length === 0) {
+        todaysOfferGrid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: rgba(255,255,255,0.8);">
+                <i class="fas fa-gift" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.6;"></i>
+                <h3 style="margin: 0 0 10px 0;">No Special Offers Today</h3>
+                <p style="margin: 0; opacity: 0.8;">Check back soon for amazing deals!</p>
+                <button onclick="document.getElementById('product-grid').scrollIntoView({behavior: 'smooth'})" 
+                        style="margin-top: 20px; padding: 12px 25px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 600;">
+                    Browse All Products
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    const displayProducts = offerProducts.slice(0, 2);
+    const hasMoreProducts = offerProducts.length > 2;
+
+    let offerHTML = '';
+    displayProducts.forEach(product => {
+        const firstImage = (product.imgUrl && product.imgUrl[0]) || product.img || (typeof product.imgUrl === 'string' ? product.imgUrl : 'https://via.placeholder.com/200x200?text=No+Image');
+        const discount = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
+        const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+        const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
+        const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+
+        offerHTML += `
+            <div class="offer-product-card" onclick="saveActiveProduct('${product.id}'); window.location.href='product.html?id=${product.id}'">
+                <div class="offer-image-container">
+                    <img src="${firstImage}" alt="${product.name}" loading="lazy">
+                    ${outOfStock ? '<div class="offer-out-of-stock-badge">Out of Stock</div>' : ''}
+                </div>
+                <h3 style="font-size: 1.1rem; margin: 10px 0; font-weight: 600; line-height: 1.3;">${product.name}</h3>
+                <div class="offer-price">
+                    ${product.oldPrice ? `<span class="offer-old-price">₹${product.oldPrice}</span>` : ''}
+                    <span class="offer-new-price">₹${product.newPrice || product.price}</span>
+                    ${discount ? `<span class="offer-discount">${discount}% OFF</span>` : ''}
+                </div>
+                ${outOfStock ? 
+                    '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
+                    `<div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="event.stopPropagation(); saveActiveProduct('${product.id}'); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${firstImage}')" 
+                                style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                            <i class="fab fa-whatsapp"></i> Buy Now
+                        </button>
+                    </div>`
+                }
+            </div>
+        `;
+    });
+
+    if (hasMoreProducts) {
+        offerHTML += `
+            <div class="offer-view-more-card" onclick="showAllTodaysOffers()">
+                <div class="offer-view-more-content">
+                    <i class="fas fa-plus" style="font-size: 0.9rem; margin-bottom: 2px; color: rgba(255,255,255,0.8);"></i>
+                    <h3 style="margin: 2px 0 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.9); font-weight: 600;">View More</h3>
+                </div>
+            </div>
+        `;
+    }
+
+    todaysOfferGrid.innerHTML = offerHTML;
+    window.allTodaysOffers = offerProducts;
+    startOfferCountdown();
+}
+window.renderTodaysOffersFromList = renderTodaysOffersFromList;
+
 // ✅ Today's Offer Section
 function loadTodaysOffers() {
     const todaysOfferGrid = document.getElementById('todaysOfferGrid');
     if (!todaysOfferGrid) return;
 
-    // Show loading state
+    // ⚡ 1. If allProducts or cached products exist, render immediately (0ms)
+    if (allProducts && allProducts.length > 0) {
+        renderTodaysOffersFromList(allProducts);
+        return;
+    }
+
+    const cachedProducts = getCachedProducts();
+    if (cachedProducts && cachedProducts.length > 0) {
+        renderTodaysOffersFromList(cachedProducts);
+        return;
+    }
+
+    // Otherwise show loading state
     todaysOfferGrid.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: rgba(255,255,255,0.8);">
             <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
@@ -1843,9 +2009,8 @@ function loadTodaysOffers() {
         </div>
     `;
 
-    // Check if db is ready, if not wait for Firebase callback
-    if (typeof db === 'undefined' || !db) {
-        console.log('Database not ready, waiting for Firebase...');
+    const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+    if (!dbInstance) {
         if (typeof window.onFirebaseReady === 'function') {
             window.onFirebaseReady(loadTodaysOffers);
         }
@@ -1854,7 +2019,7 @@ function loadTodaysOffers() {
 
     // Query products from "today offer" category with resilient fallback
     const fetchOffersWithFallback = () => {
-        const query = db.collection("products").where("categories", "array-contains", "today offer");
+        const query = dbInstance.collection("products").where("categories", "array-contains", "today offer");
         return query.get().then(snapshot => {
             if (snapshot.empty) {
                 return query.get({ source: "server" }).catch(() => snapshot);
@@ -1867,87 +2032,11 @@ function loadTodaysOffers() {
 
     fetchOffersWithFallback()
         .then(snapshot => {
-            if (snapshot.empty) {
-                todaysOfferGrid.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: rgba(255,255,255,0.8);">
-                        <i class="fas fa-gift" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.6;"></i>
-                        <h3 style="margin: 0 0 10px 0;">No Special Offers Today</h3>
-                        <p style="margin: 0; opacity: 0.8;">Check back soon for amazing deals!</p>
-                        <button onclick="document.getElementById('product-grid').scrollIntoView({behavior: 'smooth'})" 
-                                style="margin-top: 20px; padding: 12px 25px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 600;">
-                            Browse All Products
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            // Convert to array and limit to 2 products
-            const allProducts = [];
+            const offerProducts = [];
             snapshot.forEach(doc => {
-                allProducts.push({ id: doc.id, ...doc.data() });
+                offerProducts.push({ id: doc.id, ...doc.data() });
             });
-
-            const displayProducts = allProducts.slice(0, 2); // Only show first 2 products
-            const hasMoreProducts = allProducts.length > 2;
-
-            let offerHTML = '';
-            displayProducts.forEach(product => {
-                const firstImage = (product.imgUrl && product.imgUrl[0]) || 'https://via.placeholder.com/200x200?text=No+Image';
-                
-                // Calculate discount percentage
-                const discount = calculateDiscountPercentage(product.oldPrice, product.newPrice);
-                
-                // Check if product is out of stock
-                const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
-                const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
-                const outOfStock = isOutOfStockByCategory || isOutOfStockByStock;
-                
-                // Generate offer product card with 1:1 ratio image
-                offerHTML += `
-                    <div class="offer-product-card" onclick="window.location.href='product.html?id=${product.id}'">
-                        <div class="offer-image-container">
-                            <img src="${firstImage}" alt="${product.name}" loading="lazy">
-                            ${outOfStock ? '<div class="offer-out-of-stock-badge">Out of Stock</div>' : ''}
-                        </div>
-                        <h3 style="font-size: 1.1rem; margin: 10px 0; font-weight: 600; line-height: 1.3;">${product.name}</h3>
-                        <div class="offer-price">
-                            ${product.oldPrice ? `<span class="offer-old-price">₹${product.oldPrice}</span>` : ''}
-                            <span class="offer-new-price">₹${product.newPrice}</span>
-                            ${discount ? `<span class="offer-discount">${discount}% OFF</span>` : ''}
-                        </div>
-                        ${outOfStock ? 
-                            '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
-                            `<div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}', '${firstImage}')" 
-                                        style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                                    <i class="fab fa-whatsapp"></i> Buy Now
-                                </button>
-                            </div>`
-                        }
-                    </div>
-                `;
-            });
-
-            // Add "View More" button if there are more than 2 products
-            if (hasMoreProducts) {
-                offerHTML += `
-                    <div class="offer-view-more-card" onclick="showAllTodaysOffers()">
-                        <div class="offer-view-more-content">
-                            <i class="fas fa-plus" style="font-size: 0.9rem; margin-bottom: 2px; color: rgba(255,255,255,0.8);"></i>
-                            <h3 style="margin: 2px 0 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.9); font-weight: 600;">View More</h3>
-                        </div>
-                    </div>
-                `;
-            }
-
-            todaysOfferGrid.innerHTML = offerHTML;
-            
-            // Store all products for "View More" functionality
-            window.allTodaysOffers = allProducts;
-            
-            // Start countdown timer
-            startOfferCountdown();
+            renderTodaysOffersFromList(offerProducts);
         })
         .catch(error => {
             console.error("Error loading today's offers:", error);

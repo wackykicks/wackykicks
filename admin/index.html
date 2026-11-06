@@ -2527,11 +2527,19 @@
                 const categoriesRef = collection(db, 'category');
                 const categoriesSnapshot = await getDocs(categoriesRef);
 
+                const shoeBrands = ['nike', 'adidas', 'puma', 'asics', 'converse', 'new balance', 'vans', 'vens', 'jordan', 'reebok', 'shoes', 'shoe'];
                 availableCategories = [];
                 categoriesSnapshot.forEach(doc => {
+                    if (doc.id === 'CONFIG_display_order') return;
+                    const catData = doc.data();
+                    const cleanName = (catData.name || '').normalize('NFKD').replace(/[^\w\s]/g, '').toLowerCase().trim();
+                    const cleanId = (doc.id || '').toLowerCase().trim();
+                    if (shoeBrands.some(brand => cleanName.includes(brand) || cleanId.includes(brand))) {
+                        return;
+                    }
                     availableCategories.push({
                         id: doc.id,
-                        ...doc.data()
+                        ...catData
                     });
                 });
 
@@ -2542,10 +2550,10 @@
                 console.error('Error loading categories:', error);
                 // Use default categories if loading fails
                 availableCategories = [
-                    { id: 'nike', name: 'Nike', color: '#000000' },
-                    { id: 'adidas', name: 'Adidas', color: '#0066cc' },
-                    { id: 'shoes', name: 'Shoes', color: '#ff6b35' },
                     { id: 'watches', name: 'Watches', color: '#28a745' },
+                    { id: 'smart-watches', name: 'Smart Watches', color: '#3b82f6' },
+                    { id: 'airpods', name: 'Airpods', color: '#10b981' },
+                    { id: 'gadgets', name: 'Gadgets', color: '#8b5cf6' },
                     { id: 'accessories', name: 'Accessories', color: '#6f42c1' },
                     { id: 'today-offer', name: "Today's Offers", color: '#6c757d' }
                 ];

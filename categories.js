@@ -33,49 +33,81 @@ class CategoryManager {
         console.log('✅ Categories sorted by custom order');
     }
 
+    // Helper to identify and exclude shoe related brand categories
+    isShoeBrandCategory(cat) {
+        if (!cat) return false;
+        // Normalize Unicode bold/italic characters to standard ASCII
+        const name = (cat.name || '').normalize('NFKD').replace(/[^\w\s]/g, '').toLowerCase().trim();
+        const id = (cat.id || '').toLowerCase().trim();
+        const shoeBrands = ['nike', 'adidas', 'puma', 'asics', 'converse', 'new balance', 'vans', 'vens', 'jordan', 'reebok'];
+        return shoeBrands.some(brand => name.includes(brand) || id.includes(brand));
+    }
+
     // Initialize category manager
     init() {
-        // Wait for Firebase to be ready before loading categories
-        if (typeof db !== 'undefined') {
+        // ⚡ INSTANT RENDER: Check local cache first (0ms)
+        try {
+            const cached = localStorage.getItem('vexior_categories_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed && Array.isArray(parsed.categories) && parsed.categories.length > 0) {
+                    this.categories = parsed.categories.filter(cat => !this.isShoeBrandCategory(cat));
+                    this.categoryDisplayOrder = parsed.order || [];
+                    this.sortCategories();
+                    this.renderCategories();
+                    console.log('⚡ Categories loaded INSTANTLY from cache:', this.categories.length);
+                }
+            }
+        } catch (e) {
+            console.warn('Error reading category cache:', e);
+        }
+
+        // Wait for Firebase to be ready before loading/revalidating categories
+        const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+        if (dbInstance) {
             this.loadCategories();
+        } else if (typeof window.onFirebaseReady === 'function') {
+            window.onFirebaseReady(() => this.loadCategories());
         } else {
             // Wait for Firebase to initialize
             const checkFirebase = setInterval(() => {
-                if (typeof db !== 'undefined') {
+                const readyDb = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+                if (readyDb) {
                     clearInterval(checkFirebase);
                     this.loadCategories();
                 }
             }, 100);
 
-            // Fallback after 5 seconds if Firebase doesn't load
+            // Fallback after 4 seconds if Firebase doesn't load and we haven't rendered
             setTimeout(() => {
                 clearInterval(checkFirebase);
-                if (typeof db === 'undefined') {
+                if ((!this.categories || this.categories.length === 0)) {
                     console.warn('Firebase not available, using default categories');
                     this.categories = this.getDefaultCategories();
                     this.renderCategories();
                     this.setupEventListeners();
                 }
-            }, 5000);
+            }, 4000);
         }
         this.setupEventListeners();
     }
 
     // Load categories from Firebase
     async loadCategories() {
-        console.log('🏷️ Loading categories...');
+        console.log('🏷️ Loading/revalidating categories from Firebase...');
 
         try {
-            if (typeof db !== 'undefined') {
+            const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+            if (dbInstance) {
                 // 1. Fetch Categories with server fallback
-                const categoriesSnapshot = await db.collection('category').get().catch(err => {
+                const categoriesSnapshot = await dbInstance.collection('category').get().catch(err => {
                     console.warn('⚠️ Category fetch failed, trying server directly:', err);
-                    return db.collection('category').get({ source: 'server' });
+                    return dbInstance.collection('category').get({ source: 'server' });
                 });
 
                 // 2. Fetch Display Order
                 try {
-                    const settingsDoc = await db.collection('category').doc('CONFIG_display_order').get();
+                    const settingsDoc = await dbInstance.collection('category').doc('CONFIG_display_order').get();
                     if (settingsDoc.exists) {
                         this.categoryDisplayOrder = settingsDoc.data().order || [];
                         console.log('📋 Loaded category order:', this.categoryDisplayOrder);
@@ -99,8 +131,17 @@ class CategoryManager {
                         };
                         return data;
                     })
-                    .filter(cat => cat.id !== 'CONFIG_display_order'); // Exclude config doc
-            } else {
+                    .filter(cat => cat.id !== 'CONFIG_display_order' && !this.isShoeBrandCategory(cat)); // Exclude config doc & shoe brand categories
+
+                // Cache fresh categories in localStorage
+                try {
+                    localStorage.setItem('vexior_categories_cache', JSON.stringify({
+                        categories: this.categories,
+                        order: this.categoryDisplayOrder,
+                        timestamp: Date.now()
+                    }));
+                } catch (e) {}
+            } else if (!this.categories || this.categories.length === 0) {
                 this.categories = this.getDefaultCategories();
             }
 
@@ -112,20 +153,23 @@ class CategoryManager {
             this.renderCategories();
         } catch (error) {
             console.error('❌ Error loading categories:', error);
-            this.categories = this.getDefaultCategories();
-            this.renderCategories();
+            if (!this.categories || this.categories.length === 0) {
+                this.categories = this.getDefaultCategories();
+                this.renderCategories();
+            }
         }
     }
 
-    // Default categories for fallback
+    // Default categories for fallback (without shoe brands)
     getDefaultCategories() {
         return [
             { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
             { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#6c757d', special: true },
-            { id: 'nike', name: 'Nike', image: 'https://via.placeholder.com/60x60?text=NIKE', color: '#000000' },
-            { id: 'adidas', name: 'Adidas', image: 'https://via.placeholder.com/60x60?text=ADIDAS', color: '#0066cc' },
-            { id: 'shoes', name: 'Shoes', image: 'https://via.placeholder.com/60x60?text=SHOES', color: '#ff6b35' },
             { id: 'watches', name: 'Watches', image: 'https://via.placeholder.com/60x60?text=WATCH', color: '#28a745' },
+            { id: 'smart-watches', name: 'Smart Watches', image: 'https://via.placeholder.com/60x60?text=SMART', color: '#667eea' },
+            { id: 'gadgets', name: 'Gadgets', image: 'https://via.placeholder.com/60x60?text=GADGET', color: '#667eea' },
+            { id: 'sunglasses', name: 'Sunglasses', image: 'https://via.placeholder.com/60x60?text=SUN', color: '#667eea' },
+            { id: 'airpods', name: 'Airpods', image: 'https://via.placeholder.com/60x60?text=AIRPODS', color: '#667eea' },
             { id: 'accessories', name: 'Accessories', image: 'https://via.placeholder.com/60x60?text=ACC', color: '#6f42c1' }
         ];
     }

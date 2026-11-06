@@ -376,10 +376,9 @@ class AdminCategoryManager {
         return [
             { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
             { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#6c757d', special: true, description: 'Limited time special offers and deals' },
-            { id: 'nike', name: 'Nike', image: 'https://via.placeholder.com/60x60?text=NIKE', color: '#000000' },
-            { id: 'adidas', name: 'Adidas', image: 'https://via.placeholder.com/60x60?text=ADIDAS', color: '#0066cc' },
-            { id: 'shoes', name: 'Shoes', image: 'https://via.placeholder.com/60x60?text=SHOES', color: '#ff6b35' },
             { id: 'watches', name: 'Watches', image: 'https://via.placeholder.com/60x60?text=WATCH', color: '#28a745' },
+            { id: 'smart-watches', name: 'Smart Watches', image: 'https://via.placeholder.com/60x60?text=SMART', color: '#3b82f6' },
+            { id: 'gadgets', name: 'Gadgets', image: 'https://via.placeholder.com/60x60?text=GADGET', color: '#8b5cf6' },
             { id: 'accessories', name: 'Accessories', image: 'https://via.placeholder.com/60x60?text=ACC', color: '#6f42c1' },
             { id: 'out-of-stock', name: 'Out of Stock', image: 'https://via.placeholder.com/60x60?text=OUT', color: '#ef4444' }
         ];
@@ -412,21 +411,21 @@ class AdminCategoryManager {
         return [
             {
                 id: '1',
-                name: 'Nike Zoom Vomero 5 White',
-                img: 'https://via.placeholder.com/200x200?text=Nike+Shoe',
-                categories: ['nike', 'shoes']
+                name: 'Apple Watch Ultra 2 Titanium',
+                img: 'https://via.placeholder.com/200x200?text=Apple+Watch',
+                categories: ['smart-watches', 'gadgets']
             },
             {
                 id: '2',
                 name: 'Fossil Watch Classic',
                 img: 'https://via.placeholder.com/200x200?text=Fossil+Watch',
-                categories: ['fossil', 'watches']
+                categories: ['watches']
             },
             {
                 id: '3',
-                name: 'Adidas Running Shoes',
-                img: 'https://via.placeholder.com/200x200?text=Adidas+Shoe',
-                categories: ['adidas', 'shoes']
+                name: 'AirPods Pro 2nd Gen',
+                img: 'https://via.placeholder.com/200x200?text=AirPods',
+                categories: ['airpods', 'gadgets']
             }
         ];
     }

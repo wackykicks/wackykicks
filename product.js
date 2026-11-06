@@ -41,172 +41,160 @@ function scrollPhotoSlider(direction) {
     });
 }
 
-// ✅ Load Product
-function loadProduct() {
+// ✅ Render Product Details HTML & Setup Interactions (Reusable for 0ms cache & live data)
+function renderProductDetails(product) {
     const productDetails = document.getElementById('productDetails');
+    if (!productDetails || !product) return;
 
-    if (!productId) {
-        productDetails.innerHTML = '<p>Product ID is missing in URL.</p>';
-        return;
+    // Store product data globally for checkout
+    window.currentProductData = {
+        ...product,
+        photos: Array.isArray(product.imgUrl) ? product.imgUrl : (product.img ? [product.img] : (product.photos || []))
+    };
+
+    const images = Array.isArray(product.imgUrl) ? product.imgUrl : (product.img ? [product.img] : (product.photos || []));
+    const sizes = product.sizes || [];
+    const rawColors = product.colors || [];
+
+    // Parse colors to handle both old and new formats
+    const colors = rawColors.map(colorData => {
+        if (typeof colorData === 'string') {
+            if (colorData.includes(':')) {
+                // New format "ColorName:HexValue"
+                const [name, hex] = colorData.split(':');
+                return { name: name.trim(), hex: hex.trim() };
+            } else {
+                // Old format - just color name
+                return { name: colorData, hex: getColorHex(colorData) };
+            }
+        } else if (colorData && colorData.name && colorData.hex) {
+            // Already an object
+            return colorData;
+        } else {
+            // Fallback
+            return { name: 'Unknown', hex: '#6b7280' };
+        }
+    });
+
+    // ✅ Build gallery HTML
+    let galleryHTML = `
+        <div class="slider">
+    `;
+    images.forEach(url => {
+        galleryHTML += `
+            <div class="image-slide">
+                <img src="${url}" alt="${product.name}">
+            </div>
+        `;
+    });
+    galleryHTML += `</div>
+        <div class="photo-slider-arrows">
+            <button type="button" onclick="scrollPhotoSlider(-1)">&larr;</button>
+            <div class="pagination" id="pagination"></div>
+            <button type="button" onclick="scrollPhotoSlider(1)">&rarr;</button>
+        </div>
+    `;
+
+    let sizesHTML = '';
+    if (sizes.length) {
+        sizesHTML = `
+            <div class="sizes">
+                <h4>Available Sizes:</h4>
+                <select id="sizeDropdown" class="size-dropdown" onchange="selectSize(this.value)">
+                    <option value="">Select Size</option>
+        `;
+        sizes.forEach(size => {
+            sizesHTML += `<option value="${size}">${size}</option>`;
+        });
+        sizesHTML += `
+                </select>
+            </div>
+        `;
     }
 
-    db.collection("products").doc(productId).get().then(doc => {
-        if (!doc.exists) {
-            productDetails.innerHTML = `<p>Product not found.</p>`;
-            return;
-        }
-
-        const product = doc.data();
-        
-        // Store product data globally for checkout
-        window.currentProductData = {
-            ...product,
-            photos: product.imgUrl || []
-        };
-        
-        const images = product.imgUrl || [];
-
-        const sizes = product.sizes || [];
-        const rawColors = product.colors || [];
-
-        // Parse colors to handle both old and new formats
-        const colors = rawColors.map(colorData => {
-            if (typeof colorData === 'string') {
-                if (colorData.includes(':')) {
-                    // New format "ColorName:HexValue"
-                    const [name, hex] = colorData.split(':');
-                    return { name: name.trim(), hex: hex.trim() };
-                } else {
-                    // Old format - just color name
-                    return { name: colorData, hex: getColorHex(colorData) };
-                }
-            } else if (colorData && colorData.name && colorData.hex) {
-                // Already an object
-                return colorData;
-            } else {
-                // Fallback
-                return { name: 'Unknown', hex: '#6b7280' };
-            }
-        });
-
-        // ✅ Build gallery HTML
-        let galleryHTML = `
-            <div class="slider">
-        `;
-        images.forEach(url => {
-            galleryHTML += `
-                <div class="image-slide">
-                    <img src="${url}" alt="${product.name}">
-                </div>
-            `;
-        });
-        galleryHTML += `</div>
-            <div class="photo-slider-arrows">
-                <button type="button" onclick="scrollPhotoSlider(-1)">&larr;</button>
-                <div class="pagination" id="pagination"></div>
-                <button type="button" onclick="scrollPhotoSlider(1)">&rarr;</button>
-            </div>
-        `;
-
-        let sizesHTML = '';
-        if (sizes.length) {
-            sizesHTML = `
-                <div class="sizes">
-                    <h4>Available Sizes:</h4>
-                    <select id="sizeDropdown" class="size-dropdown" onchange="selectSize(this.value)">
-                        <option value="">Select Size</option>
-            `;
-            sizes.forEach(size => {
-                sizesHTML += `<option value="${size}">${size}</option>`;
-            });
-            sizesHTML += `
-                    </select>
-                </div>
-            `;
-        }
-
-        let colorsHTML = '';
-        if (colors.length) {
-            colorsHTML = `
-                <div class="colors">
-                    <div class="modern-color-selection">
-                        <div class="color-section-header">
-                            <h4 class="color-section-title">Colors</h4>
-                        </div>
-                        <div class="color-circles-container">
-            `;
-
-            // Generate color circles
-            colors.forEach((colorObj, index) => {
-                const colorName = colorObj.name;
-                const hexColor = colorObj.hex;
-                const isFirstColor = index === 0;
-                console.log(`Color: ${colorName} -> Hex: ${hexColor}`); // Debug logging
-                colorsHTML += `
-                    <div class="product-color-circle${isFirstColor ? ' selected' : ''}" 
-                         data-color="${colorName}" 
-                         data-hex="${hexColor}"
-                         style="background: ${hexColor};"
-                         onclick="selectProductColor('${colorName}', '${hexColor}', this)">
+    let colorsHTML = '';
+    if (colors.length) {
+        colorsHTML = `
+            <div class="colors">
+                <div class="modern-color-selection">
+                    <div class="color-section-header">
+                        <h4 class="color-section-title">Colors</h4>
                     </div>
-                `;
-            });
+                    <div class="color-circles-container">
+        `;
 
+        // Generate color circles
+        colors.forEach((colorObj, index) => {
+            const colorName = colorObj.name;
+            const hexColor = colorObj.hex;
+            const isFirstColor = index === 0;
             colorsHTML += `
-                            <div class="selected-color-name${colors.length > 0 ? ' active' : ''}" id="selectedColorDisplay">
-                                ${colors.length > 0 ? colors[0].name : 'Select Color'}
-                            </div>
-                        </div>
-                    </div>
+                <div class="product-color-circle${isFirstColor ? ' selected' : ''}" 
+                     data-color="${colorName}" 
+                     data-hex="${hexColor}"
+                     style="background: ${hexColor};"
+                     onclick="selectProductColor('${colorName}', '${hexColor}', this)">
                 </div>
             `;
-        }
+        });
 
-        // Calculate discount percentage
-        const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
-
-        // Check if product is out of stock via category assignment or stock field
-        const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
-        const isOutOfStockByStock = typeof product.stock !== 'undefined' && parseInt(product.stock) === 0;
-        const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
-
-        // ✅ Inject product HTML
-        productDetails.innerHTML = `
-            <div class="product-container">
-                <div class="product-gallery">
-                    ${galleryHTML}
-                </div>
-                <div class="product-info">
-                    <h2>${product.name}</h2>
-                    <div class="price">
-                        ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
-                        <span class="new-price">₹${product.newPrice || product.price}</span>
-                        ${discountPercentage && !isOutOfStock ? `<span class="discount-tag-price">${discountPercentage}% OFF</span>` : ''}
-                        ${isOutOfStock ? `<span class="out-stock-tag-price">Out of Stock</span>` : ''}
-                    </div>
-                    ${colorsHTML}
-                    <div class="quantity-container">
-                        <span>Quantity:</span>
-                        <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled' : ''}>
-                    </div>
-                    <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
-                    ${sizesHTML}
-                    <p class="description">${product.description || 'No description available.'}</p>
-                    <div class="product-buttons">
-                        <button class="add-to-cart-btn" onclick="addProductToCart('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] ? images[0].replace(/'/g, "\\'") : ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
-                            <i class="fas fa-shopping-cart"></i>
-                            Add to Cart
-                        </button>
-                        <button class="buy-now" onclick="handleBuyNowClick()" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>Buy Now</button>
+        colorsHTML += `
+                        <div class="selected-color-name${colors.length > 0 ? ' active' : ''}" id="selectedColorDisplay">
+                            ${colors.length > 0 ? colors[0].name : 'Select Color'}
+                        </div>
                     </div>
                 </div>
             </div>
         `;
+    }
 
-        // ✅ Setup slider & pagination (AFTER rendering HTML)
-        const slider = document.querySelector('.slider');
-        const pagination = document.getElementById('pagination');
+    // Calculate discount percentage
+    const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
 
+    // Check if product is out of stock via category assignment or stock field
+    const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+    const isOutOfStockByStock = typeof product.stock !== 'undefined' && parseInt(product.stock) === 0;
+    const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+
+    // ✅ Inject product HTML
+    productDetails.innerHTML = `
+        <div class="product-container">
+            <div class="product-gallery">
+                ${galleryHTML}
+            </div>
+            <div class="product-info">
+                <h2>${product.name}</h2>
+                <div class="price">
+                    ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
+                    <span class="new-price">₹${product.newPrice || product.price}</span>
+                    ${discountPercentage && !isOutOfStock ? `<span class="discount-tag-price">${discountPercentage}% OFF</span>` : ''}
+                    ${isOutOfStock ? `<span class="out-stock-tag-price">Out of Stock</span>` : ''}
+                </div>
+                ${colorsHTML}
+                <div class="quantity-container">
+                    <span>Quantity:</span>
+                    <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled' : ''}>
+                </div>
+                <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
+                ${sizesHTML}
+                <p class="description">${product.description || 'No description available.'}</p>
+                <div class="product-buttons">
+                    <button class="add-to-cart-btn" onclick="addProductToCart('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] ? images[0].replace(/'/g, "\\'") : ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
+                        <i class="fas fa-shopping-cart"></i>
+                        Add to Cart
+                    </button>
+                    <button class="buy-now" onclick="handleBuyNowClick()" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>Buy Now</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // ✅ Setup slider & pagination (AFTER rendering HTML)
+    const slider = document.querySelector('.slider');
+    const pagination = document.getElementById('pagination');
+
+    if (slider && pagination) {
+        pagination.innerHTML = '';
         images.forEach((url, index) => {
             const dot = document.createElement('span');
             dot.classList.add('dot');
@@ -228,21 +216,88 @@ function loadProduct() {
                 dot.classList.toggle('active', i === index);
             });
         });
+    }
 
-        // ✅ Auto-adjust layout based on image size
-        adjustLayoutToImageSize();
+    // ✅ Auto-adjust layout based on image size
+    adjustLayoutToImageSize();
 
-        // ✅ Initialize color selection if colors are available
-        if (colors.length > 0) {
-            // Set the first color as selected by default
-            selectedColor = colors[0].name;
-            window.selectedColor = selectedColor; // Also set on window for backward compatibility
-            console.log('Auto-selected first color:', selectedColor);
+    // ✅ Initialize color selection if colors are available
+    if (colors.length > 0) {
+        selectedColor = colors[0].name;
+        window.selectedColor = selectedColor;
+    }
+}
+
+// ✅ Load Product with 0ms Instant Cache + Stale-While-Revalidate
+function loadProduct() {
+    const productDetails = document.getElementById('productDetails');
+
+    if (!productId) {
+        if (productDetails) productDetails.innerHTML = '<p>Product ID is missing in URL.</p>';
+        return;
+    }
+
+    let renderedFromCache = false;
+
+    // ⚡ 1. INSTANT RENDER: Check sessionStorage (from click) then localStorage products cache
+    try {
+        let cachedProduct = null;
+        const sessionData = sessionStorage.getItem('vexior_active_product_' + productId);
+        if (sessionData) {
+            cachedProduct = JSON.parse(sessionData);
+        } else {
+            const allCached = localStorage.getItem('vexior_products_cache');
+            if (allCached) {
+                const parsed = JSON.parse(allCached);
+                const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+                cachedProduct = list.find(p => p.id === productId);
+            }
         }
 
+        if (cachedProduct) {
+            console.log('⚡ Product rendered INSTANTLY from local cache in 0ms');
+            renderProductDetails(cachedProduct);
+            renderedFromCache = true;
+        }
+    } catch (e) {
+        console.warn('Cache read error:', e);
+    }
+
+    if (!renderedFromCache && productDetails) {
+        productDetails.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #666;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #00a83e; margin-bottom: 15px;"></i>
+                <p style="font-size: 1.1rem; font-weight: 500;">Loading product details...</p>
+            </div>
+        `;
+    }
+
+    // ⚡ 2. STALE-WHILE-REVALIDATE: Fetch live data in background to ensure real-time accuracy
+    const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+    if (!dbInstance) {
+        console.warn('Firestore db not yet ready for live product fetch');
+        return;
+    }
+
+    dbInstance.collection("products").doc(productId).get().then(doc => {
+        if (!doc.exists) {
+            if (!renderedFromCache && productDetails) {
+                productDetails.innerHTML = `<p>Product not found.</p>`;
+            }
+            return;
+        }
+
+        const freshProduct = { id: doc.id, ...doc.data() };
+        try {
+            sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(freshProduct));
+        } catch (e) {}
+
+        renderProductDetails(freshProduct);
     }).catch(error => {
-        console.error("Error loading product: ", error);
-        productDetails.innerHTML = `<p>Error loading product details.</p>`;
+        console.error("Error loading product from Firebase: ", error);
+        if (!renderedFromCache && productDetails) {
+            productDetails.innerHTML = `<p>Error loading product details.</p>`;
+        }
     });
 }
 
@@ -1323,14 +1378,17 @@ async function loadRelatedProducts() {
     }
 
     try {
-        // First, get the current product to understand its categories and name
-        const currentProductDoc = await db.collection("products").doc(productId).get();
-        if (!currentProductDoc.exists) {
-            console.error('Current product not found');
-            return;
+        // First, check if current product is already available in memory/cache
+        let currentProduct = window.currentProductData;
+        if (!currentProduct) {
+            const currentProductDoc = await db.collection("products").doc(productId).get();
+            if (!currentProductDoc.exists) {
+                console.error('Current product not found');
+                return;
+            }
+            currentProduct = currentProductDoc.data();
         }
 
-        const currentProduct = currentProductDoc.data();
         const currentCategories = currentProduct.categories || [];
         const currentName = currentProduct.name || '';
 
@@ -1349,24 +1407,31 @@ async function loadRelatedProducts() {
 
         console.log('🏷️ Detected brand:', detectedBrand);
 
-        // Load all products to filter for related ones
-        const allProductsSnapshot = await db.collection("products").get();
-        const allProducts = [];
+        // ⚡ Check local cache for all products first (0ms)
+        let allProducts = [];
+        try {
+            const cached = localStorage.getItem('vexior_products_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+                allProducts = list.filter(p => p.id !== productId);
+            }
+        } catch (e) {}
 
-        allProductsSnapshot.forEach(doc => {
-            const product = doc.data();
-            const docId = doc.id;
-
-            // Skip the current product
-            if (docId === productId) return;
-
-            allProducts.push({
-                id: docId,
-                ...product
+        // Fallback to Firestore if no cache available
+        if (!allProducts || allProducts.length === 0) {
+            const allProductsSnapshot = await db.collection("products").get();
+            allProducts = [];
+            allProductsSnapshot.forEach(doc => {
+                if (doc.id === productId) return;
+                allProducts.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
             });
-        });
+        }
 
-        console.log('📦 Total products loaded:', allProducts.length);
+        console.log('📦 Total related candidate products:', allProducts.length);
 
         // Score products based on similarity
         const scoredProducts = allProducts.map(product => {

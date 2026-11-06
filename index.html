@@ -165,22 +165,11 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         window.db = firebase.firestore();
+        var db = window.db;
 
         // Mark Firebase as ready immediately
         window.isFirebaseReady = true;
         console.log('Firebase initialized successfully');
-
-        // Clean up legacy/corrupted IndexedDB cache from prior runs to prevent transaction abort errors
-        if (typeof indexedDB !== 'undefined' && indexedDB.databases) {
-            indexedDB.databases().then(function(dbs) {
-                (dbs || []).forEach(function(dbInfo) {
-                    if (dbInfo.name && (dbInfo.name.includes('firestore') || dbInfo.name.includes('wackykicks') || dbInfo.name.includes('vexior'))) {
-                        console.log('Cleaning legacy firestore cache:', dbInfo.name);
-                        try { indexedDB.deleteDatabase(dbInfo.name); } catch(e){}
-                    }
-                });
-            }).catch(function() {});
-        }
 
         // Execute all queued callbacks
         window.firebaseReadyCallbacks.forEach(function (callback) {
@@ -203,13 +192,13 @@
     </script>
 
     <!-- <script defer src="christmas-theme.js"></script> -->
-    <script defer src="ramadan-theme.js?v=3"></script>
-    <script defer src="floating-alerts.js?v=3"></script>
-    <script defer src="address-manager.js?v=3"></script>
-    <script defer src="categories.js?v=6"></script>
-    <script defer src="cart.js?v=3"></script>
-    <script defer src="products.js?v=3"></script>
-    <script defer src="scripts.js?v=3"></script>
+    <script defer src="ramadan-theme.js?v=4"></script>
+    <script defer src="floating-alerts.js?v=4"></script>
+    <script defer src="address-manager.js?v=4"></script>
+    <script defer src="categories.js?v=8"></script>
+    <script defer src="cart.js?v=4"></script>
+    <script defer src="products.js?v=5"></script>
+    <script defer src="scripts.js?v=4"></script>
 </body>
 
 </html>

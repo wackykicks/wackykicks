@@ -34,22 +34,44 @@ const searchInput = document.querySelector('input[type="text"]');
 
 let allProducts = [];
 
-// Load all products once on page load
+// Load all products once on page load (with 0ms instant cache)
 async function loadAllProducts() {
-    const snapshot = await getDocs(collection(db, "products"));
-    allProducts = [];
-    
-    snapshot.forEach(doc => {
-        const product = doc.data();
-        allProducts.push({ id: doc.id, ...product });
-    });
-    
-    // Perform initial search if query exists
-    if (query) {
-        performSearch(query);
-    } else {
-        // Show all products initially
-        renderResults(allProducts);
+    // ⚡ 1. Check local cache for 0ms instant search results
+    try {
+        const cached = localStorage.getItem('vexior_products_cache');
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+            if (list.length > 0) {
+                allProducts = list;
+                if (query) {
+                    performSearch(query);
+                } else {
+                    renderResults(allProducts);
+                }
+            }
+        }
+    } catch (e) {}
+
+    // ⚡ 2. Fetch fresh products from Firestore in background
+    try {
+        const snapshot = await getDocs(collection(db, "products"));
+        allProducts = [];
+        
+        snapshot.forEach(doc => {
+            const product = doc.data();
+            allProducts.push({ id: doc.id, ...product });
+        });
+        
+        // Perform initial search if query exists
+        if (query) {
+            performSearch(query);
+        } else {
+            // Show all products initially
+            renderResults(allProducts);
+        }
+    } catch (err) {
+        console.error("Error fetching products in search:", err);
     }
 }
 
