@@ -5,6 +5,9 @@ class CategoryManager {
         this.categories = [];
         this.selectedCategories = [];
         this.categoryDisplayOrder = []; // Will be loaded from Firebase
+        // If already loaded and cached, keep all categories; otherwise start with 5 for instant speed
+        const hasExistingCache = !!(localStorage.getItem('vexior_products_cache') || localStorage.getItem('vexior_categories_cache'));
+        this.showAll = hasExistingCache;
 
         this.init();
     }
@@ -92,46 +95,87 @@ class CategoryManager {
         this.setupEventListeners();
     }
 
-    // Load categories from Firebase
+    // Load categories from Firebase with direct REST API fallback
     async loadCategories() {
         console.log('🏷️ Loading/revalidating categories from Firebase...');
 
         try {
+            let loadedCategories = [];
+            let loadedOrder = [];
+            let fetchedSuccessfully = false;
+
             const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+
+            // Attempt 1: Try Firebase SDK with a 1.8s timeout
             if (dbInstance) {
-                // 1. Fetch Categories with server fallback
-                const categoriesSnapshot = await dbInstance.collection('category').get().catch(err => {
-                    console.warn('⚠️ Category fetch failed, trying server directly:', err);
-                    return dbInstance.collection('category').get({ source: 'server' });
-                });
-
-                // 2. Fetch Display Order
                 try {
-                    const settingsDoc = await dbInstance.collection('category').doc('CONFIG_display_order').get();
-                    if (settingsDoc.exists) {
-                        this.categoryDisplayOrder = settingsDoc.data().order || [];
-                        console.log('📋 Loaded category order:', this.categoryDisplayOrder);
-                    } else {
-                        console.log('📋 No saved category order found');
-                        this.categoryDisplayOrder = [];
-                    }
-                } catch (e) {
-                    console.warn('Could not load category order:', e);
-                    this.categoryDisplayOrder = [];
-                }
+                    const sdkPromise = dbInstance.collection('category').get();
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Category SDK timeout')), 1800)
+                    );
+                    const categoriesSnapshot = await Promise.race([sdkPromise, timeoutPromise]);
+                    
+                    try {
+                        const settingsDoc = await dbInstance.collection('category').doc('CONFIG_display_order').get();
+                        if (settingsDoc.exists) {
+                            loadedOrder = settingsDoc.data().order || [];
+                        }
+                    } catch (e) {}
 
-                this.categories = categoriesSnapshot.docs
-                    .map(doc => {
-                        const data = {
-                            id: doc.id,
-                            ...doc.data(),
-                            name: doc.data().name || 'Unnamed Category',
-                            image: doc.data().image || doc.data().icon || '',
-                            color: doc.data().color || '#667eea'
-                        };
-                        return data;
-                    })
-                    .filter(cat => cat.id !== 'CONFIG_display_order' && !this.isShoeBrandCategory(cat)); // Exclude config doc & shoe brand categories
+                    loadedCategories = categoriesSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        name: doc.data().name || 'Unnamed Category',
+                        image: doc.data().image || doc.data().icon || '',
+                        color: doc.data().color || '#667eea'
+                    }));
+                    fetchedSuccessfully = loadedCategories.length > 0;
+                } catch (sdkErr) {
+                    console.warn('⚠️ Category SDK fetch failed, switching to direct REST API fallback:', sdkErr.message || sdkErr);
+                }
+            }
+
+            // Attempt 2: Direct Google Cloud REST API (100% reliable bypass for WebChannel drops)
+            if (!fetchedSuccessfully) {
+                try {
+                    console.log('🌐 Fetching categories via direct Google Cloud REST API...');
+                    const res = await fetch('https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category');
+                    if (res.ok) {
+                        const data = await res.json();
+                        const docs = data.documents || [];
+                        const parsedDocs = docs.map(d => {
+                            const id = d.name ? d.name.split('/').pop() : '';
+                            const fields = d.fields || {};
+                            const getVal = (v) => {
+                                if (!v) return null;
+                                if ('stringValue' in v) return v.stringValue;
+                                if ('arrayValue' in v) return (v.arrayValue.values || []).map(getVal);
+                                return null;
+                            };
+                            return {
+                                id,
+                                name: getVal(fields.name) || 'Unnamed Category',
+                                image: getVal(fields.image) || getVal(fields.icon) || '',
+                                color: getVal(fields.color) || '#667eea',
+                                order: getVal(fields.order) || []
+                            };
+                        });
+                        const configDoc = parsedDocs.find(c => c.id === 'CONFIG_display_order');
+                        if (configDoc && configDoc.order) {
+                            loadedOrder = configDoc.order;
+                        }
+                        loadedCategories = parsedDocs;
+                        fetchedSuccessfully = loadedCategories.length > 0;
+                    }
+                } catch (restErr) {
+                    console.warn('⚠️ Category REST API fetch failed:', restErr);
+                }
+            }
+
+            if (fetchedSuccessfully && loadedCategories.length > 0) {
+                this.categoryDisplayOrder = loadedOrder;
+                this.categories = loadedCategories
+                    .filter(cat => cat.id !== 'CONFIG_display_order' && !this.isShoeBrandCategory(cat));
 
                 // Cache fresh categories in localStorage
                 try {
@@ -185,12 +229,14 @@ class CategoryManager {
             prevScrollLeft = existingScrollEl.scrollLeft;
         }
 
+        const categoriesToDisplay = this.showAll ? this.categories : this.categories.slice(0, 5);
+
         categoriesContainer.innerHTML = `
             <div class="categories-section">
                 <h2>Browse Categories</h2>
                 <div class="categories-scroll">
                     <div class="categories-grid">
-                        ${this.categories.map(category => this.renderCategoryCard(category)).join('')}
+                        ${categoriesToDisplay.map(category => this.renderCategoryCard(category)).join('')}
                     </div>
                 </div>
             </div>
@@ -201,6 +247,14 @@ class CategoryManager {
         if (newScrollEl && Number.isFinite(prevScrollLeft)) {
             newScrollEl.scrollLeft = prevScrollLeft;
         }
+    }
+
+    // Reveal all categories once background products load
+    showAllCategoriesView() {
+        if (this.showAll) return;
+        this.showAll = true;
+        this.renderCategories();
+        console.log('⚡ All categories revealed smoothly');
     }
 
     // Render individual category card

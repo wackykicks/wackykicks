@@ -228,8 +228,42 @@ function renderProductDetails(product) {
     }
 }
 
+// ✅ Helper: Read cached product from high-capacity IndexedDB
+function getProductFromIndexedDB(pid) {
+    return new Promise((resolve) => {
+        if (typeof window === 'undefined' || !window.indexedDB) return resolve(null);
+        try {
+            const req = window.indexedDB.open('VexiorCatalogDB', 1);
+            req.onsuccess = (e) => {
+                try {
+                    const idb = e.target.result;
+                    if (!idb.objectStoreNames.contains('products_store')) return resolve(null);
+                    const tx = idb.transaction('products_store', 'readonly');
+                    const store = tx.objectStore('products_store');
+                    const getReq = store.get('all_products');
+                    getReq.onsuccess = () => {
+                        const res = getReq.result;
+                        if (res && Array.isArray(res.data)) {
+                            const found = res.data.find(p => p.id === pid);
+                            resolve(found || null);
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    getReq.onerror = () => resolve(null);
+                } catch (err) {
+                    resolve(null);
+                }
+            };
+            req.onerror = () => resolve(null);
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
 // ✅ Load Product with 0ms Instant Cache + Stale-While-Revalidate
-function loadProduct() {
+async function loadProduct() {
     const productDetails = document.getElementById('productDetails');
 
     if (!productId) {
@@ -263,6 +297,20 @@ function loadProduct() {
         console.warn('Cache read error:', e);
     }
 
+    // ⚡ 1b. Check IndexedDB if not found in sessionStorage or localStorage
+    if (!renderedFromCache) {
+        try {
+            const idbProduct = await getProductFromIndexedDB(productId);
+            if (idbProduct) {
+                console.log('⚡ Product rendered INSTANTLY from IndexedDB cache in 0ms');
+                renderProductDetails(idbProduct);
+                renderedFromCache = true;
+            }
+        } catch (e) {
+            console.warn('IndexedDB read error in loadProduct:', e);
+        }
+    }
+
     if (!renderedFromCache && productDetails) {
         productDetails.innerHTML = `
             <div style="text-align: center; padding: 60px 20px; color: #666;">
@@ -272,18 +320,58 @@ function loadProduct() {
         `;
     }
 
+    const fetchProductViaRest = async (pid) => {
+        try {
+            console.log('🌐 Fetching product via direct Google Cloud REST API...');
+            const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${pid}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (!data.fields) return null;
+            const parseVal = (v) => {
+                if (!v) return null;
+                if ('stringValue' in v) return v.stringValue;
+                if ('integerValue' in v) return parseInt(v.integerValue, 10);
+                if ('doubleValue' in v) return parseFloat(v.doubleValue);
+                if ('booleanValue' in v) return v.booleanValue;
+                if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseVal);
+                return null;
+            };
+            const product = { id: pid };
+            for (const k of Object.keys(data.fields)) {
+                product[k] = parseVal(data.fields[k]);
+            }
+            product.img = Array.isArray(product.imgUrl) ? product.imgUrl[0] : (product.imgUrl || product.img || '');
+            return product;
+        } catch (e) {
+            console.warn('REST product fetch failed:', e);
+            return null;
+        }
+    };
+
     // ⚡ 2. STALE-WHILE-REVALIDATE: Fetch live data in background to ensure real-time accuracy
     const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
     if (!dbInstance) {
-        console.warn('Firestore db not yet ready for live product fetch');
+        console.warn('Firestore db not yet ready, using REST API fallback');
+        const restProd = await fetchProductViaRest(productId);
+        if (restProd) {
+            try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(restProd)); } catch(e){}
+            renderProductDetails(restProd);
+        } else if (!renderedFromCache && productDetails) {
+            productDetails.innerHTML = `<p>Product not found.</p>`;
+        }
         return;
     }
 
     dbInstance.collection("products").doc(productId).get().then(doc => {
         if (!doc.exists) {
-            if (!renderedFromCache && productDetails) {
-                productDetails.innerHTML = `<p>Product not found.</p>`;
-            }
+            fetchProductViaRest(productId).then(restProd => {
+                if (restProd) {
+                    try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(restProd)); } catch(e){}
+                    renderProductDetails(restProd);
+                } else if (!renderedFromCache && productDetails) {
+                    productDetails.innerHTML = `<p>Product not found.</p>`;
+                }
+            });
             return;
         }
 
@@ -293,9 +381,13 @@ function loadProduct() {
         } catch (e) {}
 
         renderProductDetails(freshProduct);
-    }).catch(error => {
-        console.error("Error loading product from Firebase: ", error);
-        if (!renderedFromCache && productDetails) {
+    }).catch(async error => {
+        console.warn("⚠️ Firebase SDK product fetch failed, trying direct REST API fallback:", error);
+        const restProd = await fetchProductViaRest(productId);
+        if (restProd) {
+            try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(restProd)); } catch(e){}
+            renderProductDetails(restProd);
+        } else if (!renderedFromCache && productDetails) {
             productDetails.innerHTML = `<p>Error loading product details.</p>`;
         }
     });

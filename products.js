@@ -1545,8 +1545,64 @@ function showSkeletonLoading() {
     productList.appendChild(fragment);
 }
 
-// ✅ Local Cache and Session Handlers for Instant Loading
+// ✅ High-Capacity IndexedDB Cache for base64 products (bypasses 5MB localStorage limit)
+const DB_NAME = 'VexiorCatalogDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'products_store';
 const PRODUCTS_CACHE_KEY = 'vexior_products_cache';
+
+function openProductIndexedDB() {
+    return new Promise((resolve, reject) => {
+        if (typeof window === 'undefined' || !window.indexedDB) {
+            reject(new Error('IndexedDB not supported'));
+            return;
+        }
+        const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+            const idb = e.target.result;
+            if (!idb.objectStoreNames.contains(STORE_NAME)) {
+                idb.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function getCachedProductsAsync() {
+    try {
+        const idb = await openProductIndexedDB();
+        return await new Promise((resolve) => {
+            const tx = idb.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get('all_products');
+            req.onsuccess = () => {
+                const res = req.result;
+                if (res && Array.isArray(res.data) && res.data.length > 0) {
+                    resolve(res.data);
+                } else {
+                    resolve(null);
+                }
+            };
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) {
+        return getCachedProducts(); // Fallback to localStorage
+    }
+}
+
+async function setCachedProductsAsync(products) {
+    if (!products || !products.length) return;
+    try {
+        const idb = await openProductIndexedDB();
+        const tx = idb.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.put({ timestamp: Date.now(), data: products }, 'all_products');
+    } catch (e) {
+        console.warn('Could not save to IndexedDB, falling back to localStorage:', e);
+        setCachedProducts(products);
+    }
+}
 
 function getCachedProducts() {
     try {
@@ -1563,12 +1619,24 @@ function getCachedProducts() {
 
 function setCachedProducts(products) {
     try {
+        // Save compact version with single image to stay within localStorage 5MB quota
+        const compact = products.map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            newPrice: p.newPrice,
+            oldPrice: p.oldPrice,
+            img: p.img,
+            categories: p.categories || [],
+            createdAt: p.createdAt || '',
+            stock: p.stock
+        }));
         localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({
             timestamp: Date.now(),
-            data: products
+            data: compact
         }));
     } catch (e) {
-        console.warn('Error saving products cache:', e);
+        console.warn('Error saving products cache to localStorage:', e);
     }
 }
 
@@ -1585,137 +1653,302 @@ function saveActiveProduct(productId) {
 }
 window.saveActiveProduct = saveActiveProduct;
 
-function loadProducts() {
-    console.log('🔄 Starting to load products...');
+// ✅ Select initial 10 products (prioritizing 5 category products and 5 general products)
+function selectInitial10Products(productsList) {
+    if (!productsList || productsList.length <= 10) return productsList || [];
+
+    const categorized = [];
+    const general = [];
+
+    productsList.forEach(p => {
+        if (p.categories && Array.isArray(p.categories) && p.categories.length > 0) {
+            categorized.push(p);
+        } else {
+            general.push(p);
+        }
+    });
+
+    const initialCategory = categorized.slice(0, 5);
+    const slotsForGeneral = 10 - initialCategory.length;
+    const initialGeneral = general.slice(0, slotsForGeneral);
+
+    let result = [...initialCategory, ...initialGeneral];
+    if (result.length < 10) {
+        const extraCategory = categorized.slice(5, 5 + (10 - result.length));
+        result = [...result, ...extraCategory];
+    }
+    if (result.length < 10) {
+        const resultIds = new Set(result.map(p => p.id));
+        for (const p of productsList) {
+            if (!resultIds.has(p.id)) {
+                result.push(p);
+                if (result.length >= 10) break;
+            }
+        }
+    }
+    return result;
+}
+
+// ✅ Helper: Parse Firestore REST API value types into native JS values
+function parseFirestoreValue(val) {
+    if (!val) return null;
+    if ('stringValue' in val) return val.stringValue;
+    if ('integerValue' in val) return parseInt(val.integerValue, 10);
+    if ('doubleValue' in val) return parseFloat(val.doubleValue);
+    if ('booleanValue' in val) return val.booleanValue;
+    if ('timestampValue' in val) return val.timestampValue;
+    if ('arrayValue' in val) {
+        const values = (val.arrayValue && val.arrayValue.values) || [];
+        return values.map(v => parseFirestoreValue(v));
+    }
+    if ('mapValue' in val) {
+        const fields = (val.mapValue && val.mapValue.fields) || {};
+        const res = {};
+        for (const k of Object.keys(fields)) {
+            res[k] = parseFirestoreValue(fields[k]);
+        }
+        return res;
+    }
+    return null;
+}
+
+// ✅ Helper: Convert Firestore REST document to standard store product object
+function parseFirestoreProductDoc(doc) {
+    if (!doc || !doc.fields) return null;
+    const id = doc.name ? doc.name.split('/').pop() : '';
+    const fields = doc.fields || {};
+    const item = { id };
+    for (const key of Object.keys(fields)) {
+        item[key] = parseFirestoreValue(fields[key]);
+    }
+    const firstImage = Array.isArray(item.imgUrl) ? item.imgUrl[0] : (item.imgUrl || item.img || '');
+    item.img = firstImage;
+    item.categories = item.categories || [];
+    return item;
+}
+
+// ✅ Paginated Google Cloud REST API Fetcher (loops through nextPageToken to load ALL products)
+async function fetchProductsFromRestApi(targetCount = Infinity, onPageLoaded = null) {
+    console.log(`🌐 Fetching products via REST API (target: ${targetCount === Infinity ? 'all' : targetCount})...`);
+    let allFetched = [];
+    let pageToken = null;
+    let pageNum = 0;
+
+    do {
+        pageNum++;
+        let url = `https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products?pageSize=100`;
+        if (pageToken) {
+            url += `&pageToken=${encodeURIComponent(pageToken)}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Firestore REST API returned HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const pageDocs = (data.documents || [])
+            .map(parseFirestoreProductDoc)
+            .filter(p => p !== null);
+
+        if (pageDocs.length > 0) {
+            allFetched = allFetched.concat(pageDocs);
+            console.log(`📦 REST Page ${pageNum}: fetched ${pageDocs.length} products (total so far: ${allFetched.length})`);
+            
+            if (typeof onPageLoaded === 'function') {
+                onPageLoaded(allFetched, pageDocs, !data.nextPageToken);
+            }
+        }
+
+        pageToken = data.nextPageToken || null;
+
+        // If targetCount reached (e.g. initial 10 products), stop early
+        if (allFetched.length >= targetCount) {
+            break;
+        }
+    } while (pageToken);
+
+    return allFetched;
+}
+
+// ⚡ Fast 2-Stage Product Loader:
+// - If already loaded and cached: KEEP all cached products immediately (0ms instant render) and sync silently in background.
+// - If first time (no cache): Load 10 products first (5 category + 5 general) for instant page feel, then load and cache all remaining.
+async function loadProducts() {
+    console.log('🔄 Loading products...');
     
-    // ⚡ 1. INSTANT RENDER: Render from cache immediately (0ms response time)
-    const cachedProducts = getCachedProducts();
-    let hasRenderedFromCache = false;
+    // ⚡ 1. INSTANT RENDER: Check high-capacity IndexedDB cache first
+    let cachedProducts = await getCachedProductsAsync();
+    if (!cachedProducts || !cachedProducts.length) {
+        cachedProducts = getCachedProducts(); // localStorage fallback
+    }
 
     if (cachedProducts && cachedProducts.length > 0) {
-        console.log('⚡ Rendered', cachedProducts.length, 'products INSTANTLY from cache');
+        console.log('⚡ Loaded from persistent cache: KEEPING all', cachedProducts.length, 'products');
         allProducts = cachedProducts;
         renderProducts(allProducts);
         window.productsLoaded = true;
-        hasRenderedFromCache = true;
+        window.allProductsFullyLoaded = true;
+
+        if (window.categoryManager && typeof window.categoryManager.showAllCategoriesView === 'function') {
+            window.categoryManager.showAllCategoriesView();
+        }
 
         if (window.pendingCategoryFilter) {
             filterProducts(window.pendingCategoryFilter);
             delete window.pendingCategoryFilter;
         }
 
-        // Also instantly render Today's Offers from cached data
+        // Instantly render Today's Offers from cached products
         if (typeof renderTodaysOffersFromList === 'function') {
             renderTodaysOffersFromList(allProducts);
         }
-    } else {
-        // Only show skeleton loader if no cache is present
-        showSkeletonLoading();
-    }
 
-    const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
-    
-    if (!dbInstance) {
-        console.log('Database not ready yet, waiting for Firebase...');
-        if (typeof window.onFirebaseReady === 'function') {
-            window.onFirebaseReady(loadProducts);
-        }
+        // Silent background sync: checks for any newly added products or updates
+        loadRemainingProducts(true);
         return;
     }
 
-    // ⚡ 2. STALE-WHILE-REVALIDATE: Fetch latest products from Firebase in background
-    const fetchWithFallback = () => {
-        return dbInstance.collection("products").get().then(snapshot => {
-            if (snapshot.empty) {
-                console.warn('⚠️ Default get returned 0 products, retrying with { source: "server" }...');
-                return dbInstance.collection("products").get({ source: "server" });
-            }
-            return snapshot;
-        }).catch(err => {
-            console.warn('⚠️ Default get failed, retrying directly from server...', err);
-            return dbInstance.collection("products").get({ source: "server" });
-        });
-    };
+    // First time visit (no cache present): show skeleton loader and proceed with progressive loading
+    showSkeletonLoading();
 
-    fetchWithFallback().then(snapshot => {
-        console.log('✅ Connected to Firebase successfully');
-        console.log('📦 Number of products found:', snapshot.size);
-        
-        const freshProducts = [];
-        snapshot.forEach(doc => {
-            const product = doc.data();
-            const productId = doc.id;
-            const firstImage = Array.isArray(product.imgUrl) ? product.imgUrl[0] : (product.imgUrl || product.img || '');
-            
-            freshProducts.push({ 
-                ...product, 
-                id: productId, 
-                img: firstImage,
-                categories: product.categories || [] // Ensure categories array exists
-            });
-        });
-        
-        // Sort products: newest first (with createdAt), then existing products
-        freshProducts.sort((a, b) => {
-            if (a.createdAt && b.createdAt) {
-                return new Date(b.createdAt) - new Date(a.createdAt);
-            } else if (a.createdAt) {
-                return -1; // a comes first
-            } else if (b.createdAt) {
-                return 1; // b comes first
+    // ⚡ 2. STAGE 1 (First visit only): Fetch initial batch fast and render immediately
+    try {
+        let initialRendered = false;
+
+        const initialProducts = await fetchProductsFromRestApi(10, (currentList, newBatch, isDone) => {
+            if (!initialRendered && currentList.length >= 3) {
+                initialRendered = true;
+                allProducts = selectInitial10Products(currentList);
+                renderProducts(allProducts);
+                window.productsLoaded = true;
+                if (typeof renderTodaysOffersFromList === 'function') {
+                    renderTodaysOffersFromList(allProducts);
+                }
             }
-            return 0; // keep existing order for products without createdAt
         });
-        
-        console.log('🎯 Fresh products loaded:', freshProducts.length);
-        
-        // Update memory and save to local cache
-        allProducts = freshProducts;
-        setCachedProducts(allProducts);
-        
-        // Render products
+
+        // Ensure initial 10 products are sorted and rendered
+        initialProducts.sort((a, b) => {
+            if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+            if (a.createdAt) return -1;
+            if (b.createdAt) return 1;
+            return 0;
+        });
+
+        allProducts = selectInitial10Products(initialProducts);
         renderProducts(allProducts);
         window.productsLoaded = true;
-        
-        // Trigger any pending category filters
+
         if (window.pendingCategoryFilter) {
             console.log('🔄 Applying pending category filter:', window.pendingCategoryFilter);
             filterProducts(window.pendingCategoryFilter);
             delete window.pendingCategoryFilter;
         }
 
-        // Update Today's Offers with fresh products
         if (typeof renderTodaysOffersFromList === 'function') {
             renderTodaysOffersFromList(allProducts);
         }
-    }).catch(error => {
-        console.error("❌ Error fetching products: ", error);
-        if (!hasRenderedFromCache && (!allProducts || allProducts.length === 0)) {
-            console.log('🔄 Loading fallback demo data...');
-            allProducts = [
-                {
-                    id: '1',
-                    name: 'Apple Watch Ultra 2 Titanium',
-                    price: 2499,
-                    newPrice: 1999,
-                    oldPrice: 2499,
-                    img: 'https://via.placeholder.com/200x200?text=Apple+Watch',
-                    categories: ['smart-watches', 'gadgets']
-                },
-                {
-                    id: '2',
-                    name: 'Fossil Watch Classic',
-                    price: 1200,
-                    newPrice: 950,
-                    oldPrice: 1200,
-                    img: 'https://via.placeholder.com/200x200?text=Fossil+Watch',
-                    categories: ['watches']
+
+        // ⚡ 3. STAGE 2: Seamlessly stream and load ALL remaining products across all pages
+        loadRemainingProducts(false);
+
+    } catch (error) {
+        console.error("❌ Error fetching initial products: ", error);
+        loadRemainingProducts(false);
+    }
+}
+
+// ⚡ Stage 2: Load ALL products across all pages and cache in IndexedDB
+async function loadRemainingProducts(isSilentSync = false) {
+    console.log(isSilentSync ? '🔄 Background sync: Keeping current products, checking for updates...' : '🔄 Stage 2: Loading ALL remaining products across all pages...');
+
+    try {
+        // Fetch ALL products from Firestore using pagination
+        const fullProducts = await fetchProductsFromRestApi(Infinity, (currentList, newBatch, isDone) => {
+            // Progressive update: as each page arrives, append to allProducts and update screen if not searching
+            if (!isSilentSync) {
+                const sortedProgress = currentList.slice();
+                sortedProgress.sort((a, b) => {
+                    if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+                    if (a.createdAt) return -1;
+                    if (b.createdAt) return 1;
+                    return 0;
+                });
+                allProducts = sortedProgress;
+
+                const searchInput = document.getElementById('searchInput');
+                const hasSearch = searchInput && searchInput.value.trim();
+                const hasCatFilter = typeof selectedCategories !== 'undefined' && selectedCategories && selectedCategories.length > 0;
+
+                if (!hasSearch && !hasCatFilter) {
+                    renderProducts(allProducts);
+                } else if (hasCatFilter) {
+                    filterProducts(selectedCategories);
                 }
-            ];
+
+                if (typeof renderTodaysOffersFromList === 'function') {
+                    renderTodaysOffersFromList(allProducts);
+                }
+            }
+        });
+
+        console.log(`✅ All ${fullProducts.length} products loaded successfully!`);
+
+        // Sort full catalog newest first
+        fullProducts.sort((a, b) => {
+            if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+            if (a.createdAt) return -1;
+            if (b.createdAt) return 1;
+            return 0;
+        });
+
+        // If doing silent sync and counts match, check if anything changed
+        if (isSilentSync && allProducts && allProducts.length === fullProducts.length) {
+            const isIdentical = allProducts.every((p, idx) => {
+                const fp = fullProducts[idx];
+                return fp && p.id === fp.id && (p.newPrice || p.price) === (fp.newPrice || fp.price);
+            });
+            if (isIdentical) {
+                console.log('⚡ All products up-to-date with server, current display kept intact');
+                return;
+            }
+        }
+
+        allProducts = fullProducts;
+        window.allProductsFullyLoaded = true;
+
+        // Persist full catalog in high-capacity IndexedDB
+        await setCachedProductsAsync(allProducts);
+        setCachedProducts(allProducts); // Compact backup in localStorage
+        console.log(`💾 Persisted all ${allProducts.length} products to IndexedDB cache`);
+
+        // Reveal all categories
+        if (window.categoryManager && typeof window.categoryManager.showAllCategoriesView === 'function') {
+            window.categoryManager.showAllCategoriesView();
+        }
+
+        // Update Today's Offers
+        if (typeof renderTodaysOffersFromList === 'function') {
+            renderTodaysOffersFromList(allProducts);
+        }
+
+        // Update view
+        const searchInput = document.getElementById('searchInput');
+        const searchTerm = searchInput ? searchInput.value.trim() : '';
+        if (searchTerm) {
+            searchProducts();
+        } else if (typeof selectedCategories !== 'undefined' && selectedCategories && selectedCategories.length > 0) {
+            filterProducts(selectedCategories);
+        } else {
             renderProducts(allProducts);
         }
-    });
+
+    } catch (err) {
+        console.warn('⚠️ Error loading remaining products:', err);
+    }
 }
+window.loadRemainingProducts = loadRemainingProducts;
 
 window.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DOM loaded, initializing products...');
@@ -1985,7 +2218,7 @@ function renderTodaysOffersFromList(productsList) {
 window.renderTodaysOffersFromList = renderTodaysOffersFromList;
 
 // ✅ Today's Offer Section
-function loadTodaysOffers() {
+async function loadTodaysOffers() {
     const todaysOfferGrid = document.getElementById('todaysOfferGrid');
     if (!todaysOfferGrid) return;
 
@@ -1995,7 +2228,10 @@ function loadTodaysOffers() {
         return;
     }
 
-    const cachedProducts = getCachedProducts();
+    let cachedProducts = await getCachedProductsAsync();
+    if (!cachedProducts || !cachedProducts.length) {
+        cachedProducts = getCachedProducts();
+    }
     if (cachedProducts && cachedProducts.length > 0) {
         renderTodaysOffersFromList(cachedProducts);
         return;
@@ -2103,10 +2339,10 @@ function showAllTodaysOffers() {
 
     let offerHTML = '';
     window.allTodaysOffers.forEach(product => {
-        const firstImage = (product.imgUrl && product.imgUrl[0]) || 'https://via.placeholder.com/200x200?text=No+Image';
+        const firstImage = (product.imgUrl && product.imgUrl[0]) || product.img || (typeof product.imgUrl === 'string' ? product.imgUrl : 'https://via.placeholder.com/200x200?text=No+Image');
         
         // Calculate discount percentage
-        const discount = calculateDiscountPercentage(product.oldPrice, product.newPrice);
+        const discount = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
         
         // Check if product is out of stock
         const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
@@ -2115,7 +2351,7 @@ function showAllTodaysOffers() {
         
         // Generate offer product card with 1:1 ratio image
         offerHTML += `
-            <div class="offer-product-card" onclick="window.location.href='product.html?id=${product.id}'">
+            <div class="offer-product-card" onclick="saveActiveProduct('${product.id}'); window.location.href='product.html?id=${product.id}'">
                 <div class="offer-image-container">
                     <img src="${firstImage}" alt="${product.name}" loading="lazy">
                     ${outOfStock ? '<div class="offer-out-of-stock-badge">Out of Stock</div>' : ''}
@@ -2123,13 +2359,13 @@ function showAllTodaysOffers() {
                 <h3 style="font-size: 1.1rem; margin: 10px 0; font-weight: 600; line-height: 1.3;">${product.name}</h3>
                 <div class="offer-price">
                     ${product.oldPrice ? `<span class="offer-old-price">₹${product.oldPrice}</span>` : ''}
-                    <span class="offer-new-price">₹${product.newPrice}</span>
+                    <span class="offer-new-price">₹${product.newPrice || product.price}</span>
                     ${discount ? `<span class="offer-discount">${discount}% OFF</span>` : ''}
                 </div>
                 ${outOfStock ? 
                     '<div class="offer-out-of-stock-message">Currently Unavailable</div>' :
                     `<div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="event.stopPropagation(); copyToWhatsApp('${product.name}', '${product.newPrice}', '${firstImage}')" 
+                        <button onclick="event.stopPropagation(); saveActiveProduct('${product.id}'); copyToWhatsApp('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${firstImage}')" 
                                 style="flex: 1; padding: 10px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
                             <i class="fab fa-whatsapp"></i> Buy Now
                         </button>
