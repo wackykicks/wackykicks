@@ -1,4 +1,4 @@
-﻿// ✅ Calculate discount percentage (robust for string inputs)
+// ✅ Calculate discount percentage (robust for string inputs)
 function calculateDiscountPercentage(oldPrice, newPrice) {
     const o = parseFloat(oldPrice);
     const n = parseFloat(newPrice);

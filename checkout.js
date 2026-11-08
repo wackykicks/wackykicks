@@ -1,4 +1,4 @@
-﻿// Checkout Page JavaScript
+// Checkout Page JavaScript
 
 // Store order data globally to avoid re-fetching
 let cachedOrderData = null;
