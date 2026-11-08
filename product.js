@@ -95,12 +95,31 @@ function renderProductDetails(product) {
         </div>
     `;
 
+    // Calculate discount percentage
+    const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
+
+    // Check if product is out of stock via category assignment or stock field
+    const isOutOfStockByCategory = Boolean(
+        product.categories && (
+            product.categories.includes('out-of-stock') ||
+            product.categories.includes('Out of Stock') ||
+            (Array.isArray(product.categories) && product.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+        )
+    );
+    const hasExplicitStock = product.stock !== undefined && product.stock !== null && String(product.stock).trim() !== '';
+    const isOutOfStockByStock = hasExplicitStock && Number(product.stock) <= 0;
+    const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+
+    if (window.currentProductData) {
+        window.currentProductData.isOutOfStock = isOutOfStock;
+    }
+
     let sizesHTML = '';
     if (sizes.length) {
         sizesHTML = `
             <div class="sizes">
                 <h4>Available Sizes:</h4>
-                <select id="sizeDropdown" class="size-dropdown" onchange="selectSize(this.value)">
+                <select id="sizeDropdown" class="size-dropdown" onchange="selectSize(this.value)" ${isOutOfStock ? 'disabled style="background:#f3f4f6;cursor:not-allowed;"' : ''}>
                     <option value="">Select Size</option>
         `;
         sizes.forEach(size => {
@@ -132,8 +151,8 @@ function renderProductDetails(product) {
                 <div class="product-color-circle${isFirstColor ? ' selected' : ''}" 
                      data-color="${colorName}" 
                      data-hex="${hexColor}"
-                     style="background: ${hexColor};"
-                     onclick="selectProductColor('${colorName}', '${hexColor}', this)">
+                     style="background: ${hexColor};${isOutOfStock ? ' opacity: 0.5; cursor: not-allowed; pointer-events: none;' : ''}"
+                     onclick="${isOutOfStock ? 'return false;' : `selectProductColor('${colorName}', '${hexColor}', this)`}">
                 </div>
             `;
         });
@@ -148,13 +167,30 @@ function renderProductDetails(product) {
         `;
     }
 
-    // Calculate discount percentage
-    const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
-
-    // Check if product is out of stock via category assignment or stock field
-    const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
-    const isOutOfStockByStock = typeof product.stock !== 'undefined' && parseInt(product.stock) === 0;
-    const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+    // Generate product buttons HTML
+    let productButtonsHTML = '';
+    if (isOutOfStock) {
+        productButtonsHTML = `
+            <div class="product-buttons out-of-stock-wrapper">
+                <button class="out-of-stock-main-btn" disabled style="width: 100%; background: #9ca3af !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; padding: 16px !important; font-size: 1.15rem !important; font-weight: 700 !important; cursor: not-allowed !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; box-shadow: none !important; pointer-events: none !important;">
+                    <i class="fas fa-ban"></i> Out of Stock
+                </button>
+                <p class="out-of-stock-subtext" style="width: 100%; text-align: center; margin-top: 10px; color: #dc2626; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fas fa-exclamation-circle"></i> This product is currently unavailable
+                </p>
+            </div>
+        `;
+    } else {
+        productButtonsHTML = `
+            <div class="product-buttons">
+                <button class="add-to-cart-btn" onclick="addProductToCart('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] ? images[0].replace(/'/g, "\\'") : ''}')">
+                    <i class="fas fa-shopping-cart"></i>
+                    Add to Cart
+                </button>
+                <button class="buy-now" onclick="handleBuyNowClick()">Buy Now</button>
+            </div>
+        `;
+    }
 
     // ✅ Inject product HTML
     productDetails.innerHTML = `
@@ -173,18 +209,12 @@ function renderProductDetails(product) {
                 ${colorsHTML}
                 <div class="quantity-container">
                     <span>Quantity:</span>
-                    <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled' : ''}>
+                    <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled style="background:#f3f4f6;cursor:not-allowed;"' : ''}>
                 </div>
                 <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
                 ${sizesHTML}
                 <p class="description">${product.description || 'No description available.'}</p>
-                <div class="product-buttons">
-                    <button class="add-to-cart-btn" onclick="addProductToCart('${product.name.replace(/'/g, "\\'")}', '${product.newPrice || product.price}', '${product.oldPrice || ''}', '${images[0] ? images[0].replace(/'/g, "\\'") : ''}')" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>
-                        <i class="fas fa-shopping-cart"></i>
-                        Add to Cart
-                    </button>
-                    <button class="buy-now" onclick="handleBuyNowClick()" ${isOutOfStock ? 'disabled style="background:#ccc;cursor:not-allowed;"' : ''}>Buy Now</button>
-                </div>
+                ${productButtonsHTML}
             </div>
         </div>
     `;
@@ -225,6 +255,45 @@ function renderProductDetails(product) {
     if (colors.length > 0) {
         selectedColor = colors[0].name;
         window.selectedColor = selectedColor;
+    }
+
+    // ✅ Immediately update fixed bottom product bar state
+    const fixedBar = document.querySelector('.fixed-product-bar');
+    const fixedAddBtn = document.getElementById('fixedAddToCart');
+    const fixedBuyBtn = document.getElementById('fixedBuyNow');
+
+    if (fixedBar) {
+        if (isOutOfStock) {
+            fixedBar.classList.add('out-of-stock');
+            fixedBar.style.display = 'none';
+            if (fixedAddBtn) {
+                fixedAddBtn.disabled = true;
+                fixedAddBtn.setAttribute('disabled', 'disabled');
+                fixedAddBtn.style.display = 'none';
+                fixedAddBtn.style.pointerEvents = 'none';
+            }
+            if (fixedBuyBtn) {
+                fixedBuyBtn.disabled = true;
+                fixedBuyBtn.setAttribute('disabled', 'disabled');
+                fixedBuyBtn.style.display = 'none';
+                fixedBuyBtn.style.pointerEvents = 'none';
+            }
+        } else {
+            fixedBar.classList.remove('out-of-stock');
+            fixedBar.style.display = 'flex';
+            if (fixedAddBtn) {
+                fixedAddBtn.disabled = false;
+                fixedAddBtn.removeAttribute('disabled');
+                fixedAddBtn.style.display = '';
+                fixedAddBtn.style.pointerEvents = '';
+            }
+            if (fixedBuyBtn) {
+                fixedBuyBtn.disabled = false;
+                fixedBuyBtn.removeAttribute('disabled');
+                fixedBuyBtn.style.display = '';
+                fixedBuyBtn.style.pointerEvents = '';
+            }
+        }
     }
 }
 
@@ -439,6 +508,27 @@ function handleBuyNowClick() {
         console.error('No product data available');
         return;
     }
+
+    // Comprehensive out-of-stock guard
+    const isOutOfStockByCategory = Boolean(
+        window.currentProductData.categories && (
+            window.currentProductData.categories.includes('out-of-stock') ||
+            window.currentProductData.categories.includes('Out of Stock') ||
+            (Array.isArray(window.currentProductData.categories) && window.currentProductData.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+        )
+    );
+    const hasExplicitStock = window.currentProductData.stock !== undefined && window.currentProductData.stock !== null && String(window.currentProductData.stock).trim() !== '';
+    const isOutOfStockByStock = hasExplicitStock && Number(window.currentProductData.stock) <= 0;
+    const isOutOfStock = Boolean(window.currentProductData.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock);
+
+    if (isOutOfStock) {
+        if (window.FloatingAlertManager) {
+            window.FloatingAlertManager.operationError('Unavailable', 'Sorry, this product is currently out of stock.');
+        } else {
+            alert('Sorry, this product is currently out of stock.');
+        }
+        return;
+    }
     
     const productName = window.currentProductData.name;
     const productPrice = window.currentProductData.newPrice || window.currentProductData.price;
@@ -456,6 +546,28 @@ function handleBuyNowClick() {
 // ✅ WhatsApp Buy Now with User Information Modal
 function copyToWhatsApp(productName, productPrice) {
     console.log('🛍️ Buy Now clicked for:', productName);
+
+    if (window.currentProductData) {
+        const isOutOfStockByCategory = Boolean(
+            window.currentProductData.categories && (
+                window.currentProductData.categories.includes('out-of-stock') ||
+                window.currentProductData.categories.includes('Out of Stock') ||
+                (Array.isArray(window.currentProductData.categories) && window.currentProductData.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+            )
+        );
+        const hasExplicitStock = window.currentProductData.stock !== undefined && window.currentProductData.stock !== null && String(window.currentProductData.stock).trim() !== '';
+        const isOutOfStockByStock = hasExplicitStock && Number(window.currentProductData.stock) <= 0;
+        const isOutOfStock = Boolean(window.currentProductData.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock);
+
+        if (isOutOfStock) {
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.operationError('Unavailable', 'Sorry, this product is currently out of stock.');
+            } else {
+                alert('Sorry, this product is currently out of stock.');
+            }
+            return;
+        }
+    }
 
     // Get quantity and options
     const quantityInput = document.getElementById('quantity');
@@ -1310,6 +1422,28 @@ window.addEventListener('keydown', function (event) {
 
 // ✅ Add Product to Cart
 function addProductToCart(productName, productPrice, productOldPrice, productImage) {
+    if (window.currentProductData) {
+        const isOutOfStockByCategory = Boolean(
+            window.currentProductData.categories && (
+                window.currentProductData.categories.includes('out-of-stock') ||
+                window.currentProductData.categories.includes('Out of Stock') ||
+                (Array.isArray(window.currentProductData.categories) && window.currentProductData.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+            )
+        );
+        const hasExplicitStock = window.currentProductData.stock !== undefined && window.currentProductData.stock !== null && String(window.currentProductData.stock).trim() !== '';
+        const isOutOfStockByStock = hasExplicitStock && Number(window.currentProductData.stock) <= 0;
+        const isOutOfStock = Boolean(window.currentProductData.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock);
+
+        if (isOutOfStock) {
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.operationError('Unavailable', 'Sorry, this product is currently out of stock.');
+            } else {
+                alert('Sorry, this product is currently out of stock.');
+            }
+            return;
+        }
+    }
+
     const quantityInput = document.getElementById('quantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
@@ -1416,39 +1550,84 @@ window.addEventListener('DOMContentLoaded', () => {
         loadAddressIntoForm();
     }, 1000); // Small delay to ensure form is rendered
 
-    // Wire up fixed bar buttons
-    setTimeout(() => {
-        const addBtn = document.getElementById('fixedAddToCart');
-        const buyBtn = document.getElementById('fixedBuyNow');
+    // Wire up fixed bar buttons safely
+    const addBtn = document.getElementById('fixedAddToCart');
+    const buyBtn = document.getElementById('fixedBuyNow');
+    const fixedBar = document.querySelector('.fixed-product-bar');
 
-        // Check if product is out of stock by looking at disabled buttons in product info
-        const productAddBtn = document.querySelector('.product-buttons .add-to-cart-btn');
-        const isOutOfStock = productAddBtn && productAddBtn.hasAttribute('disabled');
+    const checkFixedBarStock = () => {
+        const isOutOfStock = Boolean(
+            window.currentProductData?.isOutOfStock ||
+            document.querySelector('.out-of-stock-wrapper, .out-of-stock-main-btn') ||
+            (window.currentProductData?.categories && (
+                window.currentProductData.categories.includes('out-of-stock') ||
+                window.currentProductData.categories.includes('Out of Stock')
+            )) ||
+            (window.currentProductData?.stock !== undefined && window.currentProductData?.stock !== null && String(window.currentProductData.stock).trim() !== '' && Number(window.currentProductData.stock) <= 0)
+        );
 
-        if (isOutOfStock) {
-            // Hide the entire fixed product bar when out of stock
-            const fixedBar = document.querySelector('.fixed-product-bar');
-            if (fixedBar) {
+        if (fixedBar) {
+            if (isOutOfStock) {
+                fixedBar.classList.add('out-of-stock');
                 fixedBar.style.display = 'none';
+                if (addBtn) { addBtn.disabled = true; addBtn.style.display = 'none'; addBtn.style.pointerEvents = 'none'; }
+                if (buyBtn) { buyBtn.disabled = true; buyBtn.style.display = 'none'; buyBtn.style.pointerEvents = 'none'; }
+            } else if (window.currentProductData) {
+                fixedBar.classList.remove('out-of-stock');
+                fixedBar.style.display = 'flex';
+                if (addBtn) { addBtn.disabled = false; addBtn.style.display = ''; addBtn.style.pointerEvents = ''; }
+                if (buyBtn) { buyBtn.disabled = false; buyBtn.style.display = ''; buyBtn.style.pointerEvents = ''; }
             }
-        } else {
-            // Enable buttons with click handlers
-            addBtn && addBtn.addEventListener('click', () => {
-                // Use same logic as product info button
-                // Get product details from loaded DOM
-                const name = document.querySelector('.product-info h2')?.textContent || '';
-                const price = document.querySelector('.product-info .new-price')?.textContent.replace(/[^\d.]/g, '') || '';
-                const oldPrice = document.querySelector('.product-info .old-price')?.textContent.replace(/[^\d.]/g, '') || '';
-                const img = document.querySelector('.product-gallery img')?.src || '';
-                addProductToCart(name, price, oldPrice, img);
-            });
-            buyBtn && buyBtn.addEventListener('click', () => {
-                const name = document.querySelector('.product-info h2')?.textContent || '';
-                const price = document.querySelector('.product-info .new-price')?.textContent.replace(/[^\d.]/g, '') || '';
-                copyToWhatsApp(name, price);
-            });
         }
-    }, 500);
+    };
+
+    checkFixedBarStock();
+    setTimeout(checkFixedBarStock, 500);
+    setTimeout(checkFixedBarStock, 1500);
+
+    if (addBtn) {
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isOutOfStock = Boolean(
+                window.currentProductData?.isOutOfStock ||
+                document.querySelector('.out-of-stock-wrapper, .out-of-stock-main-btn') ||
+                (window.currentProductData?.categories && (
+                    window.currentProductData.categories.includes('out-of-stock') ||
+                    window.currentProductData.categories.includes('Out of Stock')
+                )) ||
+                (window.currentProductData?.stock !== undefined && window.currentProductData?.stock !== null && String(window.currentProductData.stock).trim() !== '' && Number(window.currentProductData.stock) <= 0)
+            );
+            if (isOutOfStock) {
+                alert('Sorry, this product is currently out of stock.');
+                return;
+            }
+            const name = window.currentProductData?.name || document.querySelector('.product-info h2')?.textContent || '';
+            const price = window.currentProductData?.newPrice || window.currentProductData?.price || document.querySelector('.product-info .new-price')?.textContent.replace(/[^\d.]/g, '') || '';
+            const oldPrice = window.currentProductData?.oldPrice || document.querySelector('.product-info .old-price')?.textContent.replace(/[^\d.]/g, '') || '';
+            const img = (window.currentProductData?.photos && window.currentProductData.photos[0]) || document.querySelector('.product-gallery img')?.src || '';
+            addProductToCart(name, price, oldPrice, img);
+        });
+    }
+
+    if (buyBtn) {
+        buyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isOutOfStock = Boolean(
+                window.currentProductData?.isOutOfStock ||
+                document.querySelector('.out-of-stock-wrapper, .out-of-stock-main-btn') ||
+                (window.currentProductData?.categories && (
+                    window.currentProductData.categories.includes('out-of-stock') ||
+                    window.currentProductData.categories.includes('Out of Stock')
+                )) ||
+                (window.currentProductData?.stock !== undefined && window.currentProductData?.stock !== null && String(window.currentProductData.stock).trim() !== '' && Number(window.currentProductData.stock) <= 0)
+            );
+            if (isOutOfStock) {
+                alert('Sorry, this product is currently out of stock.');
+                return;
+            }
+            handleBuyNowClick();
+        });
+    }
 });
 
 window.addEventListener('scroll', () => {

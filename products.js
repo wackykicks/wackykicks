@@ -13,6 +13,26 @@ function calculateDiscountPercentage(oldPrice, newPrice) {
 function copyToWhatsApp(productName, productPrice, productImage = '') {
     console.log('🛍️ Buy Now clicked for:', productName);
     
+    // Check if product is out of stock in allProducts cache
+    if (typeof allProducts !== 'undefined' && Array.isArray(allProducts)) {
+        const prod = allProducts.find(p => p.name === productName);
+        if (prod) {
+            const isOutOfStockByCategory = Boolean(
+                prod.categories && (
+                    prod.categories.includes('out-of-stock') ||
+                    prod.categories.includes('Out of Stock') ||
+                    (Array.isArray(prod.categories) && prod.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+                )
+            );
+            const hasExplicitStock = prod.stock !== undefined && prod.stock !== null && String(prod.stock).trim() !== '';
+            const isOutOfStockByStock = hasExplicitStock && Number(prod.stock) <= 0;
+            if (isOutOfStockByCategory || isOutOfStockByStock) {
+                alert('Sorry, this product is currently out of stock.');
+                return;
+            }
+        }
+    }
+
     // Show user information modal
     showUserInfoModal(productName, productPrice, 1, '', '', productImage);
 }
@@ -1105,10 +1125,20 @@ function loadProduct() {
         `;
 
         // Hide fixed product bar if product is out of stock
-        if (outOfStock) {
-            const fixedBar = document.querySelector('.fixed-product-bar');
-            if (fixedBar) {
+        const fixedBar = document.querySelector('.fixed-product-bar');
+        const fixedAddBtn = document.getElementById('fixedAddToCart');
+        const fixedBuyBtn = document.getElementById('fixedBuyNow');
+        if (fixedBar) {
+            if (outOfStock) {
+                fixedBar.classList.add('out-of-stock');
                 fixedBar.style.display = 'none';
+                if (fixedAddBtn) { fixedAddBtn.disabled = true; fixedAddBtn.style.display = 'none'; fixedAddBtn.style.pointerEvents = 'none'; }
+                if (fixedBuyBtn) { fixedBuyBtn.disabled = true; fixedBuyBtn.style.display = 'none'; fixedBuyBtn.style.pointerEvents = 'none'; }
+            } else {
+                fixedBar.classList.remove('out-of-stock');
+                fixedBar.style.display = 'flex';
+                if (fixedAddBtn) { fixedAddBtn.disabled = false; fixedAddBtn.style.display = ''; fixedAddBtn.style.pointerEvents = ''; }
+                if (fixedBuyBtn) { fixedBuyBtn.disabled = false; fixedBuyBtn.style.display = ''; fixedBuyBtn.style.pointerEvents = ''; }
             }
         }
 

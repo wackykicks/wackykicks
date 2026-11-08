@@ -320,6 +320,33 @@ function submitCheckout() {
     }
     console.log('✅ Order data retrieved:', orderData);
     
+    // Check if any item in orderData is out of stock
+    try {
+        const cached = localStorage.getItem('vexior_products_cache');
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+            for (const item of orderData.items) {
+                const prod = list.find(p => p.id === item.id || p.name === item.name);
+                if (prod) {
+                    const isOutOfStockByCategory = Boolean(
+                        prod.categories && (
+                            prod.categories.includes('out-of-stock') ||
+                            prod.categories.includes('Out of Stock') ||
+                            (Array.isArray(prod.categories) && prod.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+                        )
+                    );
+                    const hasExplicitStock = prod.stock !== undefined && prod.stock !== null && String(prod.stock).trim() !== '';
+                    const isOutOfStockByStock = hasExplicitStock && Number(prod.stock) <= 0;
+                    if (isOutOfStockByCategory || isOutOfStockByStock) {
+                        alert(`Sorry, "${item.name}" is currently out of stock. Please remove it to proceed.`);
+                        return;
+                    }
+                }
+            }
+        }
+    } catch (e) {}
+
     // Create WhatsApp message
     let message = `🛍️ *New Order from vexior*\n\n`;
     

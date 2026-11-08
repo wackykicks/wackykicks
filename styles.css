@@ -1843,6 +1843,40 @@ a:hover,
 /* Hide fixed product bar when out of stock */
 .fixed-product-bar.out-of-stock {
     display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.out-of-stock-main-btn {
+    width: 100% !important;
+    background: #9ca3af !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    cursor: not-allowed !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+    opacity: 0.9 !important;
+}
+
+.out-of-stock-subtext {
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 /* Address Modal Styles */

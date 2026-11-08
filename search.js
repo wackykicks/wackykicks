@@ -116,10 +116,22 @@ function renderResults(products, searchTerm = query) {
         // Calculate discount percentage
         const discountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
 
+        // Check if product is out of stock
+        const isOutOfStockByCategory = Boolean(
+            product.categories && (
+                product.categories.includes('out-of-stock') ||
+                product.categories.includes('Out of Stock') ||
+                (Array.isArray(product.categories) && product.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+            )
+        );
+        const hasExplicitStock = product.stock !== undefined && product.stock !== null && String(product.stock).trim() !== '';
+        const isOutOfStockByStock = hasExplicitStock && Number(product.stock) <= 0;
+        const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+
         const card = document.createElement("div");
         card.className = "product-card";
         card.innerHTML = `
-            ${discountPercentage ? `<span class=\"tag discount-tag\">${discountPercentage}% OFF</span>` : ''}
+            ${isOutOfStock ? `<span class="tag out-stock-tag">Out of Stock</span>` : (discountPercentage ? `<span class="tag discount-tag">${discountPercentage}% OFF</span>` : '')}
             <a href="product.html?id=${product.id}">
                 <div class="img-wrapper">
                     <img src="${img}" alt="${product.name}">

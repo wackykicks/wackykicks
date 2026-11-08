@@ -57,6 +57,27 @@ class ShoppingCart {
 
     // Add item to cart
     addToCart(product, quantity = 1, size = null, color = null) {
+        // Check if product is out of stock
+        const isOutOfStockByCategory = Boolean(
+            product.categories && (
+                product.categories.includes('out-of-stock') ||
+                product.categories.includes('Out of Stock') ||
+                (Array.isArray(product.categories) && product.categories.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'out of stock'))
+            )
+        );
+        const hasExplicitStock = product.stock !== undefined && product.stock !== null && String(product.stock).trim() !== '';
+        const isOutOfStockByStock = hasExplicitStock && Number(product.stock) <= 0;
+        const isOutOfStock = Boolean(product.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock);
+
+        if (isOutOfStock) {
+            if (window.FloatingAlertManager) {
+                window.FloatingAlertManager.operationError('Out of Stock', 'Sorry, this product is currently out of stock.');
+            } else {
+                alert('Sorry, this product is currently out of stock.');
+            }
+            return false;
+        }
+
         // Create unique item ID based on product ID, size, and color
         let itemId = product.id;
         if (size && color) {
@@ -356,6 +377,26 @@ function checkoutViaWhatsApp() {
         if (typeof cart.getCartTotal !== 'function') {
             throw new Error('getCartTotal method not found');
         }
+
+        // Check for out-of-stock items in cart
+        try {
+            const cached = localStorage.getItem('vexior_products_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+                const oosItem = cart.cart.find(item => {
+                    const p = list.find(prod => prod.id === item.id || prod.name === item.name);
+                    if (!p) return false;
+                    const byCat = p.categories && (p.categories.includes('out-of-stock') || p.categories.includes('Out of Stock'));
+                    const byStock = p.stock !== undefined && p.stock !== null && String(p.stock).trim() !== '' && Number(p.stock) <= 0;
+                    return byCat || byStock;
+                });
+                if (oosItem) {
+                    alert(`Sorry, "${oosItem.name}" is currently out of stock. Please remove it from your cart before proceeding.`);
+                    return;
+                }
+            }
+        } catch (e) {}
         
         // Show user information modal for cart checkout
         showCartUserInfoModal();
