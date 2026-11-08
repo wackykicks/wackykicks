@@ -1,4 +1,4 @@
-// ✅ Calculate discount percentage (robust for string inputs)
+﻿// ✅ Calculate discount percentage (robust for string inputs)
 function calculateDiscountPercentage(oldPrice, newPrice) {
     const o = parseFloat(oldPrice);
     const n = parseFloat(newPrice);
@@ -788,7 +788,7 @@ if (!document.getElementById('cartModalSlideOutAnimation')) {
 }
 
 // ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
-function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
+function simpleRedirectToWhatsApp(message, phoneNumber = '917012131615') {
     console.log('🚀 Starting WhatsApp redirect with message:', message);
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -836,7 +836,7 @@ function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
 }
 
 // ✅ Enhanced WhatsApp Redirect/Forward Function (shared with product)
-function redirectToWhatsApp(message, phoneNumber = '918138999550') {
+function redirectToWhatsApp(message, phoneNumber = '917012131615') {
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     
     // Show loading/forwarding indicator

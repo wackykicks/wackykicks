@@ -12,6 +12,27 @@ class CategoryManager {
         this.init();
     }
 
+    // Helper to get matching order index from categoryDisplayOrder
+    getCategoryOrderIndex(cat) {
+        if (!this.categoryDisplayOrder || this.categoryDisplayOrder.length === 0 || !cat) return 9999;
+        const candidates = [
+            cat.id,
+            cat.categoryId,
+            cat.id ? cat.id.toLowerCase() : '',
+            cat.categoryId ? cat.categoryId.toLowerCase() : '',
+            cat.name ? cat.name.toLowerCase() : '',
+            cat.name ? cat.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : '',
+            cat.name ? cat.name.toLowerCase().replace(/['"’]/g, '').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') : '',
+            cat.name ? cat.name.toLowerCase().replace(/['"’]/g, '').trim() : ''
+        ].filter(Boolean);
+
+        for (const candidate of candidates) {
+            const idx = this.categoryDisplayOrder.findIndex(o => o && o.toLowerCase().trim() === candidate);
+            if (idx !== -1) return idx;
+        }
+        return 9999;
+    }
+
     // Sort categories based on the defined display order
     sortCategories() {
         if (!this.categoryDisplayOrder || this.categoryDisplayOrder.length === 0) {
@@ -20,17 +41,14 @@ class CategoryManager {
         }
 
         this.categories.sort((a, b) => {
-            const idA = a.id.toLowerCase();
-            const idB = b.id.toLowerCase();
+            const indexA = this.getCategoryOrderIndex(a);
+            const indexB = this.getCategoryOrderIndex(b);
 
-            let indexA = this.categoryDisplayOrder.indexOf(idA);
-            let indexB = this.categoryDisplayOrder.indexOf(idB);
+            if (indexA !== indexB) {
+                return indexA - indexB;
+            }
 
-            // If category is not in the order list, put it at the end
-            if (indexA === -1) indexA = 9999;
-            if (indexB === -1) indexB = 9999;
-
-            return indexA - indexB;
+            return (a.name || '').localeCompare(b.name || '');
         });
 
         console.log('✅ Categories sorted by custom order');
@@ -122,13 +140,17 @@ class CategoryManager {
                         }
                     } catch (e) {}
 
-                    loadedCategories = categoriesSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        name: doc.data().name || 'Unnamed Category',
-                        image: doc.data().image || doc.data().icon || '',
-                        color: doc.data().color || '#667eea'
-                    }));
+                    loadedCategories = categoriesSnapshot.docs.map(doc => {
+                        const rawData = doc.data() || {};
+                        delete rawData.id;
+                        return {
+                            ...rawData,
+                            id: doc.id,
+                            name: rawData.name || 'Unnamed Category',
+                            image: rawData.image || rawData.icon || '',
+                            color: rawData.color || '#667eea'
+                        };
+                    });
                     fetchedSuccessfully = loadedCategories.length > 0;
                 } catch (sdkErr) {
                     console.warn('⚠️ Category SDK fetch failed, switching to direct REST API fallback:', sdkErr.message || sdkErr);
@@ -208,7 +230,7 @@ class CategoryManager {
     getDefaultCategories() {
         return [
             { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
-            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#6c757d', special: true },
+            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#00b140', special: true },
             { id: 'watches', name: 'Watches', image: 'https://via.placeholder.com/60x60?text=WATCH', color: '#28a745' },
             { id: 'smart-watches', name: 'Smart Watches', image: 'https://via.placeholder.com/60x60?text=SMART', color: '#667eea' },
             { id: 'gadgets', name: 'Gadgets', image: 'https://via.placeholder.com/60x60?text=GADGET', color: '#667eea' },
@@ -364,18 +386,82 @@ class CategoryManager {
         }, 300); // Give time for products to render
     }
 
+    // Helpers for direct REST API category write operations
+    toCategoryRestDoc(obj) {
+        const fields = {};
+        for (const k of Object.keys(obj)) {
+            if (k === 'id' || k === 'firebaseId' || obj[k] === undefined) continue;
+            const v = obj[k];
+            if (typeof v === 'string') fields[k] = { stringValue: v };
+            else if (typeof v === 'number') fields[k] = Number.isInteger(v) ? { integerValue: v.toString() } : { doubleValue: v };
+            else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+            else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map(item => ({ stringValue: String(item) })) } };
+            else fields[k] = { stringValue: String(v) };
+        }
+        return { fields };
+    }
+
+    async restSaveCategory(categoryData, categoryId = null) {
+        if (categoryId) {
+            const queryMask = Object.keys(categoryData).filter(k => k !== 'id' && k !== 'firebaseId' && categoryData[k] !== undefined)
+                .map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+            const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/${encodeURIComponent(categoryId)}?${queryMask}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.toCategoryRestDoc(categoryData))
+            });
+            if (!res.ok) throw new Error(`REST PATCH returned HTTP ${res.status}`);
+            return categoryId;
+        } else {
+            const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.toCategoryRestDoc(categoryData))
+            });
+            if (!res.ok) throw new Error(`REST POST returned HTTP ${res.status}`);
+            const data = await res.json();
+            return data.name ? data.name.split('/').pop() : Date.now().toString();
+        }
+    }
+
+    async restDeleteCategory(categoryId) {
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/${encodeURIComponent(categoryId)}`, {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error(`REST DELETE returned HTTP ${res.status}`);
+        return true;
+    }
+
     // Add new category (for admin)
     async addCategory(categoryData) {
         try {
+            // Remove any arbitrary id before saving
+            delete categoryData.id;
+            delete categoryData.firebaseId;
+
+            // Direct REST POST first (instant ~150ms)
+            const docId = await this.restSaveCategory(categoryData, null);
+
             if (typeof db !== 'undefined') {
-                const docRef = await db.collection('category').add(categoryData);
-                categoryData.id = docRef.id;
-            } else {
-                categoryData.id = Date.now().toString();
+                try {
+                    db.collection('category').doc(docId).set({
+                        ...categoryData,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true }).catch(() => {});
+                } catch (_) {}
             }
 
+            categoryData.id = docId;
+            categoryData.firebaseId = docId;
             this.categories.push(categoryData);
             this.renderCategories();
+            try {
+                localStorage.setItem('vexior_categories_cache', JSON.stringify({
+                    categories: this.categories,
+                    order: this.categoryDisplayOrder,
+                    timestamp: Date.now()
+                }));
+            } catch(e){}
             return true;
         } catch (error) {
             console.error('Error adding category:', error);
@@ -386,8 +472,16 @@ class CategoryManager {
     // Update category (for admin)
     async updateCategory(categoryId, updateData) {
         try {
+            // Direct REST PATCH first using exact document ID
+            await this.restSaveCategory(updateData, categoryId);
+
             if (typeof db !== 'undefined') {
-                await db.collection('category').doc(categoryId).update(updateData);
+                try {
+                    db.collection('category').doc(categoryId).update({
+                        ...updateData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }).catch(() => {});
+                } catch (_) {}
             }
 
             const categoryIndex = this.categories.findIndex(cat => cat.id === categoryId);
@@ -395,6 +489,13 @@ class CategoryManager {
                 this.categories[categoryIndex] = { ...this.categories[categoryIndex], ...updateData };
                 this.renderCategories();
             }
+            try {
+                localStorage.setItem('vexior_categories_cache', JSON.stringify({
+                    categories: this.categories,
+                    order: this.categoryDisplayOrder,
+                    timestamp: Date.now()
+                }));
+            } catch(e){}
             return true;
         } catch (error) {
             console.error('Error updating category:', error);
@@ -405,13 +506,23 @@ class CategoryManager {
     // Delete category (for admin)
     async deleteCategory(categoryId) {
         try {
+            // Direct REST delete first (instant ~150ms)
+            await this.restDeleteCategory(categoryId);
+
             if (typeof db !== 'undefined') {
-                await db.collection('category').doc(categoryId).delete();
+                try { db.collection('category').doc(categoryId).delete().catch(() => {}); } catch (_) {}
             }
 
             this.categories = this.categories.filter(cat => cat.id !== categoryId);
             this.selectedCategories = this.selectedCategories.filter(id => id !== categoryId);
             this.renderCategories();
+            try {
+                localStorage.setItem('vexior_categories_cache', JSON.stringify({
+                    categories: this.categories,
+                    order: this.categoryDisplayOrder,
+                    timestamp: Date.now()
+                }));
+            } catch(e){}
             return true;
         } catch (error) {
             console.error('Error deleting category:', error);

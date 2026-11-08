@@ -1,4 +1,4 @@
-// Checkout Page JavaScript
+﻿// Checkout Page JavaScript
 
 // Store order data globally to avoid re-fetching
 let cachedOrderData = null;
@@ -355,7 +355,7 @@ function submitCheckout() {
     
     // Encode and redirect to WhatsApp
     const encodedMessage = encodeURIComponent(message);
-    const whatsappNumber = '918138999550';
+    const whatsappNumber = '917012131615';
     const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
     
     // Clear cart if order came from cart

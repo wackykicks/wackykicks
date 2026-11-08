@@ -1,4 +1,4 @@
-// ✅ Calculate discount percentage (robust for string inputs)
+﻿// ✅ Calculate discount percentage (robust for string inputs)
 function calculateDiscountPercentage(oldPrice, newPrice) {
     const o = parseFloat(oldPrice);
     const n = parseFloat(newPrice);
@@ -539,7 +539,7 @@ document.head.appendChild(slideOutAnimation);
 
 
 // ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
-function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
+function simpleRedirectToWhatsApp(message, phoneNumber = '917012131615') {
     console.log('🚀 Starting WhatsApp redirect with message:', message);
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -656,7 +656,7 @@ function proceedWithAddress() {
 }
 
 // ✅ Enhanced WhatsApp Redirect/Forward Function
-function redirectToWhatsApp(message, phoneNumber = '918138999550') {
+function redirectToWhatsApp(message, phoneNumber = '917012131615') {
     console.log('🔄 redirectToWhatsApp called with:', { message, phoneNumber });
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -747,7 +747,7 @@ function redirectToWhatsApp(message, phoneNumber = '918138999550') {
 }
 
 // ✅ Simple WhatsApp Redirect Fallback Function
-function simpleWhatsAppRedirect(message, phoneNumber = '918138999550') {
+function simpleWhatsAppRedirect(message, phoneNumber = '917012131615') {
     console.log('🔄 simpleWhatsAppRedirect called');
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     console.log('🔗 Simple redirect URL:', whatsappUrl);
@@ -755,7 +755,7 @@ function simpleWhatsAppRedirect(message, phoneNumber = '918138999550') {
 }
 
 // ✅ Emergency WhatsApp redirect (for testing)
-function emergencyWhatsAppRedirect(message, phoneNumber = '918138999550') {
+function emergencyWhatsAppRedirect(message, phoneNumber = '917012131615') {
     console.log('🚨 Emergency WhatsApp redirect called');
     console.log('📱 Message:', message);
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;

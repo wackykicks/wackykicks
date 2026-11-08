@@ -148,31 +148,78 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        let allLoadedProducts = [];
+
+        // Parse REST values
+        function parseRestVal(v) {
+            if (!v) return null;
+            if ('stringValue' in v) return v.stringValue;
+            if ('integerValue' in v) return parseInt(v.integerValue, 10);
+            if ('doubleValue' in v) return parseFloat(v.doubleValue);
+            if ('booleanValue' in v) return v.booleanValue;
+            if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseRestVal);
+            return null;
+        }
+
+        async function fetchAllProductsRest() {
+            let all = [];
+            let pageToken = null;
+            do {
+                let url = 'https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products?pageSize=100';
+                if (pageToken) url += '&pageToken=' + encodeURIComponent(pageToken);
+                const res = await fetch(url);
+                if (!res.ok) break;
+                const data = await res.json();
+                const docs = (data.documents || []).map(d => {
+                    const id = d.name ? d.name.split('/').pop() : '';
+                    const fields = d.fields || {};
+                    const item = { id };
+                    for (const k of Object.keys(fields)) item[k] = parseRestVal(fields[k]);
+                    return item;
+                });
+                all = all.concat(docs);
+                pageToken = data.nextPageToken || null;
+            } while (pageToken);
+            return all;
+        }
+
+        function checkIsOffer(product) {
+            if (!product) return false;
+            if (product.category === 'today offer') return true;
+            if (Array.isArray(product.categories)) {
+                return product.categories.some(c => typeof c === 'string' && (c.toLowerCase().trim() === 'today offer' || c.toLowerCase().trim() === "today's offer"));
+            }
+            return false;
+        }
+
         // Load current today's offers
         async function loadTodaysOffers() {
             const container = document.getElementById('currentOffers');
             container.innerHTML = '<p>Loading current offers...</p>';
 
             try {
-                const snapshot = await db.collection("products").where("category", "==", "today offer").get();
+                if (allLoadedProducts.length === 0) {
+                    allLoadedProducts = await fetchAllProductsRest();
+                }
 
-                if (snapshot.empty) {
+                const offers = allLoadedProducts.filter(checkIsOffer);
+
+                if (offers.length === 0) {
                     container.innerHTML = '<p>No products currently in today\'s offers.</p>';
                     return;
                 }
 
                 let html = `<div class="product-list">`;
-                snapshot.forEach(doc => {
-                    const product = doc.data();
-                    const discount = product.oldPrice && product.newPrice ?
-                        Math.round(((parseFloat(product.oldPrice) - parseFloat(product.newPrice)) / parseFloat(product.oldPrice)) * 100) : 0;
+                offers.forEach(product => {
+                    const discount = product.oldPrice && (product.newPrice || product.price) ?
+                        Math.round(((parseFloat(product.oldPrice) - parseFloat(product.newPrice || product.price)) / parseFloat(product.oldPrice)) * 100) : 0;
 
                     html += `
                         <div class="product-item">
                             <h4>${product.name}</h4>
-                            <p><strong>Price:</strong> ₹${product.newPrice} ${product.oldPrice ? `(was ₹${product.oldPrice})` : ''}</p>
+                            <p><strong>Price:</strong> ₹${product.newPrice || product.price} ${product.oldPrice ? `(was ₹${product.oldPrice})` : ''}</p>
                             ${discount > 0 ? `<p><strong>Discount:</strong> ${discount}% OFF</p>` : ''}
-                            <button onclick="removeFromOffers('${doc.id}', '${product.name}')">Remove from Offers</button>
+                            <button onclick="removeFromOffers('${product.id}', '${product.name.replace(/'/g, "\\'")}')">Remove from Offers</button>
                         </div>
                     `;
                 });
@@ -189,26 +236,28 @@
             container.innerHTML = '<p>Loading all products...</p>';
 
             try {
-                const snapshot = await db.collection("products").get();
+                if (allLoadedProducts.length === 0) {
+                    allLoadedProducts = await fetchAllProductsRest();
+                }
 
-                if (snapshot.empty) {
+                if (allLoadedProducts.length === 0) {
                     container.innerHTML = '<p>No products found in database.</p>';
                     return;
                 }
 
                 let html = `<div class="product-list">`;
-                snapshot.forEach(doc => {
-                    const product = doc.data();
-                    const isOffer = product.category === "today offer";
+                allLoadedProducts.forEach(product => {
+                    const isOffer = checkIsOffer(product);
+                    const cats = Array.isArray(product.categories) ? product.categories.join(', ') : (product.category || 'No category');
 
                     html += `
                         <div class="product-item">
                             <h4>${product.name}</h4>
-                            <p><strong>Category:</strong> ${product.category || 'No category'}</p>
-                            <p><strong>Price:</strong> ₹${product.newPrice} ${product.oldPrice ? `(was ₹${product.oldPrice})` : ''}</p>
+                            <p><strong>Category:</strong> ${cats}</p>
+                            <p><strong>Price:</strong> ₹${product.newPrice || product.price} ${product.oldPrice ? `(was ₹${product.oldPrice})` : ''}</p>
                             ${isOffer ?
                             `<button disabled>Already in Today's Offers</button>` :
-                            `<button onclick="addToOffers('${doc.id}', '${product.name}')">Add to Today's Offers</button>`
+                            `<button onclick="addToOffers('${product.id}', '${product.name.replace(/'/g, "\\'")}')">Add to Today's Offers</button>`
                         }
                         </div>
                     `;
@@ -223,17 +272,48 @@
         // Add product to today's offers
         async function addToOffers(productId, productName) {
             try {
-                await db.collection("products").doc(productId).update({
-                    category: "today offer"
+                const prod = allLoadedProducts.find(p => p.id === productId);
+                let cats = (prod && Array.isArray(prod.categories)) ? [...prod.categories] : [];
+                if (!cats.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'today offer')) {
+                    cats.push('today offer');
+                }
+
+                // Direct REST PATCH (instant 150ms)
+                const catVals = cats.map(c => ({ stringValue: c }));
+                const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${productId}?updateMask.fieldPaths=category&updateMask.fieldPaths=categories`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fields: {
+                            category: { stringValue: 'today offer' },
+                            categories: { arrayValue: { values: catVals } }
+                        }
+                    })
                 });
+
+                if (!res.ok) throw new Error(`REST PATCH returned HTTP ${res.status}`);
+
+                // Background SDK update
+                try {
+                    db.collection("products").doc(productId).update({
+                        category: "today offer",
+                        categories: cats
+                    });
+                } catch (_) {}
+
+                if (prod) {
+                    prod.category = 'today offer';
+                    prod.categories = cats;
+                }
 
                 document.getElementById('actionResult').innerHTML =
                     `<div class="success">✅ Added "${productName}" to today's offers!</div>`;
 
-                // Refresh both lists
+                // Refresh both lists immediately
                 loadTodaysOffers();
                 loadAllProducts();
             } catch (error) {
+                console.error('[Offers] Error adding product:', error);
                 document.getElementById('actionResult').innerHTML =
                     `<div class="error">❌ Error adding product: ${error.message}</div>`;
             }
@@ -242,17 +322,51 @@
         // Remove product from today's offers
         async function removeFromOffers(productId, productName) {
             try {
-                await db.collection("products").doc(productId).update({
-                    category: firebase.firestore.FieldValue.delete()
+                const prod = allLoadedProducts.find(p => p.id === productId);
+                let cats = (prod && Array.isArray(prod.categories)) ? prod.categories.filter(c => {
+                    if (!c || typeof c !== 'string') return false;
+                    const l = c.toLowerCase().trim();
+                    return l !== 'today offer' && l !== "today's offer" && l !== 'todays offer' && l !== "today's offers" && l !== 'todays offers' && l !== 'special offer';
+                }) : [];
+
+                const primaryCategory = cats.length > 0 ? cats[0] : '';
+
+                // Direct REST PATCH (instant 150ms)
+                const catVals = cats.map(c => ({ stringValue: c }));
+                const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${productId}?updateMask.fieldPaths=category&updateMask.fieldPaths=categories`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fields: {
+                            category: { stringValue: primaryCategory },
+                            categories: catVals.length > 0 ? { arrayValue: { values: catVals } } : { arrayValue: {} }
+                        }
+                    })
                 });
+
+                if (!res.ok) throw new Error(`REST PATCH returned HTTP ${res.status}`);
+
+                // Background SDK update
+                try {
+                    db.collection("products").doc(productId).update({
+                        category: primaryCategory || firebase.firestore.FieldValue.delete(),
+                        categories: cats
+                    });
+                } catch (_) {}
+
+                if (prod) {
+                    prod.category = primaryCategory;
+                    prod.categories = cats;
+                }
 
                 document.getElementById('actionResult').innerHTML =
                     `<div class="success">✅ Removed "${productName}" from today's offers!</div>`;
 
-                // Refresh both lists
+                // Refresh both lists immediately
                 loadTodaysOffers();
                 loadAllProducts();
             } catch (error) {
+                console.error('[Offers] Error removing product:', error);
                 document.getElementById('actionResult').innerHTML =
                     `<div class="error">❌ Error removing product: ${error.message}</div>`;
             }
@@ -348,27 +462,51 @@
             container.innerHTML = '<div class="status">Clearing all offers...</div>';
 
             try {
-                const snapshot = await db.collection("products").where("category", "==", "today offer").get();
+                if (allLoadedProducts.length === 0) {
+                    allLoadedProducts = await fetchAllProductsRest();
+                }
 
-                if (snapshot.empty) {
+                const currentOffers = allLoadedProducts.filter(checkIsOffer);
+
+                if (currentOffers.length === 0) {
                     container.innerHTML = '<div class="success">No offers to clear.</div>';
                     return;
                 }
 
-                const promises = [];
-                snapshot.forEach(doc => {
-                    promises.push(
-                        db.collection("products").doc(doc.id).update({
-                            category: firebase.firestore.FieldValue.delete()
-                        })
-                    );
-                });
+                // Process each offer product via REST PATCH
+                for (const prod of currentOffers) {
+                    const remainingCats = (prod.categories || []).filter(c => {
+                        if (!c || typeof c !== 'string') return false;
+                        const l = c.toLowerCase().trim();
+                        return l !== 'today offer' && l !== "today's offer" && l !== 'todays offer' && l !== "today's offers" && l !== 'special offer';
+                    });
+                    const primaryCat = remainingCats.length > 0 ? remainingCats[0] : '';
+                    const catVals = remainingCats.map(c => ({ stringValue: c }));
 
-                await Promise.all(promises);
+                    try {
+                        await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${prod.id}?updateMask.fieldPaths=category&updateMask.fieldPaths=categories`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                fields: {
+                                    category: { stringValue: primaryCat },
+                                    categories: catVals.length > 0 ? { arrayValue: { values: catVals } } : { arrayValue: {} }
+                                }
+                            })
+                        });
+
+                        prod.category = primaryCat;
+                        prod.categories = remainingCats;
+                    } catch (e) {
+                        console.warn('Failed clearing offer for:', prod.id, e);
+                    }
+                }
 
                 container.innerHTML = `<div class="success">✅ Cleared all today's offers!</div>`;
                 loadTodaysOffers();
+                loadAllProducts();
             } catch (error) {
+                console.error('[Offers] Error clearing offers:', error);
                 container.innerHTML = `<div class="error">❌ Error clearing offers: ${error.message}</div>`;
             }
         }

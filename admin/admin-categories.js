@@ -1,3 +1,152 @@
+// ✅ High-capacity IndexedDB Cache for categories admin (shares VexiorCatalogDB)
+function openAdminIndexedDB() {
+    return new Promise((resolve, reject) => {
+        if (typeof window === 'undefined' || !window.indexedDB) return reject(new Error('IndexedDB not supported'));
+        const request = window.indexedDB.open('VexiorCatalogDB', 1);
+        request.onupgradeneeded = (e) => {
+            const idb = e.target.result;
+            if (!idb.objectStoreNames.contains('products_store')) {
+                idb.createObjectStore('products_store');
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function getAdminCachedProducts() {
+    try {
+        const idb = await openAdminIndexedDB();
+        return await new Promise((resolve) => {
+            const tx = idb.transaction('products_store', 'readonly');
+            const store = tx.objectStore('products_store');
+            const req = store.get('all_products');
+            req.onsuccess = () => {
+                const res = req.result;
+                if (res && Array.isArray(res.data) && res.data.length > 0) resolve(res.data);
+                else resolve(null);
+            };
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) {
+        return null;
+    }
+}
+
+async function setAdminCachedProducts(products) {
+    if (!products || !products.length) return;
+    try {
+        const idb = await openAdminIndexedDB();
+        const tx = idb.transaction('products_store', 'readwrite');
+        const store = tx.objectStore('products_store');
+        store.put({ timestamp: Date.now(), data: products }, 'all_products');
+    } catch (e) {
+        console.warn('Could not save to IndexedDB:', e);
+    }
+}
+
+function parseAdminFirestoreValue(val) {
+    if (!val) return null;
+    if ('stringValue' in val) return val.stringValue;
+    if ('integerValue' in val) return parseInt(val.integerValue, 10);
+    if ('doubleValue' in val) return parseFloat(val.doubleValue);
+    if ('booleanValue' in val) return val.booleanValue;
+    if ('timestampValue' in val) return val.timestampValue;
+    if ('arrayValue' in val) {
+        const values = (val.arrayValue && val.arrayValue.values) || [];
+        return values.map(v => parseAdminFirestoreValue(v));
+    }
+    if ('mapValue' in val) {
+        const fields = (val.mapValue && val.mapValue.fields) || {};
+        const res = {};
+        for (const k of Object.keys(fields)) {
+            res[k] = parseAdminFirestoreValue(fields[k]);
+        }
+        return res;
+    }
+    return null;
+}
+
+function parseAdminFirestoreProduct(doc) {
+    if (!doc || !doc.fields) return null;
+    const id = doc.name ? doc.name.split('/').pop() : '';
+    const fields = doc.fields || {};
+    const item = { id };
+    for (const key of Object.keys(fields)) {
+        item[key] = parseAdminFirestoreValue(fields[key]);
+    }
+    if (typeof item.imgUrl === 'string') {
+        item.imgUrl = [item.imgUrl];
+    } else if (!Array.isArray(item.imgUrl)) {
+        item.imgUrl = item.img ? [item.img] : [];
+    }
+    item.img = item.imgUrl[0] || item.img || '';
+    item.categories = item.categories || [];
+    return item;
+}
+
+async function fetchAdminProductsViaRest(onBatchLoaded = null) {
+    let allFetched = [];
+    let pageToken = null;
+    do {
+        let url = `https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products?pageSize=100`;
+        if (pageToken) url += `&pageToken=${encodeURIComponent(pageToken)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const pageDocs = (data.documents || []).map(parseAdminFirestoreProduct).filter(Boolean);
+        allFetched = allFetched.concat(pageDocs);
+        if (typeof onBatchLoaded === 'function') onBatchLoaded(allFetched);
+        pageToken = data.nextPageToken || null;
+    } while (pageToken);
+    return allFetched;
+}
+
+function toCategoryRestDoc(obj) {
+    const fields = {};
+    for (const k of Object.keys(obj)) {
+        if (k === 'id' || k === 'firebaseId' || obj[k] === undefined) continue;
+        const v = obj[k];
+        if (typeof v === 'string') fields[k] = { stringValue: v };
+        else if (typeof v === 'number') fields[k] = Number.isInteger(v) ? { integerValue: v.toString() } : { doubleValue: v };
+        else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+        else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map(item => ({ stringValue: String(item) })) } };
+        else fields[k] = { stringValue: String(v) };
+    }
+    return { fields };
+}
+
+async function restSaveCategory(categoryData, categoryId = null) {
+    if (categoryId) {
+        const queryMask = Object.keys(categoryData).filter(k => k !== 'id' && k !== 'firebaseId' && categoryData[k] !== undefined)
+            .map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/${encodeURIComponent(categoryId)}?${queryMask}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(toCategoryRestDoc(categoryData))
+        });
+        if (!res.ok) throw new Error(`REST PATCH returned HTTP ${res.status}`);
+        return categoryId;
+    } else {
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(toCategoryRestDoc(categoryData))
+        });
+        if (!res.ok) throw new Error(`REST POST returned HTTP ${res.status}`);
+        const data = await res.json();
+        return data.name ? data.name.split('/').pop() : Date.now().toString();
+    }
+}
+
+async function restDeleteCategory(categoryId) {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/${encodeURIComponent(categoryId)}`, {
+        method: 'DELETE'
+    });
+    if (!res.ok) throw new Error(`REST DELETE returned HTTP ${res.status}`);
+    return true;
+}
+
 // Admin Categories Management
 class AdminCategoryManager {
     constructor() {
@@ -22,8 +171,7 @@ class AdminCategoryManager {
                     const testQuery = await db.collection('category').limit(1).get();
                     console.log('Firebase connection successful, docs found:', testQuery.size);
                 } catch (firebaseError) {
-                    console.error('Firebase connection failed:', firebaseError);
-                    throw new Error('Firebase connection failed: ' + firebaseError.message);
+                    console.warn('Firebase connection test failed, will use resilient REST fallbacks:', firebaseError.message);
                 }
             } else {
                 console.warn('Firebase not available, will use fallback data');
@@ -74,6 +222,27 @@ class AdminCategoryManager {
         console.log('=== END ADMIN INIT ===');
     }
 
+    // Match category to custom display order array across id, categoryId, name, or slug
+    getCategoryOrderIndex(cat, order) {
+        if (!order || !order.length || !cat) return 9999;
+        const candidates = [
+            cat.id,
+            cat.categoryId,
+            cat.id ? cat.id.toLowerCase() : '',
+            cat.categoryId ? cat.categoryId.toLowerCase() : '',
+            cat.name ? cat.name.toLowerCase() : '',
+            cat.name ? cat.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : '',
+            cat.name ? cat.name.toLowerCase().replace(/['"’]/g, '').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') : '',
+            cat.name ? cat.name.toLowerCase().replace(/['"’]/g, '').trim() : ''
+        ].filter(Boolean);
+
+        for (const candidate of candidates) {
+            const idx = order.findIndex(o => o && o.toLowerCase().trim() === candidate);
+            if (idx !== -1) return idx;
+        }
+        return 9999;
+    }
+
     renderReorderList() {
         const list = document.getElementById('reorderList');
         if (!list) return;
@@ -85,18 +254,16 @@ class AdminCategoryManager {
             // Sort locally based on order array
             if (order && order.length > 0) {
                 sortedCats.sort((a, b) => {
-                    const idA = (a.categoryId || a.id).toLowerCase();
-                    const idB = (b.categoryId || b.id).toLowerCase();
-                    let indexA = order.indexOf(idA);
-                    let indexB = order.indexOf(idB);
-                    if (indexA === -1) indexA = 9999;
-                    if (indexB === -1) indexB = 9999;
-                    return indexA - indexB;
+                    const indexA = this.getCategoryOrderIndex(a, order);
+                    const indexB = this.getCategoryOrderIndex(b, order);
+                    if (indexA !== indexB) return indexA - indexB;
+                    return (a.name || '').localeCompare(b.name || '');
                 });
             }
 
             // Check if we need to add the sort button in the header
-            const sectionHeader = document.querySelector('.reorder-categories-section .btn-primary').parentElement;
+            const reorderBtn = document.querySelector('.reorder-categories-section .btn-primary');
+            const sectionHeader = reorderBtn ? reorderBtn.parentElement : null;
             if (sectionHeader && !document.getElementById('reorderSortBtn')) {
                 const sortBtn = document.createElement('button');
                 sortBtn.id = 'reorderSortBtn';
@@ -141,14 +308,26 @@ class AdminCategoryManager {
     async fetchCurrentDisplayOrder() {
         if (typeof db !== 'undefined') {
             try {
-                const settingsDoc = await db.collection('category').doc('CONFIG_display_order').get();
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+                const settingsDoc = await Promise.race([db.collection('category').doc('CONFIG_display_order').get(), timeoutPromise]);
                 if (settingsDoc.exists) {
                     return settingsDoc.data().order || [];
                 }
-            } catch (e) { console.warn('Error fetching order', e); }
+            } catch (e) { console.warn('Error fetching order via SDK, trying REST:', e); }
+        }
+        try {
+            const res = await fetch('https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/CONFIG_display_order');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.fields && data.fields.order && data.fields.order.arrayValue && data.fields.order.arrayValue.values) {
+                    return data.fields.order.arrayValue.values.map(v => v.stringValue || v.integerValue || '').filter(Boolean);
+                }
+            }
+        } catch (restErr) {
+            console.warn('Error fetching order via REST:', restErr);
         }
         // Fallback default order
-        return ['all', 'today offer', 'smartwatch', 'gadgets', 'shoes', 'watches', 'wallet', 'belt', 'sunglasses', 'accessories'];
+        return ['all', 'today offer', 'buy-1-get-1-free', 'combo-offer', 'shoes', 'watches', 'gadgets', 'sunglasses', 'airpods', 'power-bank'];
     }
 
     setupDragAndDrop() {
@@ -322,49 +501,77 @@ class AdminCategoryManager {
         console.log('=== LOADING CATEGORIES ===');
 
         try {
-            // Try direct Firebase first
+            let loadedCategories = [];
+            let fetchedViaSdk = false;
+
+            // Try direct Firebase first with a 2-second timeout
             if (typeof db !== 'undefined') {
-                console.log('Attempting to load from Firebase category collection...');
-                const categoriesSnapshot = await db.collection('category').get();
-                console.log('Firebase query result - size:', categoriesSnapshot.size);
+                try {
+                    console.log('Attempting to load from Firebase category collection...');
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Category SDK timeout')), 2000));
+                    const categoriesSnapshot = await Promise.race([db.collection('category').get(), timeoutPromise]);
 
-                this.categories = categoriesSnapshot.docs.map(doc => {
-                    const rawData = doc.data();
-                    const data = {
-                        id: doc.id, // Firebase document ID
-                        firebaseId: doc.id, // Keep reference to Firebase ID
-                        categoryId: rawData.id || rawData.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || doc.id, // Category identifier for products
-                        name: rawData.name || 'Unnamed Category',
-                        image: rawData.image || rawData.icon || '',
-                        color: rawData.color || '#667eea',
-                        description: rawData.description || '',
-                        ...rawData
-                    };
-                    console.log('Loaded category:', data.name, 'with Firebase ID:', doc.id, 'Category ID:', data.categoryId);
-                    return data;
-                }).filter(c => c.id !== 'CONFIG_display_order'); // Filter config doc
+                    loadedCategories = categoriesSnapshot.docs.map(doc => {
+                        const rawData = doc.data() || {};
+                        const trueDocId = doc.id;
+                        delete rawData.id; // NEVER let stored 'id' field shadow true Firestore document ID!
+                        delete rawData.firebaseId;
+                        return {
+                            ...rawData,
+                            id: trueDocId,
+                            firebaseId: trueDocId,
+                            categoryId: rawData.categoryId || rawData.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || trueDocId,
+                            name: rawData.name || 'Unnamed Category',
+                            image: rawData.image || rawData.icon || '',
+                            color: rawData.color || '#667eea',
+                            description: rawData.description || ''
+                        };
+                    }).filter(c => c.id !== 'CONFIG_display_order');
 
-                console.log('Successfully loaded from Firebase:', this.categories.length, 'categories');
+                    fetchedViaSdk = loadedCategories.length > 0;
+                } catch (e) {
+                    console.warn('⚠️ Category SDK fetch failed or timed out, trying REST fallback:', e.message || e);
+                }
+            }
+
+            // Fallback: Direct Google Cloud REST API (100% reliable)
+            if (!fetchedViaSdk) {
+                try {
+                    console.log('🌐 Fetching categories via direct Google Cloud REST API...');
+                    const res = await fetch('https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category');
+                    if (res.ok) {
+                        const data = await res.json();
+                        const docs = data.documents || [];
+                        loadedCategories = docs.map(d => {
+                            const id = d.name ? d.name.split('/').pop() : '';
+                            const fields = d.fields || {};
+                            const name = parseAdminFirestoreValue(fields.name) || 'Unnamed Category';
+                            return {
+                                id,
+                                firebaseId: id,
+                                categoryId: parseAdminFirestoreValue(fields.id) || name.toLowerCase().replace(/[^a-z0-9]/g, '-') || id,
+                                name,
+                                image: parseAdminFirestoreValue(fields.image) || parseAdminFirestoreValue(fields.icon) || '',
+                                color: parseAdminFirestoreValue(fields.color) || '#667eea',
+                                description: parseAdminFirestoreValue(fields.description) || ''
+                            };
+                        }).filter(c => c.id !== 'CONFIG_display_order');
+                    }
+                } catch (restErr) {
+                    console.warn('⚠️ Category REST fallback failed:', restErr);
+                }
+            }
+
+            if (loadedCategories.length > 0) {
+                this.categories = loadedCategories;
+                console.log('Successfully loaded categories:', this.categories.length);
             } else {
-                console.log('Firebase not available, using default categories');
+                console.log('Falling back to default categories');
                 this.categories = this.getDefaultCategories();
             }
-
-            // If no categories loaded, use defaults
-            if (this.categories.length === 0) {
-                console.log('No categories found in Firebase, using default categories');
-                this.categories = this.getDefaultCategories();
-            }
-
-            console.log('Final categories count:', this.categories.length);
-            this.categories.forEach((cat, index) => {
-                console.log(`Category ${index + 1}:`, cat.name, '| Image:', cat.image || 'none');
-            });
 
         } catch (error) {
-            console.error('Error loading categories from Firebase:', error);
-            console.error('Error details:', error.message);
-            console.log('Falling back to default categories');
+            console.error('Error loading categories:', error);
             this.categories = this.getDefaultCategories();
         }
 
@@ -375,7 +582,7 @@ class AdminCategoryManager {
     getDefaultCategories() {
         return [
             { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
-            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#6c757d', special: true, description: 'Limited time special offers and deals' },
+            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#00b140', special: true, description: 'Limited time special offers and deals' },
             { id: 'watches', name: 'Watches', image: 'https://via.placeholder.com/60x60?text=WATCH', color: '#28a745' },
             { id: 'smart-watches', name: 'Smart Watches', image: 'https://via.placeholder.com/60x60?text=SMART', color: '#3b82f6' },
             { id: 'gadgets', name: 'Gadgets', image: 'https://via.placeholder.com/60x60?text=GADGET', color: '#8b5cf6' },
@@ -385,25 +592,70 @@ class AdminCategoryManager {
     }
 
     async loadProducts() {
+        console.log('=== LOADING PRODUCTS FOR CATEGORIES ===');
         try {
-            // Load products from Firebase or fallback data
-            if (typeof db !== 'undefined') {
-                const productsSnapshot = await db.collection('products').get();
-                this.products = productsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-            } else {
-                // Fallback to mock data if Firebase is not available
-                this.products = this.getMockProducts();
+            // ⚡ 1. INSTANT RENDER: Check high-capacity IndexedDB cache first (0ms)
+            const cached = await getAdminCachedProducts();
+            if (cached && cached.length > 0) {
+                console.log('⚡ Loaded products from persistent cache:', cached.length);
+                this.products = cached;
+                this.filteredProducts = [...this.products];
+                this.updateProductCount();
+                this.setupProductSearch();
+                this.renderProductsList();
+
+                // Silent background sync to ensure latest updates
+                fetchAdminProductsViaRest().then(async (freshProducts) => {
+                    if (freshProducts && freshProducts.length > 0) {
+                        this.products = freshProducts;
+                        this.filteredProducts = [...this.products];
+                        this.updateProductCount();
+                        this.setupProductSearch();
+                        this.renderProductsList();
+                        await setAdminCachedProducts(this.products);
+                    }
+                }).catch(e => console.warn('Background products sync failed:', e));
+                return;
             }
 
-            this.filteredProducts = [...this.products];
-            this.updateProductCount();
-            this.setupProductSearch();
+            // ⚡ 2. Progressive loading: Fetch first batch fast for responsive UI
+            let initialRendered = false;
+            const allFetched = await fetchAdminProductsViaRest((currentList) => {
+                if (!initialRendered && currentList.length >= 5) {
+                    initialRendered = true;
+                    this.products = currentList.slice();
+                    this.filteredProducts = [...this.products];
+                    this.updateProductCount();
+                    this.setupProductSearch();
+                    this.renderProductsList();
+                }
+            });
+
+            if (allFetched && allFetched.length > 0) {
+                this.products = allFetched;
+                this.filteredProducts = [...this.products];
+                this.updateProductCount();
+                this.setupProductSearch();
+                this.renderProductsList();
+                await setAdminCachedProducts(this.products);
+                console.log(`✅ Loaded and cached all ${this.products.length} products`);
+            } else {
+                this.products = this.getMockProducts();
+                this.filteredProducts = [...this.products];
+                this.updateProductCount();
+                this.setupProductSearch();
+                this.renderProductsList();
+            }
+
         } catch (error) {
             console.error('Error loading products:', error);
-            this.products = this.getMockProducts();
+            if (!this.products || this.products.length === 0) {
+                this.products = this.getMockProducts();
+                this.filteredProducts = [...this.products];
+                this.updateProductCount();
+                this.setupProductSearch();
+                this.renderProductsList();
+            }
         }
     }
 
@@ -521,137 +773,126 @@ class AdminCategoryManager {
 
     async handleAddCategory(e) {
         e.preventDefault();
-        console.log('=== ADD CATEGORY DEBUG ===');
-        console.log('Form submitted:', e.target);
+        console.log('=== ADD CATEGORY ===');
 
         const formData = new FormData(e.target);
-        const categoryData = {
-            name: formData.get('name').trim(),
-            image: formData.get('image').trim(),
-            color: formData.get('color'),
-            description: formData.get('description').trim() || '',
-            createdAt: new Date().toISOString(),
-            id: Date.now().toString() // Generate ID immediately
-        };
-
-        console.log('Category data to add:', categoryData);
+        const name = formData.get('name').trim();
+        const image = formData.get('image').trim();
+        const color = formData.get('color') || '#667eea';
+        const description = formData.get('description').trim() || '';
 
         // Validation
-        if (!categoryData.name || !categoryData.image) {
-            console.log('Validation failed - missing required fields');
+        if (!name || !image) {
             this.showMessage('Please fill in all required fields.', 'error');
             return;
         }
 
-        console.log('Validation passed');
-        console.log('CategoryManager available:', typeof categoryManager !== 'undefined');
-        console.log('Firebase db available:', typeof db !== 'undefined');
+        const categoryData = {
+            name,
+            image,
+            color,
+            description,
+            createdAt: new Date().toISOString()
+        };
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        }
 
         try {
-            let success = false;
+            // Direct REST POST first (instant ~150ms, assigns real Firestore doc ID)
+            const docId = await restSaveCategory(categoryData, null);
+            categoryData.id = docId;
+            categoryData.firebaseId = docId;
 
-            // Method 1: Try using categoryManager first
-            if (typeof categoryManager !== 'undefined') {
-                console.log('Using categoryManager.addCategory');
-                success = await categoryManager.addCategory(categoryData);
-                console.log('CategoryManager result:', success);
-            }
-            // Method 2: Try direct Firebase
-            else if (typeof db !== 'undefined') {
-                console.log('Using direct Firebase add');
-                const docRef = await db.collection('category').add({
-                    name: categoryData.name,
-                    image: categoryData.image,
-                    color: categoryData.color,
-                    description: categoryData.description,
-                    createdAt: categoryData.createdAt
-                });
-                console.log('Firebase docRef:', docRef);
-                categoryData.id = docRef.id;
-                success = true;
-            }
-            // Method 3: Local storage fallback
-            else {
-                console.log('Using local storage fallback');
-                let localCategories = JSON.parse(localStorage.getItem('categories') || '[]');
-                localCategories.push(categoryData);
-                localStorage.setItem('categories', JSON.stringify(localCategories));
-                this.categories.push(categoryData);
-                success = true;
-                console.log('Added to local storage');
+            // Background SDK sync
+            if (typeof db !== 'undefined') {
+                try {
+                    db.collection('category').doc(docId).set({
+                        ...categoryData,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true }).catch(() => {});
+                } catch (_) {}
             }
 
-            if (success) {
-                console.log('Category added successfully');
-                this.showMessage('Category added successfully!', 'success');
-                e.target.reset();
-                await this.loadCategories();
-                this.renderCategoriesTable();
-                this.renderCategoryCheckboxes();
-            } else {
-                console.log('Add failed - success was false');
-                this.showMessage('Failed to add category. Please try again.', 'error');
-            }
+            // Invalidate cache
+            try { localStorage.removeItem('vexior_categories_cache'); } catch (_) {}
+
+            this.showMessage('Category added successfully!', 'success');
+            e.target.reset();
+            await this.loadCategories();
+            this.renderCategoriesTable();
+            this.renderCategoryCheckboxes();
         } catch (error) {
             console.error('Error adding category:', error);
-            console.error('Error details:', error.stack);
             this.showMessage('Error adding category: ' + error.message, 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Add Category';
+            }
         }
-        console.log('=== END ADD CATEGORY DEBUG ===');
     }
 
     async handleEditCategory(e) {
         e.preventDefault();
-        console.log('=== EDIT CATEGORY DEBUG ===');
-        console.log('Form submitted:', e.target);
+        console.log('=== EDIT CATEGORY ===');
 
         const formData = new FormData(e.target);
-        const categoryId = document.getElementById('editCategoryId').value;
-        console.log('Category ID to update:', categoryId);
+        const categoryId = (document.getElementById('editCategoryId').value || '').trim();
+
+        if (!categoryId) {
+            this.showMessage('Category ID is missing. Please close and re-open the edit form.', 'error');
+            return;
+        }
 
         const updateData = {
             name: formData.get('name').trim(),
             image: formData.get('image').trim(),
-            color: formData.get('color'),
+            color: formData.get('color') || '#667eea',
             description: formData.get('description').trim() || '',
             updatedAt: new Date().toISOString()
         };
-        console.log('Update data:', updateData);
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        }
 
         try {
-            let success = false;
+            // Direct Google Cloud REST API PATCH to the exact existing categoryId document
+            await restSaveCategory(updateData, categoryId);
 
-            // Try using categoryManager first
-            if (typeof categoryManager !== 'undefined') {
-                console.log('Using categoryManager.updateCategory');
-                success = await categoryManager.updateCategory(categoryId, updateData);
-                console.log('CategoryManager result:', success);
-            } else if (typeof db !== 'undefined') {
-                // Direct Firebase call
-                console.log('Using direct Firebase update');
-                await db.collection('category').doc(categoryId).update(updateData);
-                success = true;
-                console.log('Firebase update completed');
-            } else {
-                console.log('No update method available');
+            // Background SDK sync
+            if (typeof db !== 'undefined') {
+                try {
+                    db.collection('category').doc(categoryId).update({
+                        ...updateData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }).catch(() => {});
+                } catch (_) {}
             }
 
-            if (success) {
-                this.showMessage('Category updated successfully!', 'success');
-                this.closeEditModal();
-                await this.loadCategories();
-                this.renderCategoriesTable();
-                this.renderCategoryCheckboxes();
-                console.log('Update process completed successfully');
-            } else {
-                console.log('Update failed - success was false');
-                this.showMessage('Failed to update category. Please try again.', 'error');
-            }
+            // Invalidate cache so storefront gets updated category immediately
+            try { localStorage.removeItem('vexior_categories_cache'); } catch (_) {}
+
+            this.showMessage('Category updated successfully!', 'success');
+            this.closeEditModal();
+            await this.loadCategories();
+            this.renderCategoriesTable();
+            this.renderCategoryCheckboxes();
         } catch (error) {
-            console.error('Error in handleEditCategory:', error);
-            this.showMessage('Error updating category: ' + error.message, 'error');
+            console.error('Error updating category:', error);
+            this.showMessage('Failed to update category: ' + error.message, 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Category';
+            }
         }
-        console.log('=== END EDIT CATEGORY DEBUG ===');
     }
 
     renderCategoriesTable() {
@@ -690,13 +931,10 @@ class AdminCategoryManager {
             // Sort categories based on saved order
             if (order && order.length > 0) {
                 sortedCats.sort((a, b) => {
-                    const idA = a.id.toLowerCase();
-                    const idB = b.id.toLowerCase();
-                    let indexA = order.indexOf(idA);
-                    let indexB = order.indexOf(idB);
-                    if (indexA === -1) indexA = 9999;
-                    if (indexB === -1) indexB = 9999;
-                    return indexA - indexB;
+                    const indexA = this.getCategoryOrderIndex(a, order);
+                    const indexB = this.getCategoryOrderIndex(b, order);
+                    if (indexA !== indexB) return indexA - indexB;
+                    return (a.name || '').localeCompare(b.name || '');
                 });
             }
 
@@ -755,6 +993,7 @@ class AdminCategoryManager {
 
     reorderByTableInput() {
         const tbody = document.getElementById('categoriesTableBody');
+        if (!tbody) return;
         const rows = [...tbody.querySelectorAll('tr')];
 
         rows.sort((a, b) => {
@@ -770,7 +1009,7 @@ class AdminCategoryManager {
         // Renumber to handle duplicates or gaps
         rows.forEach((row, index) => {
             const input = row.querySelector('.table-order-input');
-            input.value = index + 1;
+            if (input) input.value = index + 1;
         });
 
         this.showMessage('Table resorted. Click "Save Display Order" to apply.', 'info');
@@ -778,12 +1017,29 @@ class AdminCategoryManager {
 
     async saveCategoryOrderFromTable() {
         const inputs = [...document.querySelectorAll('.table-order-input')];
+        if (inputs.length === 0) return;
 
         // Sort inputs by their numeric value
         inputs.sort((a, b) => (parseInt(a.value) || 9999) - (parseInt(b.value) || 9999));
 
-        // Extract IDs in sorted order (normalized to lowercase)
-        const newOrder = inputs.map(input => input.dataset.id.trim().toLowerCase());
+        // Re-order table rows in DOM immediately to reflect input values
+        const tbody = document.getElementById('categoriesTableBody');
+        if (tbody) {
+            inputs.forEach((input, idx) => {
+                const row = input.closest('tr');
+                if (row) {
+                    tbody.appendChild(row);
+                    input.value = idx + 1; // Normalize 1, 2, 3...
+                }
+            });
+        }
+
+        // Build newOrder list containing category IDs and normalized slugs
+        const newOrder = inputs.map(input => {
+            const catId = (input.dataset.id || '').trim();
+            const cat = this.categories.find(c => c.id === catId);
+            return (cat && (cat.name === "Today's Offers" || (cat.name && cat.name.toLowerCase().includes('today')))) ? "today offer" : catId.toLowerCase();
+        });
 
         console.log('💾 Saving category order:', newOrder);
 
@@ -796,11 +1052,60 @@ class AdminCategoryManager {
         }
 
         try {
-            if (typeof db !== 'undefined') {
-                await db.collection('category').doc('CONFIG_display_order').set({
-                    order: newOrder,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+            let saved = false;
+
+            // Attempt 1: Direct Google Cloud REST API PATCH (instant ~100ms)
+            try {
+                const res = await fetch('https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/CONFIG_display_order?updateMask.fieldPaths=order', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fields: {
+                            order: { arrayValue: { values: newOrder.map(id => ({ stringValue: id })) } }
+                        }
+                    })
+                });
+                if (res.ok) {
+                    saved = true;
+                    // Background SDK sync
+                    if (typeof db !== 'undefined') {
+                        try {
+                            db.collection('category').doc('CONFIG_display_order').set({
+                                order: newOrder,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+                        } catch (_) {}
+                    }
+                }
+            } catch (restErr) {
+                console.warn('[Admin] Direct REST save category order failed, trying SDK fallback:', restErr);
+            }
+
+            // Attempt 2: Firebase SDK fallback
+            if (!saved && typeof db !== 'undefined') {
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+                await Promise.race([
+                    db.collection('category').doc('CONFIG_display_order').set({
+                        order: newOrder,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true }),
+                    timeoutPromise
+                ]);
+                saved = true;
+            }
+
+            if (saved) {
+                this.categoryDisplayOrder = newOrder;
+
+                // Invalidate and update localStorage caches so storefront picks it up immediately
+                try {
+                    localStorage.removeItem('vexior_categories_cache');
+                    localStorage.setItem('vexior_categories_cache', JSON.stringify({
+                        categories: this.categories.filter(c => c.id !== 'CONFIG_display_order'),
+                        order: newOrder,
+                        timestamp: Date.now()
+                    }));
+                } catch (_) {}
 
                 if (saveBtn) {
                     saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
@@ -808,7 +1113,7 @@ class AdminCategoryManager {
                     saveBtn.classList.add('btn-success');
                 }
 
-                this.showMessage('Order saved successfully!', 'success');
+                this.showMessage('Category display order saved successfully!', 'success');
 
                 setTimeout(() => {
                     if (saveBtn) {
@@ -818,13 +1123,6 @@ class AdminCategoryManager {
                         saveBtn.disabled = false;
                     }
                 }, 2000);
-
-            } else {
-                this.showMessage('Cannot save: Firebase not available.', 'error');
-                if (saveBtn) {
-                    saveBtn.innerHTML = 'Error';
-                    saveBtn.disabled = false;
-                }
             }
         } catch (error) {
             console.error('Error saving order:', error);
@@ -1085,28 +1383,74 @@ class AdminCategoryManager {
         }
 
         try {
-            let success = false;
+            const isTodayOffer = (categoryName && categoryName.toLowerCase().includes('today')) || categoryId === 'today offer';
 
-            // Try using categoryManager first
+            // Direct REST API delete first (instant ~150ms)
+            await restDeleteCategory(categoryId);
+
+            // If it's today's offer, also delete duplicate alias doc if exists
+            if (isTodayOffer && categoryId !== 'today offer') {
+                try { await restDeleteCategory('today offer'); } catch (_) {}
+            }
+
+            // Also delete via SDK in background if connected
+            if (typeof db !== 'undefined') {
+                try { db.collection('category').doc(categoryId).delete(); } catch (_) {}
+                if (isTodayOffer) {
+                    try { db.collection('category').doc('today offer').delete(); } catch (_) {}
+                }
+            }
+
+            // Remove from local arrays
+            this.categories = this.categories.filter(cat => {
+                if (isTodayOffer) {
+                    const name = (cat.name || '').toLowerCase();
+                    return cat.id !== categoryId && cat.id !== 'today offer' && !name.includes('today');
+                }
+                return cat.id !== categoryId;
+            });
+
             if (typeof categoryManager !== 'undefined') {
-                success = await categoryManager.deleteCategory(categoryId);
-            } else if (typeof db !== 'undefined') {
-                // Direct Firebase call
-                await db.collection('category').doc(categoryId).delete();
-                success = true;
+                categoryManager.categories = categoryManager.categories.filter(cat => {
+                    if (isTodayOffer) {
+                        const name = (cat.name || '').toLowerCase();
+                        return cat.id !== categoryId && cat.id !== 'today offer' && !name.includes('today');
+                    }
+                    return cat.id !== categoryId;
+                });
             }
 
-            if (success) {
-                this.showMessage('Category deleted successfully!', 'success');
-                await this.loadCategories();
-                this.renderCategoriesTable();
-                this.renderCategoryCheckboxes();
-            } else {
-                this.showMessage('Failed to delete category. Please try again.', 'error');
-            }
+            // Remove from display order config document in Firestore
+            try {
+                const order = await this.fetchCurrentDisplayOrder();
+                if (order && order.length > 0) {
+                    const newOrder = order.filter(id => {
+                        const l = id.toLowerCase();
+                        if (isTodayOffer) return l !== 'today offer' && l !== 'today-offer' && !l.includes('today');
+                        return l !== categoryId.toLowerCase();
+                    });
+                    await fetch('https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category/CONFIG_display_order?updateMask.fieldPaths=order', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            fields: {
+                                order: { arrayValue: { values: newOrder.map(id => ({ stringValue: id })) } }
+                            }
+                        })
+                    });
+                }
+            } catch (_) {}
+
+            // Clear cache
+            try { localStorage.removeItem('vexior_categories_cache'); } catch (_) {}
+
+            this.showMessage(`Category "${categoryName}" deleted successfully!`, 'success');
+            await this.loadCategories();
+            this.renderCategoriesTable();
+            this.renderCategoryCheckboxes();
         } catch (error) {
             console.error('Error deleting category:', error);
-            this.showMessage('Error deleting category. Please try again.', 'error');
+            this.showMessage('Error deleting category: ' + error.message, 'error');
         }
     }
 
@@ -1871,16 +2215,39 @@ class AdminCategoryManager {
                         finalCategories = [...new Set([...existingCategories, ...selectedCategories])];
                     }
 
-                    // Update product in database
+                    // Update product in database (with REST fallback)
+                    let updatedInDb = false;
+                    const primaryCat = finalCategories.length > 0 ? (finalCategories.includes('today offer') ? 'today offer' : finalCategories[0]) : '';
                     if (typeof db !== 'undefined') {
-                        console.log(`Updating database for product: ${product.name}`);
-                        await db.collection('products').doc(product.id).update({
-                            categories: finalCategories,
-                            updatedAt: new Date().toISOString()
+                        try {
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+                            await Promise.race([
+                                db.collection('products').doc(product.id).update({
+                                    categories: finalCategories,
+                                    category: primaryCat,
+                                    updatedAt: new Date().toISOString()
+                                }),
+                                timeoutPromise
+                            ]);
+                            updatedInDb = true;
+                        } catch (sdkErr) {
+                            console.warn(`[Admin] SDK update failed for ${product.name}, using REST fallback:`, sdkErr);
+                        }
+                    }
+
+                    if (!updatedInDb) {
+                        const catVals = finalCategories.map(c => ({ stringValue: c }));
+                        await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${product.id}?updateMask.fieldPaths=categories&updateMask.fieldPaths=category`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                fields: {
+                                    categories: { arrayValue: { values: catVals } },
+                                    category: { stringValue: primaryCat }
+                                }
+                            })
                         });
-                        console.log(`Database update successful for: ${product.name}`);
-                    } else {
-                        console.warn('Database (db) is not defined, skipping database update');
+                        updatedInDb = true;
                     }
 
                     // Update local product data

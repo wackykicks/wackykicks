@@ -894,7 +894,7 @@ let currentPurchaseData = null;
 
 
 // ✅ Enhanced WhatsApp Redirect Function with Multiple Fallbacks
-function simpleRedirectToWhatsApp(message, phoneNumber = '918138999550') {
+function simpleRedirectToWhatsApp(message, phoneNumber = '917012131615') {
     console.log('🚀 Starting WhatsApp redirect with message:', message);
 
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -1009,7 +1009,7 @@ function proceedWithAddress() {
 }
 
 // ✅ Enhanced WhatsApp Redirect/Forward Function
-function redirectToWhatsApp(message, phoneNumber = '918138999550') {
+function redirectToWhatsApp(message, phoneNumber = '917012131615') {
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
     // Validate message and phone number
@@ -1086,7 +1086,7 @@ function redirectToWhatsApp(message, phoneNumber = '918138999550') {
 }
 
 // ✅ Simple WhatsApp Redirect Fallback Function
-function simpleWhatsAppRedirect(message, phoneNumber = '918138999550') {
+function simpleWhatsAppRedirect(message, phoneNumber = '917012131615') {
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }
@@ -1603,8 +1603,10 @@ async function loadRelatedProducts() {
         relatedProducts.forEach(product => {
             const relatedDiscountPercentage = calculateDiscountPercentage(product.oldPrice, product.newPrice || product.price);
 
-            // Check if product is out of stock
-            const isOutOfStock = product.categories && product.categories.includes('out-of-stock');
+            // Check if product is out of stock (category or stock field)
+            const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+            const isOutOfStockByStock = typeof product.stock !== 'undefined' && Number(product.stock) <= 0;
+            const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
 
             const relatedCard = document.createElement('div');
             relatedCard.className = 'related-card';

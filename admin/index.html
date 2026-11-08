@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Manage Products | Vexior Admin</title>
-    <link rel="icon" href="../Logo/VEXIOR_logo.png" type="image/png">
+    <link rel="icon" href="../Logo/VEXIOR_logo.png" onerror="this.onerror=null;this.href='Logo/VEXIOR_logo.png';" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <style>
@@ -1399,7 +1399,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="../floating-alerts.css">
+    <link rel="stylesheet" href="../floating-alerts.css" onerror="this.onerror=null;this.href='floating-alerts.css';">
 </head>
 
 <body>
@@ -1426,7 +1426,7 @@
         <!-- Header Section -->
         <div class="admin-header">
             <a href="../index.html" style="display: inline-block; margin-bottom: 15px;">
-                <img src="../Logo/VEXIOR_logo.png" alt="Vexior" style="height: 48px; object-fit: contain;">
+                <img src="../Logo/VEXIOR_logo.png" onerror="this.onerror=null;this.src='Logo/VEXIOR_logo.png';" alt="Vexior" style="height: 48px; object-fit: contain;">
             </a>
             <h1><i class="fas fa-cogs"></i> Product Management</h1>
             <p class="subtitle">Add, edit, and manage your store products with ease</p>
@@ -1483,6 +1483,13 @@
                 <div class="form-group">
                     <label>Stock (leave 0 for out of stock)</label>
                     <input type="number" id="productStock" min="0" placeholder="Eg: 10">
+                </div>
+
+                <div class="form-group" style="margin-top: -5px; margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #dc2626;">
+                        <input type="checkbox" id="productOutOfStock" style="width: 18px; height: 18px; accent-color: #dc2626; cursor: pointer;">
+                        <span>Mark as Out of Stock (Stockout)</span>
+                    </label>
                 </div>
 
                 <div class="form-group">
@@ -1736,16 +1743,50 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Safe alert helper that never crashes if FloatingAlertManager is absent
+        function notify(type, msg, title) {
+            if (window.alerts && typeof window.alerts[type] === 'function') {
+                window.alerts[type](msg, title);
+            } else if (type === 'error' || type === 'warning') {
+                alert((title ? title + ': ' : '') + msg);
+            } else {
+                console.log(`[Admin ${type}]`, title || '', msg);
+            }
+        }
+
         // Form references
         const nameInput = document.getElementById("productName");
         const oldPriceInput = document.getElementById("productOldPrice");
         const newPriceInput = document.getElementById("productNewPrice");
         const stockInput = document.getElementById("productStock");
+        const outOfStockCheckbox = document.getElementById("productOutOfStock");
         const imageInputsContainer = document.getElementById("imageInputs");
         const productList = document.getElementById("productList");
         const sizesInput = document.getElementById("productSizes");
         const colorsInput = document.getElementById("productColors");
         const descriptionInput = document.getElementById("productDescription");
+
+        // Sync Out of Stock checkbox with stock input
+        if (outOfStockCheckbox) {
+            outOfStockCheckbox.addEventListener('change', () => {
+                if (outOfStockCheckbox.checked) {
+                    stockInput.value = "0";
+                    stockInput.disabled = true;
+                } else {
+                    stockInput.disabled = false;
+                    if (stockInput.value === "0" || !stockInput.value) {
+                        stockInput.value = "10";
+                    }
+                }
+            });
+        }
+        if (stockInput) {
+            stockInput.addEventListener('input', () => {
+                if (outOfStockCheckbox) {
+                    outOfStockCheckbox.checked = (parseInt(stockInput.value) === 0);
+                }
+            });
+        }
 
         let editMode = false;
         let editingProductId = null;
@@ -1813,13 +1854,9 @@
                 }
 
                 // Visual feedback
-                if (window.FloatingAlertManager) {
-                    window.alerts.success(`Added ${colorName} to selection`, 'Color Added');
-                }
+                notify('success', `Added ${colorName} to selection`, 'Color Added');
             } else {
-                if (window.FloatingAlertManager) {
-                    window.alerts.warning(`${colorName} is already selected`, 'Color Already Selected');
-                }
+                notify('warning', `${colorName} is already selected`, 'Color Already Selected');
             }
         };
 
@@ -1831,11 +1868,7 @@
             const hexValue = colorPicker.value;
 
             if (!colorName) {
-                if (window.FloatingAlertManager) {
-                    window.alerts.warning('Please enter a color name', 'Color Name Required');
-                } else {
-                    alert('Please enter a color name');
-                }
+                notify('warning', 'Please enter a color name', 'Color Name Required');
                 return;
             }
 
@@ -1865,13 +1898,9 @@
                 nameInput.value = '';
                 colorPicker.value = '#3b82f6';
 
-                if (window.FloatingAlertManager) {
-                    window.alerts.success(`Added custom color: ${colorName}`, 'Custom Color Added');
-                }
+                notify('success', `Added custom color: ${colorName}`, 'Custom Color Added');
             } else {
-                if (window.FloatingAlertManager) {
-                    window.alerts.warning(`${colorName} is already selected`, 'Color Already Selected');
-                }
+                notify('warning', `${colorName} is already selected`, 'Color Already Selected');
             }
         };
 
@@ -1969,6 +1998,8 @@
             oldPriceInput.value = "";
             newPriceInput.value = "";
             stockInput.value = "";
+            stockInput.disabled = false;
+            if (outOfStockCheckbox) outOfStockCheckbox.checked = false;
             sizesInput.value = "";
             descriptionInput.value = "";
             document.getElementById("multiImageInput").value = "";
@@ -2105,9 +2136,7 @@
                     updateImagePreview();
                 } catch (error) {
                     console.error('Error processing image:', error);
-                    if (window.FloatingAlertManager) {
-                        window.alerts.error(`Failed to process ${file.name}`, 'Upload Error');
-                    }
+                    notify('error', `Failed to process ${file.name}`, 'Upload Error');
                 }
             }
         }
@@ -2124,10 +2153,10 @@
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
 
-                        // Calculate new dimensions (max 1200px width/height)
+                        // Calculate new dimensions (max 900px width/height for fast loading & Firestore limits)
                         let width = img.width;
                         let height = img.height;
-                        const maxSize = 1200;
+                        const maxSize = 900;
 
                         if (width > maxSize || height > maxSize) {
                             if (width > height) {
@@ -2149,8 +2178,8 @@
                         let quality = 0.8;
                         let base64 = canvas.toDataURL('image/jpeg', quality);
 
-                        // If still too large (>400KB), reduce quality
-                        while (base64.length > 400000 && quality > 0.3) {
+                        // Ensure each image is <= 180KB so multiple images never exceed Firestore 1MB doc limit
+                        while (base64.length > 180000 && quality > 0.25) {
                             quality -= 0.1;
                             base64 = canvas.toDataURL('image/jpeg', quality);
                         }
@@ -2216,45 +2245,292 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
-        // Load products
-        async function loadProducts() {
-            showLoadingState();
-            try {
-                const snapshot = await getDocs(collection(db, "products"));
-                allProducts = []; // Clear the array
+        // ✅ High-Capacity IndexedDB Cache for admin (shares same DB as storefront)
+        const DB_NAME = 'VexiorCatalogDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'products_store';
 
-                snapshot.forEach(docSnap => {
-                    const product = docSnap.data();
-                    allProducts.push({
-                        id: docSnap.id,
-                        ...product
-                    });
-                });
-
-                // Sort products: newest first (with createdAt), then existing products
-                allProducts.sort((a, b) => {
-                    if (a.createdAt && b.createdAt) {
-                        return new Date(b.createdAt) - new Date(a.createdAt);
-                    } else if (a.createdAt) {
-                        return -1; // a comes first
-                    } else if (b.createdAt) {
-                        return 1; // b comes first
+        function openProductIndexedDB() {
+            return new Promise((resolve, reject) => {
+                if (typeof window === 'undefined' || !window.indexedDB) {
+                    reject(new Error('IndexedDB not supported'));
+                    return;
+                }
+                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const idb = e.target.result;
+                    if (!idb.objectStoreNames.contains(STORE_NAME)) {
+                        idb.createObjectStore(STORE_NAME);
                     }
-                    return 0; // keep existing order for products without createdAt
-                });
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
 
-                displayProducts(allProducts);
-                updateSearchInfo(allProducts.length, allProducts.length);
-            } catch (error) {
-                console.error("Error loading products:", error);
-                productList.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #dc2626;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 15px;"></i>
-                <p>Error loading products. Please try again.</p>
-            </div>
-        `;
+        async function getCachedProductsAsync() {
+            try {
+                const idb = await openProductIndexedDB();
+                return await new Promise((resolve) => {
+                    const tx = idb.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const req = store.get('all_products');
+                    req.onsuccess = () => {
+                        const res = req.result;
+                        if (res && Array.isArray(res.data) && res.data.length > 0) {
+                            resolve(res.data);
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
             }
         }
+
+        async function setCachedProductsAsync(products) {
+            if (!products || !products.length) return;
+            try {
+                const idb = await openProductIndexedDB();
+                const tx = idb.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                store.put({ timestamp: Date.now(), data: products }, 'all_products');
+            } catch (e) {
+                console.warn('[Admin] Could not save to IndexedDB:', e);
+            }
+        }
+
+        // Parse Firestore REST document values
+        function parseFirestoreValue(val) {
+            if (!val) return null;
+            if ('stringValue' in val) return val.stringValue;
+            if ('integerValue' in val) return parseInt(val.integerValue, 10);
+            if ('doubleValue' in val) return parseFloat(val.doubleValue);
+            if ('booleanValue' in val) return val.booleanValue;
+            if ('timestampValue' in val) return val.timestampValue;
+            if ('arrayValue' in val) {
+                const values = (val.arrayValue && val.arrayValue.values) || [];
+                return values.map(v => parseFirestoreValue(v));
+            }
+            if ('mapValue' in val) {
+                const fields = (val.mapValue && val.mapValue.fields) || {};
+                const res = {};
+                for (const k of Object.keys(fields)) {
+                    res[k] = parseFirestoreValue(fields[k]);
+                }
+                return res;
+            }
+            return null;
+        }
+
+        function parseFirestoreProductDoc(doc) {
+            if (!doc || !doc.fields) return null;
+            const id = doc.name ? doc.name.split('/').pop() : '';
+            const fields = doc.fields || {};
+            const item = { id };
+            for (const key of Object.keys(fields)) {
+                item[key] = parseFirestoreValue(fields[key]);
+            }
+            if (typeof item.imgUrl === 'string') {
+                item.imgUrl = [item.imgUrl];
+            } else if (!Array.isArray(item.imgUrl)) {
+                item.imgUrl = item.img ? [item.img] : [];
+            }
+            item.img = item.imgUrl[0] || item.img || '';
+            item.categories = item.categories || [];
+            return item;
+        }
+
+        // ✅ Paginated Google Cloud REST API Fetcher (loops through nextPageToken to load ALL products)
+        async function fetchProductsFromRestApi(targetCount = Infinity, onPageLoaded = null) {
+            console.log(`🌐 [Admin] Fetching products via REST API (target: ${targetCount === Infinity ? 'all' : targetCount})...`);
+            let allFetched = [];
+            let pageToken = null;
+            let pageNum = 0;
+
+            do {
+                pageNum++;
+                let url = `https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products?pageSize=100`;
+                if (pageToken) {
+                    url += `&pageToken=${encodeURIComponent(pageToken)}`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Firestore REST API returned HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const pageDocs = (data.documents || [])
+                    .map(parseFirestoreProductDoc)
+                    .filter(p => p !== null);
+
+                if (pageDocs.length > 0) {
+                    allFetched = allFetched.concat(pageDocs);
+                    console.log(`📦 [Admin] REST Page ${pageNum}: fetched ${pageDocs.length} products (total so far: ${allFetched.length})`);
+                    
+                    if (typeof onPageLoaded === 'function') {
+                        onPageLoaded(allFetched, pageDocs, !data.nextPageToken);
+                    }
+                }
+
+                pageToken = data.nextPageToken || null;
+
+                if (allFetched.length >= targetCount) {
+                    break;
+                }
+            } while (pageToken);
+
+            return allFetched;
+        }
+
+        // Select initial 10 products (5 categorized + 5 general)
+        function selectInitial10Products(productsList) {
+            if (!productsList || productsList.length <= 10) return productsList || [];
+
+            const categorized = [];
+            const general = [];
+
+            productsList.forEach(p => {
+                if (p.categories && Array.isArray(p.categories) && p.categories.length > 0) {
+                    categorized.push(p);
+                } else {
+                    general.push(p);
+                }
+            });
+
+            const initialCategory = categorized.slice(0, 5);
+            const slotsForGeneral = 10 - initialCategory.length;
+            const initialGeneral = general.slice(0, slotsForGeneral);
+
+            let result = [...initialCategory, ...initialGeneral];
+            if (result.length < 10) {
+                const extraCategory = categorized.slice(5, 5 + (10 - result.length));
+                result = [...result, ...extraCategory];
+            }
+            if (result.length < 10) {
+                const resultIds = new Set(result.map(p => p.id));
+                for (const p of productsList) {
+                    if (!resultIds.has(p.id)) {
+                        result.push(p);
+                        if (result.length >= 10) break;
+                    }
+                }
+            }
+            return result;
+        }
+
+        // ⚡ Fast 2-Stage Product Loader for Admin:
+        // - If already loaded and cached: KEEP all cached products immediately (0ms instant render) and sync in background.
+        // - If first time (no cache) or force refresh: Load 10 products first (5 category + 5 general) for instant display, then load all remaining.
+        async function loadProducts(forceRefresh = false) {
+            console.log('🔄 [Admin] Loading products...');
+
+            // ⚡ 1. INSTANT RENDER: Check high-capacity IndexedDB cache first (0ms)
+            if (!forceRefresh) {
+                const cached = await getCachedProductsAsync();
+                if (cached && cached.length > 0) {
+                    console.log('⚡ [Admin] Loaded from persistent cache: KEEPING all', cached.length, 'products');
+                    allProducts = cached;
+                    displayProducts(allProducts);
+                    updateSearchInfo(allProducts.length, allProducts.length);
+
+                    // Silent background sync to ensure latest updates from server
+                    loadRemainingProducts(true);
+                    return;
+                }
+            }
+
+            showLoadingState();
+
+            // ⚡ 2. STAGE 1 (First visit / force refresh): Fetch initial 10 products fast and render immediately
+            try {
+                let initialRendered = false;
+                const initialProducts = await fetchProductsFromRestApi(10, (currentList) => {
+                    if (!initialRendered && currentList.length >= 3) {
+                        initialRendered = true;
+                        allProducts = selectInitial10Products(currentList);
+                        displayProducts(allProducts);
+                        updateSearchInfo(allProducts.length, allProducts.length);
+                    }
+                });
+
+                initialProducts.sort((a, b) => {
+                    if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+                    if (a.createdAt) return -1;
+                    if (b.createdAt) return 1;
+                    return 0;
+                });
+
+                allProducts = selectInitial10Products(initialProducts);
+                displayProducts(allProducts);
+                updateSearchInfo(allProducts.length, allProducts.length);
+
+                // ⚡ 3. STAGE 2: Seamlessly stream and load ALL remaining products across all pages
+                loadRemainingProducts(false);
+
+            } catch (error) {
+                console.error("❌ [Admin] Error fetching initial products: ", error);
+                loadRemainingProducts(false);
+            }
+        }
+        window.loadProducts = loadProducts;
+
+        // ⚡ Stage 2: Load ALL products across all pages and cache in IndexedDB
+        async function loadRemainingProducts(isSilentSync = false) {
+            console.log(isSilentSync ? '🔄 [Admin] Background sync: Keeping current products, checking for updates...' : '🔄 [Admin] Stage 2: Loading ALL remaining products across all pages...');
+
+            try {
+                const fullProducts = await fetchProductsFromRestApi(Infinity, (currentList) => {
+                    if (!isSilentSync && !isSearchActive) {
+                        const sorted = currentList.slice();
+                        sorted.sort((a, b) => {
+                            if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+                            if (a.createdAt) return -1;
+                            if (b.createdAt) return 1;
+                            return 0;
+                        });
+                        allProducts = sorted;
+                        displayProducts(allProducts);
+                        updateSearchInfo(allProducts.length, allProducts.length);
+                    }
+                });
+
+                console.log(`✅ [Admin] All ${fullProducts.length} products loaded successfully!`);
+
+                fullProducts.sort((a, b) => {
+                    if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+                    if (a.createdAt) return -1;
+                    if (b.createdAt) return 1;
+                    return 0;
+                });
+
+                allProducts = fullProducts;
+                if (!isSearchActive) {
+                    displayProducts(allProducts);
+                    updateSearchInfo(allProducts.length, allProducts.length);
+                }
+
+                // Persist full catalog in high-capacity IndexedDB
+                await setCachedProductsAsync(allProducts);
+                console.log(`💾 [Admin] Persisted all ${allProducts.length} products to IndexedDB cache`);
+
+            } catch (err) {
+                console.warn('⚠️ [Admin] Error loading remaining products:', err);
+                if (!allProducts || allProducts.length === 0) {
+                    productList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #dc2626;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                            <p>Error loading products. Please try again.</p>
+                            <button onclick="loadProducts(true)" style="margin-top: 15px; padding: 8px 18px; background: #00b140; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Retry</button>
+                        </div>
+                    `;
+                }
+            }
+        }
+        window.loadRemainingProducts = loadRemainingProducts;
 
         function showLoadingState() {
             productList.innerHTML = `
@@ -2268,7 +2544,7 @@
         function displayProducts(products) {
             productList.innerHTML = "";
 
-            if (products.length === 0) {
+            if (!products || products.length === 0) {
                 productList.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #6c757d;">
                 <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px;"></i>
@@ -2279,34 +2555,219 @@
             }
 
             products.forEach(product => {
-                const firstImage = product.imgUrl?.[0] || "";
+                const firstImage = Array.isArray(product.imgUrl) ? (product.imgUrl[0] || "") : (product.imgUrl || product.img || "");
 
                 // Check if product is out of stock (by category or stock field)
                 const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
-                const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && product.stock === 0;
+                const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
                 const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
 
                 // Calculate discount percentage for admin display
-                const discountPercentage = product.oldPrice && product.newPrice && product.oldPrice > product.newPrice
-                    ? Math.round(((product.oldPrice - product.newPrice) / product.oldPrice) * 100)
+                const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
+                    ? Math.round(((Number(product.oldPrice) - Number(product.newPrice)) / Number(product.oldPrice)) * 100)
                     : null;
 
                 const card = document.createElement("div");
                 card.className = "product-card";
+                card.dataset.id = product.id;
                 card.innerHTML = `
             <img src="${firstImage}" alt="Product Image" onerror="this.src='../Logo/VEXIOR_logo.png'">
             <h3>${product.name}</h3>
             <p>₹${product.price || product.newPrice}</p>
-            ${isOutOfStock ? `<p style="color: #ef4444; font-weight: bold;">OUT OF STOCK</p>` :
-                        discountPercentage ? `<p style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF</p>` : '<p style="color: #666;">In Stock</p>'}
-            <div class="actions">
-                <button class="edit-btn" onclick="editProduct('${product.id}')"><i class="fas fa-edit"></i> Edit</button>
-                <button class="delete-btn" onclick="deleteProduct('${product.id}')"><i class="fas fa-trash"></i> Delete</button>
+            ${isOutOfStock ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>` :
+                        discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : '<p class="stock-status-badge" style="color: #666;">In Stock</p>'}
+            <div class="actions" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
+                <button class="edit-btn" onclick="editProduct('${product.id}')" style="flex: 1; min-width: 70px;"><i class="fas fa-edit"></i> Edit</button>
+                <button class="stock-btn" onclick="toggleProductStock('${product.id}', event)" title="${isOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock'}" style="flex: 1.2; min-width: 95px; padding: 6px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: white; background: ${isOutOfStock ? '#16a34a' : '#ef4444'};">
+                    <i class="fas ${isOutOfStock ? 'fa-check-circle' : 'fa-ban'}"></i> ${isOutOfStock ? 'In Stock' : 'Stock Out'}
+                </button>
+                <button class="delete-btn" onclick="deleteProduct('${product.id}', event)" style="flex: 1; min-width: 70px;"><i class="fas fa-trash"></i> Delete</button>
             </div>
         `;
                 productList.appendChild(card);
             });
         }
+
+        // Convert JavaScript values/objects to Firestore REST format
+        function toFirestoreRestValue(val) {
+            if (val === null || val === undefined) return { nullValue: null };
+            if (typeof val === 'string') return { stringValue: val };
+            if (typeof val === 'number') {
+                if (isNaN(val)) return { nullValue: null };
+                if (Number.isInteger(val)) return { integerValue: val.toString() };
+                return { doubleValue: val };
+            }
+            if (typeof val === 'boolean') return { booleanValue: val };
+            if (Array.isArray(val)) {
+                if (val.length === 0) return { arrayValue: {} };
+                return { arrayValue: { values: val.map(toFirestoreRestValue) } };
+            }
+            if (typeof val === 'object') {
+                const fields = {};
+                for (const k of Object.keys(val)) {
+                    if (val[k] !== undefined) {
+                        fields[k] = toFirestoreRestValue(val[k]);
+                    }
+                }
+                return { mapValue: { fields } };
+            }
+            return { stringValue: String(val) };
+        }
+
+        function toFirestoreRestDoc(obj) {
+            const fields = {};
+            for (const key of Object.keys(obj)) {
+                if (key === 'id' || obj[key] === undefined) continue;
+                fields[key] = toFirestoreRestValue(obj[key]);
+            }
+            return { fields };
+        }
+
+        // Resilient Product Save (Direct REST API first for ~150ms instant response)
+        async function saveProductToFirestore(productId, productData, isEdit) {
+            // Attempt 1: Direct Google Cloud REST API (lightning fast ~150ms, never hangs on WebChannel)
+            try {
+                const restDoc = toFirestoreRestDoc(productData);
+                if (isEdit) {
+                    const fieldMask = Object.keys(productData).filter(k => k !== 'id' && productData[k] !== undefined)
+                        .map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+                    const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${encodeURIComponent(productId)}?${fieldMask}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(restDoc)
+                    });
+                    if (!res.ok) throw new Error(`REST PATCH returned HTTP ${res.status}`);
+                    // Background SDK sync
+                    try { updateDoc(doc(db, "products", productId), productData).catch(() => {}); } catch (_) {}
+                    return { success: true, id: productId };
+                } else {
+                    const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(restDoc)
+                    });
+                    if (!res.ok) throw new Error(`REST POST returned HTTP ${res.status}`);
+                    const data = await res.json();
+                    const newId = data.name ? data.name.split('/').pop() : Date.now().toString();
+                    return { success: true, id: newId };
+                }
+            } catch (restErr) {
+                console.warn('[Admin] Direct REST save failed, attempting SDK fallback:', restErr);
+            }
+
+            // Attempt 2: Firebase SDK fallback
+            try {
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase SDK timeout')), 3500));
+                if (isEdit) {
+                    await Promise.race([updateDoc(doc(db, "products", productId), productData), timeoutPromise]);
+                    return { success: true, id: productId };
+                } else {
+                    const docRef = await Promise.race([addDoc(collection(db, "products"), productData), timeoutPromise]);
+                    return { success: true, id: docRef.id };
+                }
+            } catch (sdkErr) {
+                console.error('[Admin] Both REST and SDK save failed:', sdkErr);
+                throw sdkErr;
+            }
+        }
+
+        // Resilient Product Delete (Direct REST API with SDK background sync)
+        async function deleteProductFromFirestore(productId) {
+            // Attempt 1: Direct Google Cloud REST API (lightning fast ~150ms, never hangs on WebChannel)
+            try {
+                const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${encodeURIComponent(productId)}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    try { deleteDoc(doc(db, "products", productId)).catch(() => {}); } catch (_) {}
+                    return true;
+                }
+            } catch (restErr) {
+                console.warn('[Admin] Direct REST delete failed, trying SDK fallback:', restErr);
+            }
+
+            // Attempt 2: Firebase SDK fallback
+            try {
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase SDK timeout')), 3500));
+                await Promise.race([deleteDoc(doc(db, "products", productId)), timeoutPromise]);
+                return true;
+            } catch (sdkErr) {
+                console.error('[Admin] Both REST and SDK delete failed:', sdkErr);
+                throw sdkErr;
+            }
+        }
+
+        // Quick toggle for Product Stock (In Stock / Out of Stock) directly on card
+        window.toggleProductStock = async (id, event) => {
+            const btn = event ? (event.target.closest('button') || event.target) : null;
+            const card = btn ? btn.closest('.product-card') : null;
+            const product = allProducts.find(p => p.id === id);
+            if (!product) return;
+
+            const isCurrentlyOutOfStock = (product.categories && product.categories.includes('out-of-stock')) || (product.stock !== undefined && Number(product.stock) <= 0);
+            const makeOutOfStock = !isCurrentlyOutOfStock;
+
+            let currentCategories = Array.isArray(product.categories) ? [...product.categories] : (product.category ? [product.category] : []);
+            let newCategories;
+            let newStock;
+
+            if (makeOutOfStock) {
+                newStock = 0;
+                newCategories = currentCategories.includes('out-of-stock') ? currentCategories : [...currentCategories, 'out-of-stock'];
+            } else {
+                newStock = (product.stock && Number(product.stock) > 0) ? Number(product.stock) : 10;
+                newCategories = currentCategories.filter(c => c !== 'out-of-stock');
+            }
+
+            const originalBtnHTML = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                btn.disabled = true;
+            }
+
+            try {
+                const patchData = {
+                    stock: newStock,
+                    categories: newCategories
+                };
+                await saveProductToFirestore(id, patchData, true);
+
+                // Update in memory and local storage caches
+                product.stock = newStock;
+                product.categories = newCategories;
+                await setCachedProductsAsync(allProducts);
+
+                // Update UI on card
+                if (card) {
+                    const badge = card.querySelector('.stock-status-badge') || card.querySelector('p:nth-of-type(2)');
+                    if (badge) {
+                        const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
+                            ? Math.round(((Number(product.oldPrice) - Number(product.newPrice)) / Number(product.oldPrice)) * 100)
+                            : null;
+                        badge.outerHTML = makeOutOfStock
+                            ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>`
+                            : (discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : `<p class="stock-status-badge" style="color: #666;">In Stock</p>`);
+                    }
+                    if (btn) {
+                        btn.style.background = makeOutOfStock ? '#16a34a' : '#ef4444';
+                        btn.title = makeOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock';
+                        btn.innerHTML = `<i class="fas ${makeOutOfStock ? 'fa-check-circle' : 'fa-ban'}"></i> ${makeOutOfStock ? 'In Stock' : 'Stock Out'}`;
+                        btn.disabled = false;
+                    }
+                } else {
+                    displayProducts(allProducts);
+                }
+
+                notify('success', `Product "${product.name}" marked ${makeOutOfStock ? 'Out of Stock' : 'In Stock'}!`, 'Stock Updated');
+            } catch (err) {
+                console.error('[Admin] Error toggling stock:', err);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHTML;
+                }
+                notify('error', 'Error updating stock: ' + err.message, 'Stock Error');
+            }
+        };
 
         // Submit product (add or update)
         window.submitProduct = async () => {
@@ -2315,28 +2776,59 @@
             const newPrice = newPriceInput.value.trim();
             const price = newPrice;
             const stockValue = stockInput.value.trim();
-            const stock = stockValue !== '' ? parseInt(stockValue) : undefined;
+            const isOutOfStockChecked = outOfStockCheckbox?.checked || false;
 
-            // Get images based on upload method
-            let imgUrl = [];
-            if (currentUploadMethod === 'file') {
-                imgUrl = uploadedImages
-                    .filter(img => !img.loading && img.base64)
-                    .map(img => img.base64);
+            let stock;
+            if (isOutOfStockChecked || stockValue === '0') {
+                stock = 0;
+            } else if (stockValue !== '' && !isNaN(parseInt(stockValue))) {
+                stock = parseInt(stockValue);
             } else {
-                imgUrl = document.getElementById("multiImageInput").value
+                stock = 10;
+            }
+
+            // Get images: check uploadedImages first, then multiImageInput
+            let imgUrl = [];
+            const validUploaded = uploadedImages.filter(img => !img.loading && img.base64).map(img => img.base64);
+            if (validUploaded.length > 0) {
+                imgUrl = validUploaded;
+            }
+            const multiInput = document.getElementById("multiImageInput");
+            if (imgUrl.length === 0 && multiInput && multiInput.value.trim()) {
+                imgUrl = multiInput.value
                     .split(',')
                     .map(url => url.trim())
                     .filter(url => url);
             }
 
+            // In edit mode: if user didn't modify images, retain existing images
+            if (imgUrl.length === 0 && editMode && editingProductId) {
+                const existing = allProducts.find(p => p.id === editingProductId);
+                if (existing) {
+                    if (Array.isArray(existing.imgUrl) && existing.imgUrl.length > 0) {
+                        imgUrl = existing.imgUrl;
+                    } else if (existing.img) {
+                        imgUrl = Array.isArray(existing.img) ? existing.img : [existing.img];
+                    }
+                }
+            }
+
             const sizes = sizesInput.value.split(",").map(s => s.trim()).filter(s => s);
-            const colors = selectedColors; // Use the selectedColors array instead
+            const colors = selectedColors;
             const description = descriptionInput.value.trim();
-            const categories = getSelectedProductCategories(); // Get selected categories
+            let categories = getSelectedProductCategories();
+
+            // Synchronize out-of-stock category with stock status
+            if (stock === 0) {
+                if (!categories.includes('out-of-stock')) {
+                    categories.push('out-of-stock');
+                }
+            } else {
+                categories = categories.filter(c => c !== 'out-of-stock');
+            }
 
             if (!name || !oldPrice || !newPrice || imgUrl.length === 0) {
-                if (window.FloatingAlertManager) {
+                if (window.alerts && typeof window.alerts.warning === 'function') {
                     window.alerts.warning('Name, Old Price, New Price, and at least one Image are required.', 'Missing Required Fields');
                 } else {
                     alert("Name, Old Price, New Price, and at least one Image URL are required.");
@@ -2344,93 +2836,155 @@
                 return;
             }
 
+            const submitBtn = document.querySelector(".submit-btn");
+            if (submitBtn) {
+                submitBtn.innerText = editMode ? "Updating..." : "Adding...";
+                submitBtn.disabled = true;
+            }
+
             try {
-                // Prepare product data, only include stock if it's defined
+                const firstImg = imgUrl.length > 0 ? imgUrl[0] : '';
+                const primaryCategory = categories.length > 0 ? (categories.includes('today offer') ? 'today offer' : categories[0]) : '';
+
                 const productData = {
                     name,
                     price,
                     oldPrice,
                     newPrice,
+                    img: firstImg,
                     imgUrl,
                     sizes,
                     colors,
                     description,
-                    categories
+                    categories,
+                    category: primaryCategory,
+                    stock
                 };
 
-                // Only add stock field if it's defined
-                if (stock !== undefined) {
-                    productData.stock = stock;
+                if (editMode && editingProductId) {
+                    await saveProductToFirestore(editingProductId, productData, true);
+                    const idx = allProducts.findIndex(p => p.id === editingProductId);
+                    if (idx !== -1) {
+                        allProducts[idx] = { id: editingProductId, ...productData };
+                        allProducts[idx].img = firstImg;
+                    }
+                    await setCachedProductsAsync(allProducts);
+                    displayProducts(allProducts);
+                    notify('success', 'Product updated successfully!', 'Product Updated');
+                } else {
+                    productData.createdAt = new Date().toISOString();
+                    const result = await saveProductToFirestore(null, productData, false);
+                    const newProd = {
+                        id: result.id,
+                        ...productData,
+                        img: firstImg
+                    };
+                    allProducts.unshift(newProd);
+                    await setCachedProductsAsync(allProducts);
+                    displayProducts(allProducts);
+                    updateSearchInfo(allProducts.length, allProducts.length);
+                    notify('success', 'Product added successfully!', 'Product Added');
                 }
 
-                if (editMode && editingProductId) {
-                    await updateDoc(doc(db, "products", editingProductId), productData);
-                    if (window.FloatingAlertManager) {
-                        window.FloatingAlertManager.productUpdated();
-                    } else {
-                        alert("Product updated successfully!");
-                    }
-                } else {
-                    // Add timestamp for new products
-                    productData.createdAt = new Date().toISOString();
-                    await addDoc(collection(db, "products"), productData);
-                    if (window.FloatingAlertManager) {
-                        window.FloatingAlertManager.productAdded();
-                    } else {
-                        alert("Product added successfully!");
-                    }
-                }
+                resetForm();
             } catch (err) {
-                if (window.FloatingAlertManager) {
-                    window.alerts.error("Error saving product: " + err.message, 'Save Error');
-                } else {
-                    alert("Error saving product: " + err.message);
+                console.error('[Admin] Error saving product:', err);
+                notify('error', "Error saving product: " + err.message, 'Save Error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.innerText = editMode ? "Update Product" : "Add Product";
+                    submitBtn.disabled = false;
                 }
             }
-
-            resetForm();
-            loadProducts();
         };
 
         // Delete product
-        window.deleteProduct = async (id) => {
+        window.deleteProduct = async (id, event) => {
             if (!confirm("Are you sure you want to delete this product?")) return;
+
+            const btn = event ? (event.target.closest('button') || event.target) : null;
+            const card = btn ? btn.closest('.product-card') : null;
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+                btn.disabled = true;
+            }
+            if (card) {
+                card.style.opacity = '0.4';
+                card.style.pointerEvents = 'none';
+            }
+
             try {
-                await deleteDoc(doc(db, "products", id));
-                if (window.FloatingAlertManager) {
-                    window.FloatingAlertManager.productDeleted();
+                await deleteProductFromFirestore(id);
+                allProducts = allProducts.filter(p => p.id !== id);
+                await setCachedProductsAsync(allProducts);
+                if (card) {
+                    card.remove();
                 } else {
-                    alert("Product deleted successfully!");
+                    displayProducts(allProducts);
                 }
-                loadProducts();
+                updateSearchInfo(allProducts.length, allProducts.length);
+                notify('success', 'Product deleted successfully!', 'Product Deleted');
             } catch (err) {
-                if (window.FloatingAlertManager) {
-                    window.alerts.error("Error deleting product: " + err.message, 'Delete Error');
-                } else {
-                    alert("Error deleting product: " + err.message);
+                console.error('[Admin] Error deleting product:', err);
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                    btn.disabled = false;
                 }
+                if (card) {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = 'auto';
+                }
+                notify('error', "Error deleting product: " + err.message, 'Delete Error');
             }
         };
 
         // Edit product
         window.editProduct = async (id) => {
-            const docRef = doc(db, "products", id);
-            const docSnap = await getDoc(docRef);
+            let product = allProducts.find(p => p.id === id);
 
-            if (!docSnap.exists()) {
-                if (window.FloatingAlertManager) {
-                    window.alerts.error("Product not found in database.", 'Product Not Found');
-                } else {
-                    alert("Product not found.");
+            if (!product) {
+                try {
+                    const docRef = doc(db, "products", id);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        product = { id: docSnap.id, ...docSnap.data() };
+                    }
+                } catch (e) {
+                    console.warn('[Admin] Firebase getDoc failed, trying REST:', e);
                 }
+            }
+
+            if (!product) {
+                try {
+                    const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${encodeURIComponent(id)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        product = parseFirestoreProductDoc(data);
+                    }
+                } catch (e) {
+                    console.warn('[Admin] REST getDoc failed:', e);
+                }
+            }
+
+            if (!product) {
+                notify('error', 'Product not found in database.', 'Product Not Found');
                 return;
             }
 
-            const product = docSnap.data();
-            nameInput.value = product.name;
+            nameInput.value = product.name || "";
             oldPriceInput.value = product.oldPrice || "";
-            newPriceInput.value = product.newPrice || "";
-            stockInput.value = product.stock || 0;
+            newPriceInput.value = product.newPrice || product.price || "";
+
+            // Out of stock and stock status handling
+            const isOutOfStock = (product.categories && product.categories.includes('out-of-stock')) || (product.stock !== undefined && Number(product.stock) <= 0);
+            if (outOfStockCheckbox) {
+                outOfStockCheckbox.checked = isOutOfStock;
+            }
+            if (stockInput) {
+                stockInput.disabled = isOutOfStock;
+                stockInput.value = isOutOfStock ? 0 : (product.stock !== undefined ? product.stock : 10);
+            }
+
             sizesInput.value = (product.sizes || []).join(", ");
             descriptionInput.value = product.description || "";
 
@@ -2438,20 +2992,16 @@
             const productColors = product.colors || [];
             selectedColors = [];
 
-            // Convert colors to new format if needed
             productColors.forEach(colorData => {
                 if (typeof colorData === 'string') {
-                    // Handle both old format and new "name:hex" format
                     if (colorData.includes(':')) {
                         const [name, hex] = colorData.split(':');
                         selectedColors.push({ name: name.trim(), hex: hex.trim() });
                     } else {
-                        // Old format - try to get hex from predefined colors
                         const hex = getColorHexForAdmin(colorData);
                         selectedColors.push({ name: colorData, hex: hex });
                     }
                 } else if (colorData && colorData.name && colorData.hex) {
-                    // Already in new format
                     selectedColors.push(colorData);
                 }
             });
@@ -2459,48 +3009,71 @@
             updateColorDisplay();
             updateColorInput();
 
-            // Set categories if available
-            if (product.categories) {
-                setProductCategories(product.categories);
+            // Set categories if available (ensure availableCategories is loaded first)
+            if (availableCategories.length === 0) {
+                await loadProductCategories();
+            }
+            const productCategories = Array.isArray(product.categories) ? product.categories : (product.category ? [product.category] : []);
+            setProductCategories(productCategories);
+
+            // Handle images safely (support array, string, or empty)
+            let images = [];
+            if (Array.isArray(product.imgUrl)) {
+                images = product.imgUrl.filter(Boolean);
+            } else if (typeof product.imgUrl === 'string' && product.imgUrl) {
+                images = [product.imgUrl];
+            } else if (product.img) {
+                images = Array.isArray(product.img) ? product.img : [product.img];
             }
 
-            // Handle images - check if they're base64 or URLs
-            const images = product.imgUrl || [];
-            const hasBase64 = images.some(url => url.startsWith('data:image'));
+            const hasBase64 = images.some(url => typeof url === 'string' && url.startsWith('data:image'));
 
             if (hasBase64) {
-                // Switch to file upload method and show images
                 currentUploadMethod = 'file';
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelector('.tab-btn').classList.add('active');
-                document.getElementById('fileUploadSection').classList.add('active');
-                document.getElementById('urlUploadSection').classList.remove('active');
+                const fileTab = document.querySelectorAll('.tab-btn')[0];
+                if (fileTab) fileTab.classList.add('active');
+                const fileSec = document.getElementById('fileUploadSection');
+                if (fileSec) fileSec.classList.add('active');
+                const urlSec = document.getElementById('urlUploadSection');
+                if (urlSec) urlSec.classList.remove('active');
 
-                // Load base64 images into uploaded array
                 uploadedImages = images.map((base64, index) => ({
                     id: Date.now() + index,
                     base64: base64,
                     name: `Image ${index + 1}`,
-                    size: Math.round((base64.length * 3) / 4),
-                    compressedSize: Math.round((base64.length * 3) / 4)
+                    size: typeof base64 === 'string' ? Math.round((base64.length * 3) / 4) : 0,
+                    compressedSize: typeof base64 === 'string' ? Math.round((base64.length * 3) / 4) : 0
                 }));
                 updateImagePreview();
             } else {
-                // Use URL method
                 currentUploadMethod = 'url';
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
-                document.getElementById('fileUploadSection').classList.remove('active');
-                document.getElementById('urlUploadSection').classList.add('active');
+                const urlTab = document.querySelectorAll('.tab-btn')[1];
+                if (urlTab) urlTab.classList.add('active');
+                const fileSec = document.getElementById('fileUploadSection');
+                if (fileSec) fileSec.classList.remove('active');
+                const urlSec = document.getElementById('urlUploadSection');
+                if (urlSec) urlSec.classList.add('active');
 
-                document.getElementById("multiImageInput").value = images.join(', ');
+                const multiInput = document.getElementById("multiImageInput");
+                if (multiInput) multiInput.value = images.join(', ');
                 uploadedImages = [];
                 updateImagePreview();
             }
 
             editMode = true;
             editingProductId = id;
-            document.querySelector(".submit-btn").innerText = "Update Product";
+            const submitBtn = document.querySelector(".submit-btn");
+            if (submitBtn) submitBtn.innerText = "Update Product";
+
+            // Smoothly scroll to the form card so the admin immediately sees the edit form
+            const adminCard = document.querySelector(".admin-card, form, #productForm");
+            if (adminCard) {
+                adminCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         };
 
         // Helper function to get hex colors for admin (similar to product page)
@@ -2524,30 +3097,62 @@
         // Load categories for product form
         async function loadProductCategories() {
             try {
-                const categoriesRef = collection(db, 'category');
-                const categoriesSnapshot = await getDocs(categoriesRef);
+                let categoriesDocs = [];
+
+                // Attempt 1: Try Firebase SDK with a 2-second timeout
+                try {
+                    const categoriesRef = collection(db, 'category');
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+                    const categoriesSnapshot = await Promise.race([getDocs(categoriesRef), timeoutPromise]);
+                    categoriesSnapshot.forEach(docSnap => {
+                        categoriesDocs.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                } catch (sdkErr) {
+                    console.warn('[Admin] Category SDK getDocs failed or timed out, using direct REST fallback:', sdkErr.message || sdkErr);
+                }
+
+                // Attempt 2: Direct Google Cloud REST API fallback
+                if (categoriesDocs.length === 0) {
+                    try {
+                        const res = await fetch('https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/category');
+                        if (res.ok) {
+                            const data = await res.json();
+                            const docs = data.documents || [];
+                            categoriesDocs = docs.map(d => {
+                                const id = d.name ? d.name.split('/').pop() : '';
+                                const fields = d.fields || {};
+                                const item = { id };
+                                for (const k of Object.keys(fields)) {
+                                    item[k] = parseFirestoreValue(fields[k]);
+                                }
+                                return item;
+                            });
+                        }
+                    } catch (restErr) {
+                        console.warn('[Admin] Category REST fallback failed:', restErr);
+                    }
+                }
 
                 const shoeBrands = ['nike', 'adidas', 'puma', 'asics', 'converse', 'new balance', 'vans', 'vens', 'jordan', 'reebok', 'shoes', 'shoe'];
                 availableCategories = [];
-                categoriesSnapshot.forEach(doc => {
-                    if (doc.id === 'CONFIG_display_order') return;
-                    const catData = doc.data();
-                    const cleanName = (catData.name || '').normalize('NFKD').replace(/[^\w\s]/g, '').toLowerCase().trim();
-                    const cleanId = (doc.id || '').toLowerCase().trim();
+                categoriesDocs.forEach(cat => {
+                    if (cat.id === 'CONFIG_display_order') return;
+                    const cleanName = (cat.name || '').normalize('NFKD').replace(/[^\w\s]/g, '').toLowerCase().trim();
+                    const cleanId = (cat.id || '').toLowerCase().trim();
                     if (shoeBrands.some(brand => cleanName.includes(brand) || cleanId.includes(brand))) {
                         return;
                     }
                     availableCategories.push({
-                        id: doc.id,
-                        ...catData
+                        id: cat.id,
+                        ...cat
                     });
                 });
 
-                console.log('Loaded categories for product form:', availableCategories);
+                console.log('[Admin] Loaded categories for product form:', availableCategories);
                 renderProductCategoriesCheckboxes();
 
             } catch (error) {
-                console.error('Error loading categories:', error);
+                console.error('[Admin] Error loading categories:', error);
                 // Use default categories if loading fails
                 availableCategories = [
                     { id: 'watches', name: 'Watches', color: '#28a745' },
@@ -2658,11 +3263,7 @@
             const clearBtn = document.getElementById('clearSearchBtn');
 
             if (!searchTerm) {
-                if (window.FloatingAlertManager) {
-                    window.alerts.warning('Please enter a search term', 'Search Required');
-                } else {
-                    alert('Please enter something to search for');
-                }
+                notify('warning', 'Please enter a search term', 'Search Required');
                 return;
             }
 
@@ -2688,9 +3289,7 @@
             updateSearchInfo(filteredProducts.length, allProducts.length);
             isSearchActive = true;
 
-            if (window.FloatingAlertManager) {
-                window.alerts.success(`Found ${filteredProducts.length} product(s)`, 'Search Complete');
-            }
+            notify('success', `Found ${filteredProducts.length} product(s)`, 'Search Complete');
         };
 
         window.clearSearch = () => {
@@ -2704,9 +3303,7 @@
             hideSearchInfo();
             isSearchActive = false;
 
-            if (window.FloatingAlertManager) {
-                window.alerts.info('Search cleared', 'Search Reset');
-            }
+            notify('info', 'Search cleared', 'Search Reset');
         };
 
         window.showAllProducts = () => {
@@ -2770,14 +3367,19 @@
 
         // Highlight active link
         const path = window.location.pathname;
-        if (path.includes("admin.html")) {
-            document.getElementById("nav-admin").classList.add("active");
-        } else if (path.includes("photo-to-url.html")) {
-            document.getElementById("nav-converter").classList.add("active");
+        if (path.includes("photo-to-url.html")) {
+            document.getElementById("nav-converter")?.classList.add("active");
+            document.getElementById("bottom-converter")?.classList.add("active");
+        } else if (path.includes("categories.html")) {
+            document.getElementById("nav-categories")?.classList.add("active");
+            document.getElementById("bottom-categories")?.classList.add("active");
+        } else {
+            document.getElementById("nav-admin")?.classList.add("active");
+            document.getElementById("bottom-admin")?.classList.add("active");
         }
     </script>
 
-    <script src="../floating-alerts.js"></script>
+    <script src="../floating-alerts.js" onerror="this.onerror=null;this.src='floating-alerts.js';"></script>
 
 
 </body>
