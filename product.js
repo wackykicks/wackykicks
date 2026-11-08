@@ -331,7 +331,36 @@ function getProductFromIndexedDB(pid) {
     });
 }
 
-// ✅ Load Product with 0ms Instant Cache + Stale-While-Revalidate
+// ✅ Helper: Fetch product directly via high-speed Google Cloud REST API (~100ms)
+async function fetchProductViaRest(pid) {
+    try {
+        console.log('🌐 Fetching product via direct Google Cloud REST API...');
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${pid}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.fields) return null;
+        const parseVal = (v) => {
+            if (!v) return null;
+            if ('stringValue' in v) return v.stringValue;
+            if ('integerValue' in v) return parseInt(v.integerValue, 10);
+            if ('doubleValue' in v) return parseFloat(v.doubleValue);
+            if ('booleanValue' in v) return v.booleanValue;
+            if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseVal);
+            return null;
+        };
+        const product = { id: pid };
+        for (const k of Object.keys(data.fields)) {
+            product[k] = parseVal(data.fields[k]);
+        }
+        product.img = Array.isArray(product.imgUrl) ? product.imgUrl[0] : (product.imgUrl || product.img || '');
+        return product;
+    } catch (e) {
+        console.warn('REST product fetch failed:', e);
+        return null;
+    }
+}
+
+// ✅ Load Product with 0ms Instant Cache + High-Speed REST Revalidate (~100ms)
 async function loadProduct() {
     const productDetails = document.getElementById('productDetails');
 
@@ -340,9 +369,12 @@ async function loadProduct() {
         return;
     }
 
+    // ⚡ 1. Fire high-speed Google Cloud REST API fetch immediately in background (~100ms)
+    const restPromise = fetchProductViaRest(productId);
+
     let renderedFromCache = false;
 
-    // ⚡ 1. INSTANT RENDER: Check sessionStorage (from click) then localStorage products cache
+    // ⚡ 2. 0ms INSTANT RENDER: Check sessionStorage (from click) then localStorage products cache
     try {
         let cachedProduct = null;
         const sessionData = sessionStorage.getItem('vexior_active_product_' + productId);
@@ -366,7 +398,7 @@ async function loadProduct() {
         console.warn('Cache read error:', e);
     }
 
-    // ⚡ 1b. Check IndexedDB if not found in sessionStorage or localStorage
+    // ⚡ 2b. Check IndexedDB if not found in sessionStorage or localStorage
     if (!renderedFromCache) {
         try {
             const idbProduct = await getProductFromIndexedDB(productId);
@@ -389,77 +421,54 @@ async function loadProduct() {
         `;
     }
 
-    const fetchProductViaRest = async (pid) => {
-        try {
-            console.log('🌐 Fetching product via direct Google Cloud REST API...');
-            const res = await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${pid}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            if (!data.fields) return null;
-            const parseVal = (v) => {
-                if (!v) return null;
-                if ('stringValue' in v) return v.stringValue;
-                if ('integerValue' in v) return parseInt(v.integerValue, 10);
-                if ('doubleValue' in v) return parseFloat(v.doubleValue);
-                if ('booleanValue' in v) return v.booleanValue;
-                if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseVal);
-                return null;
-            };
-            const product = { id: pid };
-            for (const k of Object.keys(data.fields)) {
-                product[k] = parseVal(data.fields[k]);
-            }
-            product.img = Array.isArray(product.imgUrl) ? product.imgUrl[0] : (product.imgUrl || product.img || '');
-            return product;
-        } catch (e) {
-            console.warn('REST product fetch failed:', e);
-            return null;
-        }
-    };
-
-    // ⚡ 2. STALE-WHILE-REVALIDATE: Fetch live data in background to ensure real-time accuracy
-    const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
-    if (!dbInstance) {
-        console.warn('Firestore db not yet ready, using REST API fallback');
-        const restProd = await fetchProductViaRest(productId);
-        if (restProd) {
-            try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(restProd)); } catch(e){}
-            renderProductDetails(restProd);
-        } else if (!renderedFromCache && productDetails) {
-            productDetails.innerHTML = `<p>Product not found.</p>`;
-        }
-        return;
-    }
-
-    dbInstance.collection("products").doc(productId).get().then(doc => {
-        if (!doc.exists) {
-            fetchProductViaRest(productId).then(restProd => {
-                if (restProd) {
-                    try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(restProd)); } catch(e){}
-                    renderProductDetails(restProd);
-                } else if (!renderedFromCache && productDetails) {
-                    productDetails.innerHTML = `<p>Product not found.</p>`;
+    // ⚡ 3. FAST LIVE SYNC: Google Cloud REST API returns live doc in ~100ms (bypassing slow Firestore SDK handshake)
+    try {
+        const freshProduct = await restPromise;
+        if (freshProduct) {
+            try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(freshProduct)); } catch (e) {}
+            // Sync into localStorage products cache so all tabs/pages are updated immediately
+            try {
+                const allCached = localStorage.getItem('vexior_products_cache');
+                if (allCached) {
+                    const parsed = JSON.parse(allCached);
+                    const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+                    const idx = list.findIndex(p => p.id === productId);
+                    if (idx !== -1) {
+                        list[idx] = { ...list[idx], ...freshProduct };
+                        localStorage.setItem('vexior_products_cache', JSON.stringify(list));
+                    }
                 }
-            });
+            } catch (e) {}
+
+            renderProductDetails(freshProduct);
             return;
         }
+    } catch (e) {
+        console.warn('REST live sync failed, falling back to Firestore SDK:', e);
+    }
 
-        const freshProduct = { id: doc.id, ...doc.data() };
-        try {
-            sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(freshProduct));
-        } catch (e) {}
-
-        renderProductDetails(freshProduct);
-    }).catch(async error => {
-        console.warn("⚠️ Firebase SDK product fetch failed, trying direct REST API fallback:", error);
-        const restProd = await fetchProductViaRest(productId);
-        if (restProd) {
-            try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(restProd)); } catch(e){}
-            renderProductDetails(restProd);
-        } else if (!renderedFromCache && productDetails) {
-            productDetails.innerHTML = `<p>Error loading product details.</p>`;
-        }
-    });
+    // ⚡ 4. Fallback to Firestore SDK if REST API was unavailable
+    const dbInstance = (typeof db !== 'undefined' && db) ? db : (window.db || null);
+    if (dbInstance) {
+        dbInstance.collection("products").doc(productId).get().then(doc => {
+            if (!doc.exists) {
+                if (!renderedFromCache && productDetails) {
+                    productDetails.innerHTML = `<p>Product not found.</p>`;
+                }
+                return;
+            }
+            const freshProduct = { id: doc.id, ...doc.data() };
+            try { sessionStorage.setItem('vexior_active_product_' + productId, JSON.stringify(freshProduct)); } catch (e) {}
+            renderProductDetails(freshProduct);
+        }).catch(err => {
+            console.error("Firestore SDK product fetch error:", err);
+            if (!renderedFromCache && productDetails) {
+                productDetails.innerHTML = `<p>Error loading product details.</p>`;
+            }
+        });
+    } else if (!renderedFromCache && productDetails) {
+        productDetails.innerHTML = `<p>Product not found.</p>`;
+    }
 }
 
 // ✅ Custom Size Alert
@@ -1538,9 +1547,16 @@ function clearSavedAddress() {
     }
 }
 
+// ✅ Run immediately on script execution to minimize load latency
+if (document.getElementById('productDetails')) {
+    loadProduct();
+}
+
 // ✅ Run on page load
 window.addEventListener('DOMContentLoaded', () => {
-    loadProduct();
+    if (!window.currentProductData) {
+        loadProduct();
+    }
     loadRelatedProducts(); // ✅ Add this
     loadReviews(); // Load reviews for this product
     setupReviewForm(); // Setup review form functionality

@@ -1933,11 +1933,18 @@ async function loadRemainingProducts(isSilentSync = false) {
             return 0;
         });
 
-        // If doing silent sync and counts match, check if anything changed
+        // If doing silent sync and counts match, check if anything changed (including stock and categories)
         if (isSilentSync && allProducts && allProducts.length === fullProducts.length) {
             const isIdentical = allProducts.every((p, idx) => {
                 const fp = fullProducts[idx];
-                return fp && p.id === fp.id && (p.newPrice || p.price) === (fp.newPrice || fp.price);
+                if (!fp || p.id !== fp.id) return false;
+                if ((p.newPrice || p.price) !== (fp.newPrice || fp.price)) return false;
+                if (p.oldPrice !== fp.oldPrice) return false;
+                if (String(p.stock) !== String(fp.stock)) return false;
+                const pCats = Array.isArray(p.categories) ? p.categories.slice().sort().join(',') : '';
+                const fpCats = Array.isArray(fp.categories) ? fp.categories.slice().sort().join(',') : '';
+                if (pCats !== fpCats) return false;
+                return true;
             });
             if (isIdentical) {
                 console.log('⚡ All products up-to-date with server, current display kept intact');

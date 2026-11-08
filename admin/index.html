@@ -2736,6 +2736,10 @@
                 product.stock = newStock;
                 product.categories = newCategories;
                 await setCachedProductsAsync(allProducts);
+                try {
+                    localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
+                    sessionStorage.removeItem('vexior_active_product_' + id);
+                } catch (e) {}
 
                 // Update UI on card
                 if (card) {
@@ -2869,6 +2873,10 @@
                         allProducts[idx].img = firstImg;
                     }
                     await setCachedProductsAsync(allProducts);
+                    try {
+                        localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
+                        sessionStorage.removeItem('vexior_active_product_' + editingProductId);
+                    } catch (e) {}
                     displayProducts(allProducts);
                     notify('success', 'Product updated successfully!', 'Product Updated');
                 } else {
@@ -2881,6 +2889,9 @@
                     };
                     allProducts.unshift(newProd);
                     await setCachedProductsAsync(allProducts);
+                    try {
+                        localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
+                    } catch (e) {}
                     displayProducts(allProducts);
                     updateSearchInfo(allProducts.length, allProducts.length);
                     notify('success', 'Product added successfully!', 'Product Added');
@@ -2917,6 +2928,10 @@
                 await deleteProductFromFirestore(id);
                 allProducts = allProducts.filter(p => p.id !== id);
                 await setCachedProductsAsync(allProducts);
+                try {
+                    localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
+                    sessionStorage.removeItem('vexior_active_product_' + id);
+                } catch (e) {}
                 if (card) {
                     card.remove();
                 } else {
