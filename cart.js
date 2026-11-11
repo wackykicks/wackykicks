@@ -9,9 +9,30 @@ function calculateDiscountPercentage(oldPrice, newPrice) {
     return Math.round(discount); // Round to nearest whole number
 }
 
-// Shared color/product stock validation helper
-function checkProductOrColorOutOfStock(product, selectedColorName = null) {
-    if (!product) return { outOfStock: false, reason: null, colorName: null };
+// Shared color/size variant parser for stock validation
+function parseVariantAvailability(entries) {
+    if (!Array.isArray(entries)) return [];
+    return entries.map(entry => {
+        if (typeof entry === 'string' || typeof entry === 'number') {
+            const parts = String(entry).trim().split(':');
+            const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+            const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
+            const name = (isOos ? parts.slice(0, -1) : parts)[0] || '';
+            return { name: name.trim(), inStock: !isOos };
+        }
+        if (entry && typeof entry === 'object') {
+            const isOos = entry.outOfStock === true || entry.inStock === false || entry.available === false ||
+                (entry.stock !== undefined && entry.stock !== null && Number(entry.stock) <= 0);
+            const rawName = entry.name ?? entry.size ?? entry.label ?? '';
+            return { name: String(rawName).trim(), inStock: !isOos };
+        }
+        return { name: '', inStock: true };
+    }).filter(v => v.name !== '');
+}
+
+// Shared color/size/product stock validation helper
+function checkProductOrColorOutOfStock(product, selectedColorName = null, selectedSizeName = null) {
+    if (!product) return { outOfStock: false, reason: null, colorName: null, sizeName: null };
 
     const isOutOfStockByCategory = Boolean(
         product.categories && (
@@ -23,41 +44,54 @@ function checkProductOrColorOutOfStock(product, selectedColorName = null) {
     const hasExplicitStock = product.stock !== undefined && product.stock !== null && String(product.stock).trim() !== '';
     const isOutOfStockByStock = hasExplicitStock && Number(product.stock) <= 0;
     if (product.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock) {
-        return { outOfStock: true, reason: 'product', colorName: null };
+        return { outOfStock: true, reason: 'product', colorName: null, sizeName: null };
     }
 
-    const colors = Array.isArray(product.colors) ? product.colors : [];
-    if (colors.length > 0) {
-        const parsedColors = colors.map(c => {
-            if (typeof c === 'string') {
-                const parts = c.trim().split(':');
-                const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
-                const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
-                const name = (isOos ? parts.slice(0, -1) : parts)[0] || '';
-                return { name: name.trim(), inStock: !isOos };
-            }
-            if (c && typeof c === 'object') {
-                const isOos = c.outOfStock === true || c.inStock === false || c.available === false ||
-                    (c.stock !== undefined && c.stock !== null && Number(c.stock) <= 0);
-                return { name: String(c.name || '').trim(), inStock: !isOos };
-            }
-            return { name: '', inStock: true };
-        });
+    const parsedColors = parseVariantAvailability(product.colors);
+    const parsedSizes = parseVariantAvailability(product.sizes);
 
-        if (parsedColors.every(c => !c.inStock)) {
-            return { outOfStock: true, reason: 'product', colorName: null };
-        }
-
-        if (selectedColorName) {
-            const target = String(selectedColorName).trim().toLowerCase();
-            const matched = parsedColors.find(c => c.name.toLowerCase() === target);
-            if (matched && !matched.inStock) {
-                return { outOfStock: true, reason: 'color', colorName: matched.name };
-            }
-        }
+    if ((parsedColors.length > 0 && parsedColors.every(c => !c.inStock)) ||
+        (parsedSizes.length > 0 && parsedSizes.every(s => !s.inStock))) {
+        return { outOfStock: true, reason: 'product', colorName: null, sizeName: null };
     }
 
-    return { outOfStock: false, reason: null, colorName: null };
+    const findOosVariant = (list, selected) => {
+        if (selected === null || selected === undefined || String(selected).trim() === '') return null;
+        const target = String(selected).trim().toLowerCase();
+        const matched = list.find(v => v.name.toLowerCase() === target);
+        return matched && !matched.inStock ? matched.name : null;
+    };
+
+    const oosColor = findOosVariant(parsedColors, selectedColorName);
+    const oosSize = findOosVariant(parsedSizes, selectedSizeName);
+
+    if (oosColor && oosSize) {
+        return { outOfStock: true, reason: 'both', colorName: oosColor, sizeName: oosSize };
+    }
+    if (oosColor) {
+        return { outOfStock: true, reason: 'color', colorName: oosColor, sizeName: null };
+    }
+    if (oosSize) {
+        return { outOfStock: true, reason: 'size', colorName: null, sizeName: oosSize };
+    }
+
+    return { outOfStock: false, reason: null, colorName: null, sizeName: null };
+}
+
+function formatStockUnavailableMessage(stockCheck, itemName, forCheckout = false) {
+    const suffix = forCheckout ? ' Please update your cart before proceeding.' : '';
+    if (stockCheck.reason === 'both' && stockCheck.colorName && stockCheck.sizeName) {
+        return `Sorry, color "${stockCheck.colorName}" and size "${stockCheck.sizeName}" for "${itemName}" are currently out of stock.${suffix}`;
+    }
+    if (stockCheck.reason === 'color' && stockCheck.colorName) {
+        return `Sorry, color "${stockCheck.colorName}" for "${itemName}" is currently out of stock.${suffix}`;
+    }
+    if (stockCheck.reason === 'size' && stockCheck.sizeName) {
+        return `Sorry, size "${stockCheck.sizeName}" for "${itemName}" is currently out of stock.${suffix}`;
+    }
+    return forCheckout
+        ? `Sorry, "${itemName}" is currently out of stock. Please remove it from your cart before proceeding.`
+        : 'Sorry, this product is currently out of stock.';
 }
 
 // Cart Management System
@@ -108,9 +142,9 @@ class ShoppingCart {
 
     // Add item to cart
     addToCart(product, quantity = 1, size = null, color = null) {
-        // Resolve full product metadata from cache if colors/stock were omitted on caller object
+        // Resolve full product metadata from cache if colors/sizes/stock were omitted on caller object
         let productMeta = product;
-        if (product && (!Array.isArray(product.colors) || product.stock === undefined)) {
+        if (product && (!Array.isArray(product.colors) || !Array.isArray(product.sizes) || product.stock === undefined)) {
             try {
                 const cached = localStorage.getItem('vexior_products_cache');
                 if (cached) {
@@ -118,17 +152,22 @@ class ShoppingCart {
                     const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
                     const cachedProd = list.find(p => p.id === product.id || p.name === product.name);
                     if (cachedProd) {
-                        productMeta = { ...cachedProd, ...product, colors: product.colors || cachedProd.colors, stock: product.stock !== undefined ? product.stock : cachedProd.stock, categories: (product.categories && product.categories.length) ? product.categories : cachedProd.categories };
+                        productMeta = {
+                            ...cachedProd,
+                            ...product,
+                            colors: product.colors || cachedProd.colors,
+                            sizes: product.sizes || cachedProd.sizes,
+                            stock: product.stock !== undefined ? product.stock : cachedProd.stock,
+                            categories: (product.categories && product.categories.length) ? product.categories : cachedProd.categories
+                        };
                     }
                 }
             } catch (e) {}
         }
 
-        const stockCheck = checkProductOrColorOutOfStock(productMeta, color);
+        const stockCheck = checkProductOrColorOutOfStock(productMeta, color, size);
         if (stockCheck.outOfStock) {
-            const msg = stockCheck.reason === 'color' && stockCheck.colorName
-                ? `Sorry, color "${stockCheck.colorName}" for "${product.name}" is currently out of stock.`
-                : 'Sorry, this product is currently out of stock.';
+            const msg = formatStockUnavailableMessage(stockCheck, product.name, false);
             if (window.FloatingAlertManager) {
                 window.FloatingAlertManager.operationError('Out of Stock', msg);
             } else {
@@ -437,7 +476,7 @@ function checkoutViaWhatsApp() {
             throw new Error('getCartTotal method not found');
         }
 
-        // Check for out-of-stock items or colors in cart
+        // Check for out-of-stock items, colors, or sizes in cart
         try {
             const cached = localStorage.getItem('vexior_products_cache');
             if (cached) {
@@ -446,11 +485,9 @@ function checkoutViaWhatsApp() {
                 for (const item of cart.cart) {
                     const p = list.find(prod => prod.id === item.id || prod.name === item.name);
                     if (!p) continue;
-                    const stockCheck = checkProductOrColorOutOfStock(p, item.color);
+                    const stockCheck = checkProductOrColorOutOfStock(p, item.color, item.size);
                     if (stockCheck.outOfStock) {
-                        const msg = stockCheck.reason === 'color' && stockCheck.colorName
-                            ? `Sorry, color "${stockCheck.colorName}" for "${item.name}" is currently out of stock. Please update your cart before proceeding.`
-                            : `Sorry, "${item.name}" is currently out of stock. Please remove it from your cart before proceeding.`;
+                        const msg = formatStockUnavailableMessage(stockCheck, item.name, true);
                         alert(msg);
                         return;
                     }

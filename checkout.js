@@ -321,12 +321,29 @@ function submitCheckout() {
     }
     console.log('✅ Order data retrieved:', orderData);
     
-    // Check if any item (or selected color) in orderData is out of stock
+    // Check if any item (or selected color / size) in orderData is out of stock
     try {
         const cached = localStorage.getItem('vexior_products_cache');
         if (cached) {
             const parsed = JSON.parse(cached);
             const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+            const parseCheckoutVariants = (entries) => Array.isArray(entries) ? entries.map(entry => {
+                if (typeof entry === 'string' || typeof entry === 'number') {
+                    const parts = String(entry).trim().split(':');
+                    const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+                    const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
+                    const vname = (isOos ? parts.slice(0, -1) : parts)[0] || '';
+                    return { name: vname.trim(), inStock: !isOos };
+                }
+                if (entry && typeof entry === 'object') {
+                    const isOos = entry.outOfStock === true || entry.inStock === false || entry.available === false ||
+                        (entry.stock !== undefined && entry.stock !== null && Number(entry.stock) <= 0);
+                    const rawName = entry.name ?? entry.size ?? entry.label ?? '';
+                    return { name: String(rawName).trim(), inStock: !isOos };
+                }
+                return { name: '', inStock: true };
+            }).filter(v => v.name !== '') : [];
+
             for (const item of orderData.items) {
                 const prod = list.find(p => (item.id && p.id === item.id) || p.name === item.name);
                 if (prod) {
@@ -340,33 +357,33 @@ function submitCheckout() {
                     const hasExplicitStock = prod.stock !== undefined && prod.stock !== null && String(prod.stock).trim() !== '';
                     const isOutOfStockByStock = hasExplicitStock && Number(prod.stock) <= 0;
 
-                    const prodColors = Array.isArray(prod.colors) ? prod.colors.map(c => {
-                        if (typeof c === 'string') {
-                            const parts = c.trim().split(':');
-                            const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
-                            const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
-                            const cname = (isOos ? parts.slice(0, -1) : parts)[0] || '';
-                            return { name: cname.trim(), inStock: !isOos };
-                        }
-                        if (c && typeof c === 'object') {
-                            const isOos = c.outOfStock === true || c.inStock === false || c.available === false ||
-                                (c.stock !== undefined && c.stock !== null && Number(c.stock) <= 0);
-                            return { name: String(c.name || '').trim(), inStock: !isOos };
-                        }
-                        return { name: '', inStock: true };
-                    }) : [];
+                    const prodColors = parseCheckoutVariants(prod.colors);
+                    const prodSizes = parseCheckoutVariants(prod.sizes);
 
                     const allColorsOos = prodColors.length > 0 && prodColors.every(c => !c.inStock);
+                    const allSizesOos = prodSizes.length > 0 && prodSizes.every(s => !s.inStock);
                     const selectedColorOos = Boolean(
                         item.color && prodColors.some(c => c.name.toLowerCase() === String(item.color).trim().toLowerCase() && !c.inStock)
                     );
+                    const selectedSizeOos = Boolean(
+                        item.size !== null && item.size !== undefined && String(item.size).trim() !== '' &&
+                        prodSizes.some(s => s.name.toLowerCase() === String(item.size).trim().toLowerCase() && !s.inStock)
+                    );
 
-                    if (isOutOfStockByCategory || isOutOfStockByStock || allColorsOos) {
+                    if (isOutOfStockByCategory || isOutOfStockByStock || allColorsOos || allSizesOos) {
                         alert(`Sorry, "${item.name}" is currently out of stock. Please remove it to proceed.`);
+                        return;
+                    }
+                    if (selectedColorOos && selectedSizeOos) {
+                        alert(`Sorry, color "${item.color}" and size "${item.size}" for "${item.name}" are currently out of stock. Please choose available options.`);
                         return;
                     }
                     if (selectedColorOos) {
                         alert(`Sorry, color "${item.color}" for "${item.name}" is currently out of stock. Please choose another color.`);
+                        return;
+                    }
+                    if (selectedSizeOos) {
+                        alert(`Sorry, size "${item.size}" for "${item.name}" is currently out of stock. Please choose another size.`);
                         return;
                     }
                 }

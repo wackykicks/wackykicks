@@ -1082,7 +1082,7 @@ function loadProduct() {
                 <div class="sizes">
                     <label>Size:</label>
                     <div class="size-options">
-                        ${product.sizes.map(size => `<span class="size-option">${size}</span>`).join('')}
+                        ${product.sizes.map(size => `<span class="size-option">${typeof size === 'object' ? (size.name || size.size || size.label || '') : size}</span>`).join('')}
                     </div>
                 </div>
             `;

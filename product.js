@@ -65,6 +65,27 @@ function normalizeProductColor(colorData) {
     return { name: 'Unknown', hex: '#6b7280', inStock: true };
 }
 
+function normalizeProductSize(sizeData) {
+    if (typeof sizeData === 'string') {
+        const raw = sizeData.trim();
+        const parts = raw.split(':');
+        const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+        const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
+        const cleanParts = isOos ? parts.slice(0, -1) : parts;
+        const name = cleanParts.join(':').trim() || 'Unknown';
+        return { name, inStock: !isOos };
+    }
+    if (sizeData && typeof sizeData === 'object') {
+        const name = String(sizeData.name ?? sizeData.size ?? sizeData.label ?? '').trim() || 'Unknown';
+        const isOos = sizeData.outOfStock === true ||
+            sizeData.inStock === false ||
+            sizeData.available === false ||
+            (sizeData.stock !== undefined && sizeData.stock !== null && Number(sizeData.stock) <= 0);
+        return { name, inStock: !isOos };
+    }
+    return { name: 'Unknown', inStock: true };
+}
+
 function isWholeProductOutOfStock(product) {
     if (!product) return false;
     const isOutOfStockByCategory = Boolean(
@@ -79,52 +100,101 @@ function isWholeProductOutOfStock(product) {
     const colors = Array.isArray(product.normalizedColors)
         ? product.normalizedColors
         : (Array.isArray(product.colors) ? product.colors.map(normalizeProductColor) : []);
+    const sizes = Array.isArray(product.normalizedSizes)
+        ? product.normalizedSizes
+        : (Array.isArray(product.sizes) ? product.sizes.map(normalizeProductSize) : []);
     const allColorsOos = colors.length > 0 && colors.every(c => !c.inStock);
-    return Boolean(product.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock || allColorsOos);
+    const allSizesOos = sizes.length > 0 && sizes.every(s => !s.inStock);
+    return Boolean(product.isOutOfStock || isOutOfStockByCategory || isOutOfStockByStock || allColorsOos || allSizesOos);
 }
 
-function isSelectedVariantOutOfStock(product = window.currentProductData, colorName = window.selectedColor) {
+function isSelectedVariantOutOfStock(
+    product = window.currentProductData,
+    colorName = window.selectedColor,
+    sizeName = window.selectedSize
+) {
     if (isWholeProductOutOfStock(product) || document.querySelector('.out-of-stock-wrapper, .out-of-stock-main-btn')) {
-        return { unavailable: true, reason: 'product', colorName: colorName || '' };
+        return { unavailable: true, reason: 'product', colorName: colorName || '', sizeName: sizeName || '' };
     }
+    let matchedOosColor = null;
+    let matchedOosSize = null;
+
     if (product && colorName) {
         const colors = Array.isArray(product.normalizedColors)
             ? product.normalizedColors
             : (Array.isArray(product.colors) ? product.colors.map(normalizeProductColor) : []);
-        const target = String(colorName).trim().toLowerCase();
-        const matched = colors.find(c => c.name.trim().toLowerCase() === target);
-        if (matched && !matched.inStock) {
-            return { unavailable: true, reason: 'color', colorName: matched.name };
-        }
+        const targetColor = String(colorName).trim().toLowerCase();
+        const foundColor = colors.find(c => c.name.trim().toLowerCase() === targetColor);
+        if (foundColor && !foundColor.inStock) matchedOosColor = foundColor.name;
     }
-    return { unavailable: false, reason: null, colorName: colorName || '' };
+
+    if (product && sizeName) {
+        const sizes = Array.isArray(product.normalizedSizes)
+            ? product.normalizedSizes
+            : (Array.isArray(product.sizes) ? product.sizes.map(normalizeProductSize) : []);
+        const targetSize = String(sizeName).trim().toLowerCase();
+        const foundSize = sizes.find(s => s.name.trim().toLowerCase() === targetSize);
+        if (foundSize && !foundSize.inStock) matchedOosSize = foundSize.name;
+    }
+
+    if (matchedOosColor && matchedOosSize) {
+        return { unavailable: true, reason: 'both', colorName: matchedOosColor, sizeName: matchedOosSize };
+    }
+    if (matchedOosColor) {
+        return { unavailable: true, reason: 'color', colorName: matchedOosColor, sizeName: sizeName || '' };
+    }
+    if (matchedOosSize) {
+        return { unavailable: true, reason: 'size', colorName: colorName || '', sizeName: matchedOosSize };
+    }
+    return { unavailable: false, reason: null, colorName: colorName || '', sizeName: sizeName || '' };
 }
 
 function getUnavailableVariantMessage(status) {
+    if (status && status.reason === 'both') {
+        return `Sorry, color "${status.colorName}" and size "${status.sizeName}" are currently out of stock. Please choose available options.`;
+    }
     if (status && status.reason === 'color' && status.colorName) {
         return `Sorry, "${status.colorName}" color is currently out of stock. Please choose another available color.`;
+    }
+    if (status && status.reason === 'size' && status.sizeName) {
+        return `Sorry, size "${status.sizeName}" is currently out of stock. Please choose another available size.`;
     }
     return 'Sorry, this product is currently out of stock.';
 }
 
-function updatePurchaseControlsForSelectedColor() {
+function updatePurchaseControlsForSelectedVariant() {
     const product = window.currentProductData;
-    const status = isSelectedVariantOutOfStock(product, window.selectedColor);
+    const status = isSelectedVariantOutOfStock(product, window.selectedColor, window.selectedSize);
     const wholeOos = isWholeProductOutOfStock(product);
-    const colorOosOnly = !wholeOos && status.unavailable && status.reason === 'color';
+    const colorOos = wholeOos || status.reason === 'color' || status.reason === 'both';
+    const sizeOos = wholeOos || status.reason === 'size' || status.reason === 'both';
+    const variantOosOnly = !wholeOos && status.unavailable;
 
     const colorDisplay = document.getElementById('selectedColorDisplay');
     if (colorDisplay && window.selectedColor) {
-        colorDisplay.textContent = (wholeOos || colorOosOnly)
+        colorDisplay.textContent = colorOos
             ? `${window.selectedColor} (Out of Stock)`
             : window.selectedColor;
         colorDisplay.classList.add('active');
-        colorDisplay.classList.toggle('out-of-stock', wholeOos || colorOosOnly);
+        colorDisplay.classList.toggle('out-of-stock', colorOos);
     }
 
-    const oosNotice = document.getElementById('colorOosNotice');
-    if (oosNotice) {
-        oosNotice.style.display = colorOosOnly ? 'flex' : 'none';
+    const colorOosNotice = document.getElementById('colorOosNotice');
+    if (colorOosNotice) {
+        colorOosNotice.style.display = (!wholeOos && (status.reason === 'color' || status.reason === 'both')) ? 'flex' : 'none';
+    }
+
+    const sizeDisplay = document.getElementById('selectedSizeDisplay');
+    if (sizeDisplay && window.selectedSize) {
+        sizeDisplay.textContent = sizeOos
+            ? `Size ${window.selectedSize} (Out of Stock)`
+            : `Selected Size: ${window.selectedSize}`;
+        sizeDisplay.classList.toggle('out-of-stock', sizeOos);
+    }
+
+    const sizeOosNotice = document.getElementById('sizeOosNotice');
+    if (sizeOosNotice) {
+        sizeOosNotice.style.display = (!wholeOos && (status.reason === 'size' || status.reason === 'both')) ? 'flex' : 'none';
     }
 
     const mainAddBtn = document.querySelector('.product-buttons .add-to-cart-btn');
@@ -157,26 +227,30 @@ function updatePurchaseControlsForSelectedColor() {
 
     [mainAddBtn, fixedAddBtn].forEach(btn => {
         if (!btn) return;
-        btn.disabled = colorOosOnly;
-        btn.classList.toggle('variant-oos', colorOosOnly);
+        btn.disabled = variantOosOnly;
+        btn.classList.toggle('variant-oos', variantOosOnly);
         btn.style.display = '';
         btn.style.pointerEvents = '';
-        if (colorOosOnly) {
+        if (variantOosOnly) {
             btn.setAttribute('disabled', 'disabled');
         } else {
             btn.removeAttribute('disabled');
         }
     });
 
+    const unavailableBuyText = status.reason === 'both'
+        ? 'Option Out of Stock'
+        : (status.reason === 'size' ? 'Size Out of Stock' : 'Color Out of Stock');
+
     [mainBuyBtn, fixedBuyBtn].forEach(btn => {
         if (!btn) return;
-        btn.disabled = colorOosOnly;
-        btn.classList.toggle('variant-oos', colorOosOnly);
+        btn.disabled = variantOosOnly;
+        btn.classList.toggle('variant-oos', variantOosOnly);
         btn.style.display = '';
         btn.style.pointerEvents = '';
-        if (colorOosOnly) {
+        if (variantOosOnly) {
             btn.setAttribute('disabled', 'disabled');
-            btn.textContent = 'Color Out of Stock';
+            btn.textContent = unavailableBuyText;
         } else {
             btn.removeAttribute('disabled');
             btn.textContent = 'Buy Now';
@@ -184,9 +258,11 @@ function updatePurchaseControlsForSelectedColor() {
     });
 
     if (qtyInput) {
-        qtyInput.disabled = colorOosOnly;
+        qtyInput.disabled = variantOosOnly;
     }
 }
+
+const updatePurchaseControlsForSelectedColor = updatePurchaseControlsForSelectedVariant;
 
 // ✅ Make scrollPhotoSlider global
 function scrollPhotoSlider(direction) {
@@ -210,13 +286,15 @@ function renderProductDetails(product) {
     };
 
     const images = Array.isArray(product.imgUrl) ? product.imgUrl : (product.img ? [product.img] : (product.photos || []));
-    const sizes = product.sizes || [];
+    const rawSizes = Array.isArray(product.sizes) ? product.sizes : [];
     const rawColors = Array.isArray(product.colors) ? product.colors : [];
 
-    // Parse colors with per-color stock status
+    // Parse colors and sizes with per-option stock status
     const colors = rawColors.map(normalizeProductColor);
+    const sizes = rawSizes.map(normalizeProductSize);
     if (window.currentProductData) {
         window.currentProductData.normalizedColors = colors;
+        window.currentProductData.normalizedSizes = sizes;
     }
 
     // ✅ Build gallery HTML
@@ -252,7 +330,8 @@ function renderProductDetails(product) {
     const hasExplicitStock = product.stock !== undefined && product.stock !== null && String(product.stock).trim() !== '';
     const isOutOfStockByStock = hasExplicitStock && Number(product.stock) <= 0;
     const allColorsOutOfStock = colors.length > 0 && colors.every(c => !c.inStock);
-    const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock;
+    const allSizesOutOfStock = sizes.length > 0 && sizes.every(s => !s.inStock);
+    const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock || allSizesOutOfStock;
 
     if (window.currentProductData) {
         window.currentProductData.isOutOfStock = isOutOfStock;
@@ -261,19 +340,47 @@ function renderProductDetails(product) {
     const firstInStockIndex = colors.findIndex(c => c.inStock);
     const defaultColorIndex = colors.length > 0 ? (firstInStockIndex !== -1 ? firstInStockIndex : 0) : -1;
 
+    const firstInStockSizeIndex = sizes.findIndex(s => s.inStock);
+    const defaultSizeIndex = sizes.length > 0 ? (firstInStockSizeIndex !== -1 ? firstInStockSizeIndex : 0) : -1;
+
     let sizesHTML = '';
     if (sizes.length) {
         sizesHTML = `
             <div class="sizes">
                 <h4>Available Sizes:</h4>
-                <select id="sizeDropdown" class="size-dropdown" onchange="selectSize(this.value)" ${isOutOfStock ? 'disabled style="background:#f3f4f6;cursor:not-allowed;"' : ''}>
-                    <option value="">Select Size</option>
+                <div class="size-pills-container">
         `;
-        sizes.forEach(size => {
-            sizesHTML += `<option value="${size}">${size}</option>`;
+        sizes.forEach((sizeObj, index) => {
+            const sizeName = sizeObj.name;
+            const isSelectedSize = index === defaultSizeIndex;
+            const isSizeOos = isOutOfStock || !sizeObj.inStock;
+            sizesHTML += `
+                <button type="button"
+                        class="product-size-pill${isSelectedSize ? ' selected' : ''}${isSizeOos ? ' out-of-stock' : ''}"
+                        data-size-index="${index}"
+                        data-size="${escapeHtmlAttr(sizeName)}"
+                        data-in-stock="${sizeObj.inStock ? 'true' : 'false'}"
+                        title="${escapeHtmlAttr('Size ' + sizeName + (isSizeOos ? ' (Out of Stock)' : ''))}"
+                        ${isOutOfStock ? 'disabled style="cursor:not-allowed;pointer-events:none;"' : `onclick="selectProductSizeByIndex(${index}, this)"`}>
+                    ${escapeHtmlAttr(sizeName)}
+                </button>
+            `;
         });
+        const defaultSizeObj = defaultSizeIndex >= 0 ? sizes[defaultSizeIndex] : null;
+        const defaultSizeLabel = defaultSizeObj
+            ? ((isOutOfStock || !defaultSizeObj.inStock)
+                ? `Size ${defaultSizeObj.name} (Out of Stock)`
+                : `Selected Size: ${defaultSizeObj.name}`)
+            : 'Select Size';
         sizesHTML += `
-                </select>
+                </div>
+                <div class="selected-size-name${defaultSizeObj && (isOutOfStock || !defaultSizeObj.inStock) ? ' out-of-stock' : ''}" id="selectedSizeDisplay">
+                    ${escapeHtmlAttr(defaultSizeLabel)}
+                </div>
+                <div class="size-oos-notice" id="sizeOosNotice" style="display: none;">
+                    <i class="fas fa-ban"></i>
+                    <span>Selected size is out of stock. Choose an available size.</span>
+                </div>
             </div>
         `;
     }
@@ -329,9 +436,16 @@ function renderProductDetails(product) {
     // Generate product buttons HTML
     let productButtonsHTML = '';
     if (isOutOfStock) {
-        const oosReasonText = (allColorsOutOfStock && !isOutOfStockByCategory && !isOutOfStockByStock)
-            ? 'All color options are currently out of stock'
-            : 'This product is currently unavailable';
+        let oosReasonText = 'This product is currently unavailable';
+        if (!isOutOfStockByCategory && !isOutOfStockByStock) {
+            if (allColorsOutOfStock && allSizesOutOfStock) {
+                oosReasonText = 'All color and size options are currently out of stock';
+            } else if (allColorsOutOfStock) {
+                oosReasonText = 'All color options are currently out of stock';
+            } else if (allSizesOutOfStock) {
+                oosReasonText = 'All size options are currently out of stock';
+            }
+        }
         productButtonsHTML = `
             <div class="product-buttons out-of-stock-wrapper">
                 <button class="out-of-stock-main-btn" disabled style="width: 100%; background: #9ca3af !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; padding: 16px !important; font-size: 1.15rem !important; font-weight: 700 !important; cursor: not-allowed !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; box-shadow: none !important; pointer-events: none !important;">
@@ -413,7 +527,7 @@ function renderProductDetails(product) {
     // ✅ Auto-adjust layout based on image size
     adjustLayoutToImageSize();
 
-    // ✅ Initialize color selection (default to first available in-stock color)
+    // ✅ Initialize color & size selection (default to first available in-stock option)
     if (colors.length > 0 && defaultColorIndex >= 0) {
         selectedColor = colors[defaultColorIndex].name;
         window.selectedColor = selectedColor;
@@ -422,8 +536,16 @@ function renderProductDetails(product) {
         window.selectedColor = null;
     }
 
+    if (sizes.length > 0 && defaultSizeIndex >= 0) {
+        selectedSize = sizes[defaultSizeIndex].name;
+        window.selectedSize = selectedSize;
+    } else {
+        selectedSize = null;
+        window.selectedSize = null;
+    }
+
     // ✅ Immediately update fixed bottom product bar and variant controls
-    updatePurchaseControlsForSelectedColor();
+    updatePurchaseControlsForSelectedVariant();
 }
 
 // ✅ Helper: Read cached product from high-capacity IndexedDB
@@ -656,8 +778,8 @@ function handleBuyNowClick() {
         return;
     }
 
-    // Comprehensive out-of-stock guard (whole product + selected color)
-    const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor);
+    // Comprehensive out-of-stock guard (whole product + selected color + selected size)
+    const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor, window.selectedSize);
     if (variantStatus.unavailable) {
         const msg = getUnavailableVariantMessage(variantStatus);
         if (window.FloatingAlertManager) {
@@ -685,7 +807,7 @@ function handleBuyNowClick() {
 function copyToWhatsApp(productName, productPrice) {
     console.log('🛍️ Buy Now clicked for:', productName);
 
-    const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor);
+    const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor, window.selectedSize);
     if (variantStatus.unavailable) {
         const msg = getUnavailableVariantMessage(variantStatus);
         if (window.FloatingAlertManager) {
@@ -1553,7 +1675,7 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
     const productSelectedSize = selectedSize || null;
     const productSelectedColor = selectedColor || null;
 
-    const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, productSelectedColor);
+    const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, productSelectedColor, productSelectedSize);
     if (variantStatus.unavailable) {
         const msg = getUnavailableVariantMessage(variantStatus);
         if (window.FloatingAlertManager) {
@@ -1574,7 +1696,7 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
     const customerPincode = document.getElementById('customerPincode')?.value.trim() || null;
     const saveAddress = document.getElementById('saveAddress')?.checked || false;
 
-    // Create product object (carry live stock/colors metadata so cart.js validates accurately)
+    // Create product object (carry live stock/colors/sizes metadata so cart.js validates accurately)
     const product = {
         id: productId,
         name: productName,
@@ -1583,7 +1705,8 @@ function addProductToCart(productName, productPrice, productOldPrice, productIma
         img: productImage,
         categories: window.currentProductData?.categories || [],
         stock: window.currentProductData?.stock,
-        colors: window.currentProductData?.colors || []
+        colors: window.currentProductData?.colors || [],
+        sizes: window.currentProductData?.sizes || []
     };
 
     // Create address object if any address field is filled
@@ -1702,7 +1825,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (addBtn) {
         addBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor);
+            const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor, window.selectedSize);
             if (variantStatus.unavailable) {
                 alert(getUnavailableVariantMessage(variantStatus));
                 return;
@@ -1718,7 +1841,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (buyBtn) {
         buyBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor);
+            const variantStatus = isSelectedVariantOutOfStock(window.currentProductData, window.selectedColor, window.selectedSize);
             if (variantStatus.unavailable) {
                 alert(getUnavailableVariantMessage(variantStatus));
                 return;
@@ -1949,13 +2072,32 @@ function adjustLayoutToImageSize() {
     }
 }
 
-window.selectSize = function (size) {
+window.selectProductSizeByIndex = function (index, element) {
+    const sizes = window.currentProductData?.normalizedSizes || [];
+    const entry = sizes[index];
+    if (entry) {
+        window.selectSize(entry.name, element);
+    } else if (element) {
+        window.selectSize(element.dataset.size || '', element);
+    }
+};
+
+window.selectSize = function (size, element = null) {
     selectedSize = size;
     window.selectedSize = size; // Also set on window for backward compatibility
     const dropdown = document.getElementById('sizeDropdown');
     if (dropdown) {
         dropdown.value = size;
     }
+    const pills = document.querySelectorAll('.product-size-pill');
+    if (pills.length) {
+        const target = String(size || '').trim().toLowerCase();
+        pills.forEach(pill => {
+            const match = element ? pill === element : ((pill.dataset.size || '').trim().toLowerCase() === target);
+            pill.classList.toggle('selected', match);
+        });
+    }
+    updatePurchaseControlsForSelectedVariant();
     console.log('Selected size:', size);
 };
 

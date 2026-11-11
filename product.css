@@ -846,6 +846,105 @@
     animation: shake 0.5s ease-in-out;
 }
 
+.size-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.product-size-pill {
+    min-width: 48px;
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.product-size-pill:hover {
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+
+.product-size-pill.selected {
+    border-color: #00a83e;
+    background: rgba(0, 168, 62, 0.08);
+    color: #007a2c;
+    box-shadow: 0 0 0 2px rgba(0, 168, 62, 0.22);
+}
+
+.product-size-pill.out-of-stock {
+    opacity: 0.58;
+    border-color: rgba(220, 38, 38, 0.45);
+    background: #fef2f2;
+    color: #b91c1c;
+    text-decoration: line-through;
+}
+
+.product-size-pill.out-of-stock::before {
+    content: '';
+    position: absolute;
+    left: -10%;
+    top: 50%;
+    width: 120%;
+    height: 1.5px;
+    background: rgba(220, 38, 38, 0.6);
+    transform: rotate(-16deg);
+    pointer-events: none;
+}
+
+.product-size-pill.out-of-stock.selected {
+    border-color: #dc2626 !important;
+    background: #fee2e2;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.22);
+}
+
+.selected-size-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #3b82f6;
+    margin-top: 10px;
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.selected-size-name.out-of-stock {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.35);
+    font-weight: 600;
+}
+
+.size-oos-notice {
+    margin: 10px auto 0;
+    max-width: 360px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 @keyframes shake {
 
     0%,

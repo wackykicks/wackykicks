@@ -483,7 +483,8 @@
             flex-wrap: wrap;
         }
 
-        .card-colors-section {
+        .card-colors-section,
+        .card-sizes-section {
             margin: 10px 0 4px;
             padding: 8px 10px;
             background: #f8fafc;
@@ -492,7 +493,8 @@
             text-align: left;
         }
 
-        .card-colors-header {
+        .card-colors-header,
+        .card-sizes-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -503,13 +505,15 @@
             gap: 6px;
         }
 
-        .card-colors-list {
+        .card-colors-list,
+        .card-sizes-list {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
         }
 
-        .card-color-chip {
+        .card-color-chip,
+        .card-size-chip {
             display: inline-flex;
             align-items: center;
             gap: 5px;
@@ -527,24 +531,28 @@
             box-shadow: none !important;
         }
 
-        .card-color-chip:hover {
+        .card-color-chip:hover,
+        .card-size-chip:hover {
             transform: translateY(-1px);
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
         }
 
-        .card-color-chip.in-stock {
+        .card-color-chip.in-stock,
+        .card-size-chip.in-stock {
             border-color: #86efac;
             background: #f0fdf4;
             color: #166534;
         }
 
-        .card-color-chip.out-of-stock {
+        .card-color-chip.out-of-stock,
+        .card-size-chip.out-of-stock {
             border-color: #fca5a5;
             background: #fef2f2;
             color: #b91c1c;
         }
 
-        .card-color-chip.out-of-stock .card-color-name {
+        .card-color-chip.out-of-stock .card-color-name,
+        .card-size-chip.out-of-stock .card-size-name {
             text-decoration: line-through;
             opacity: 0.8;
         }
@@ -1361,6 +1369,46 @@
             transform: scale(1.08);
         }
 
+        .size-preset-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .size-preset-btn {
+            width: auto !important;
+            margin: 0 !important;
+            padding: 5px 12px !important;
+            border-radius: 999px !important;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: none !important;
+        }
+
+        .size-preset-btn:hover {
+            border-color: #8b5cf6;
+            color: #6b21a8;
+        }
+
+        .size-preset-btn.selected {
+            background: #8b5cf6;
+            border-color: #7c3aed;
+            color: #ffffff;
+        }
+
+        .size-preset-btn.size-out-of-stock {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            text-decoration: line-through;
+        }
+
         @media (max-width: 768px) {
             .color-grid {
                 grid-template-columns: repeat(3, 1fr);
@@ -1600,8 +1648,33 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Available Sizes (comma separated)</label>
-                    <input type="text" id="productSizes" placeholder="Eg: 7, 8, 9, 10">
+                    <label>Available Sizes &amp; Availability (comma separated or quick select)</label>
+                    <input type="text" id="productSizes" placeholder="Eg: 7, 8, 9, 10 (or S, M, L, XL)"
+                        oninput="syncSelectedSizesFromInput()">
+                    <div class="size-preset-chips" id="sizePresetChips">
+                        <button type="button" class="size-preset-btn" data-size="6" onclick="togglePresetSize('6')">6</button>
+                        <button type="button" class="size-preset-btn" data-size="7" onclick="togglePresetSize('7')">7</button>
+                        <button type="button" class="size-preset-btn" data-size="8" onclick="togglePresetSize('8')">8</button>
+                        <button type="button" class="size-preset-btn" data-size="9" onclick="togglePresetSize('9')">9</button>
+                        <button type="button" class="size-preset-btn" data-size="10" onclick="togglePresetSize('10')">10</button>
+                        <button type="button" class="size-preset-btn" data-size="11" onclick="togglePresetSize('11')">11</button>
+                        <button type="button" class="size-preset-btn" data-size="S" onclick="togglePresetSize('S')">S</button>
+                        <button type="button" class="size-preset-btn" data-size="M" onclick="togglePresetSize('M')">M</button>
+                        <button type="button" class="size-preset-btn" data-size="L" onclick="togglePresetSize('L')">L</button>
+                        <button type="button" class="size-preset-btn" data-size="XL" onclick="togglePresetSize('XL')">XL</button>
+                        <button type="button" class="size-preset-btn" data-size="XXL" onclick="togglePresetSize('XXL')">XXL</button>
+                    </div>
+                    <div class="selected-colors-container" style="margin-top: 10px;">
+                        <div class="selected-colors-header">
+                            <span>Selected Sizes &amp; Availability:</span>
+                            <button type="button" onclick="clearAllSizes()" class="clear-all-btn">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
+                        <div class="selected-colors-list" id="selectedSizesList">
+                            <span style="color: #9ca3af; font-style: italic; padding: 6px 4px; font-size: 13px;">No sizes selected — type above or click a preset</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -1893,7 +1966,8 @@
 
         let editMode = false;
         let editingProductId = null;
-        let selectedColors = []; // Will store objects like {name: "Blue", hex: "#3b82f6"}
+        let selectedColors = []; // Will store objects like {name: "Blue", hex: "#3b82f6", inStock: true, outOfStock: false}
+        let selectedSizes = []; // Will store objects like {name: "8", inStock: true, outOfStock: false}
         let allProducts = []; // Store all products for search functionality
         let isSearchActive = false;
 
@@ -2110,58 +2184,71 @@
             syncColorGridSelection();
         };
 
-        function updateColorDisplay() {
-            const container = document.getElementById('selectedColorsList');
+        function renderVariantTagList(containerId, items, emptyMessage, onToggleStock, onRemove, includeColorDot) {
+            const container = document.getElementById(containerId);
             if (!container) return;
 
             container.innerHTML = '';
 
-            if (selectedColors.length === 0) {
+            if (!items || items.length === 0) {
                 const emptyMsg = document.createElement('span');
                 emptyMsg.style.cssText = 'color: #9ca3af; font-style: italic; padding: 6px 4px; font-size: 13px; display: inline-flex; align-items: center;';
-                emptyMsg.textContent = 'No colors selected — open dropdown to select colors';
+                emptyMsg.textContent = emptyMessage;
                 container.appendChild(emptyMsg);
                 return;
             }
 
-            selectedColors = selectedColors.map(normalizeAdminColor);
-            selectedColors.forEach((colorObj, idx) => {
+            items.forEach((itemObj, idx) => {
                 const tag = document.createElement('div');
-                tag.className = `selected-color-tag${colorObj.outOfStock ? ' is-out-of-stock' : ''}`;
-                tag.setAttribute('data-color', colorObj.name);
+                tag.className = `selected-color-tag${itemObj.outOfStock ? ' is-out-of-stock' : ''}`;
+                tag.setAttribute(includeColorDot ? 'data-color' : 'data-size', itemObj.name);
 
-                const circle = document.createElement('div');
-                circle.className = 'tag-color-circle';
-                circle.style.background = colorObj.hex;
+                if (includeColorDot) {
+                    const circle = document.createElement('div');
+                    circle.className = 'tag-color-circle';
+                    circle.style.background = itemObj.hex;
+                    tag.appendChild(circle);
+                }
 
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'tag-color-name';
-                nameSpan.textContent = colorObj.name;
+                nameSpan.textContent = itemObj.name;
 
                 const stockBtn = document.createElement('button');
                 stockBtn.type = 'button';
-                stockBtn.className = `color-stock-toggle ${colorObj.outOfStock ? 'out-of-stock' : 'in-stock'}`;
-                stockBtn.title = colorObj.outOfStock
-                    ? `Click to mark ${colorObj.name} In Stock`
-                    : `Click to mark ${colorObj.name} Out of Stock`;
-                stockBtn.innerHTML = colorObj.outOfStock
+                stockBtn.className = `color-stock-toggle ${itemObj.outOfStock ? 'out-of-stock' : 'in-stock'}`;
+                stockBtn.title = itemObj.outOfStock
+                    ? `Click to mark ${itemObj.name} In Stock`
+                    : `Click to mark ${itemObj.name} Out of Stock`;
+                stockBtn.innerHTML = itemObj.outOfStock
                     ? '<i class="fas fa-ban"></i> Out of Stock'
                     : '<i class="fas fa-check"></i> In Stock';
-                stockBtn.onclick = () => toggleColorStock(idx);
+                stockBtn.onclick = () => onToggleStock(idx);
 
                 const removeBtn = document.createElement('button');
                 removeBtn.type = 'button';
                 removeBtn.className = 'remove-color';
-                removeBtn.title = `Remove ${colorObj.name}`;
+                removeBtn.title = `Remove ${itemObj.name}`;
                 removeBtn.textContent = '×';
-                removeBtn.onclick = () => removeColor(idx);
+                removeBtn.onclick = () => onRemove(idx);
 
-                tag.appendChild(circle);
                 tag.appendChild(nameSpan);
                 tag.appendChild(stockBtn);
                 tag.appendChild(removeBtn);
                 container.appendChild(tag);
             });
+        }
+
+        function updateColorDisplay() {
+            selectedColors = selectedColors.map(normalizeAdminColor);
+            renderVariantTagList(
+                'selectedColorsList',
+                selectedColors,
+                'No colors selected — open dropdown to select colors',
+                toggleColorStock,
+                removeColor,
+                true
+            );
         }
 
         function updateColorInput() {
@@ -2182,6 +2269,142 @@
             syncColorGridSelection();
         };
 
+        // Size Normalization & Management Helpers
+        function normalizeAdminSize(sizeData) {
+            if (typeof sizeData === 'string') {
+                const raw = sizeData.trim();
+                const parts = raw.split(':');
+                const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+                const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
+                const cleanParts = isOos ? parts.slice(0, -1) : parts;
+                const name = cleanParts.join(':').trim() || 'Unknown';
+                return { name, inStock: !isOos, outOfStock: isOos };
+            }
+            if (sizeData && typeof sizeData === 'object') {
+                const name = String(sizeData.name ?? sizeData.size ?? sizeData.label ?? '').trim() || 'Unknown';
+                const isOos = sizeData.outOfStock === true ||
+                    sizeData.inStock === false ||
+                    sizeData.available === false ||
+                    (sizeData.stock !== undefined && sizeData.stock !== null && Number(sizeData.stock) <= 0);
+                return { name, inStock: !isOos, outOfStock: isOos };
+            }
+            return { name: 'Unknown', inStock: true, outOfStock: false };
+        }
+
+        function syncSizePresetButtons() {
+            const presetContainer = document.getElementById('sizePresetChips');
+            if (!presetContainer) return;
+            const selectedMap = new Map();
+            selectedSizes.forEach(s => {
+                const norm = normalizeAdminSize(s);
+                selectedMap.set(norm.name.toLowerCase(), norm);
+            });
+            presetContainer.querySelectorAll('.size-preset-btn').forEach(btn => {
+                const key = (btn.getAttribute('data-size') || '').trim().toLowerCase();
+                const match = selectedMap.get(key);
+                btn.classList.remove('selected', 'size-out-of-stock');
+                if (match) {
+                    btn.classList.add('selected');
+                    if (match.outOfStock) btn.classList.add('size-out-of-stock');
+                }
+            });
+        }
+
+        function updateSizeDisplay() {
+            selectedSizes = selectedSizes.map(normalizeAdminSize);
+            renderVariantTagList(
+                'selectedSizesList',
+                selectedSizes,
+                'No sizes selected — type above or click a preset',
+                toggleSizeStock,
+                removeSize,
+                false
+            );
+            syncSizePresetButtons();
+        }
+
+        window.syncSelectedSizesFromInput = () => {
+            if (!sizesInput) return;
+            const existingMap = new Map();
+            selectedSizes.forEach(s => {
+                const norm = normalizeAdminSize(s);
+                existingMap.set(norm.name.toLowerCase(), norm);
+            });
+
+            const seen = new Set();
+            const parsed = [];
+            sizesInput.value.split(',').forEach(part => {
+                const trimmed = part.trim();
+                if (!trimmed) return;
+                const norm = normalizeAdminSize(trimmed);
+                const key = norm.name.toLowerCase();
+                if (seen.has(key)) return;
+                seen.add(key);
+                const prev = existingMap.get(key);
+                // Preserve existing OOS toggle if not explicitly suffixed with :oos
+                const hasInlineOos = trimmed.toLowerCase().endsWith(':oos') || trimmed.toLowerCase().endsWith(':out-of-stock');
+                if (prev && !hasInlineOos) {
+                    parsed.push({ name: norm.name, inStock: prev.inStock, outOfStock: prev.outOfStock });
+                } else {
+                    parsed.push(norm);
+                }
+            });
+
+            selectedSizes = parsed;
+            updateSizeDisplay();
+        };
+
+        window.togglePresetSize = (sizeName) => {
+            const clean = String(sizeName || '').trim();
+            if (!clean) return;
+            const key = clean.toLowerCase();
+            const idx = selectedSizes.findIndex(s => normalizeAdminSize(s).name.toLowerCase() === key);
+            if (idx === -1) {
+                selectedSizes.push({ name: clean, inStock: true, outOfStock: false });
+            } else {
+                selectedSizes.splice(idx, 1);
+            }
+            if (sizesInput) sizesInput.value = selectedSizes.map(s => normalizeAdminSize(s).name).join(', ');
+            updateSizeDisplay();
+        };
+
+        window.toggleSizeStock = (indexOrName) => {
+            let idx = -1;
+            if (typeof indexOrName === 'number') {
+                idx = indexOrName;
+            } else {
+                const key = String(indexOrName || '').trim().toLowerCase();
+                idx = selectedSizes.findIndex(s => normalizeAdminSize(s).name.toLowerCase() === key);
+            }
+            if (idx < 0 || idx >= selectedSizes.length) return;
+            const norm = normalizeAdminSize(selectedSizes[idx]);
+            const nextOos = !norm.outOfStock;
+            selectedSizes[idx] = { name: norm.name, inStock: !nextOos, outOfStock: nextOos };
+            updateSizeDisplay();
+            notify(
+                nextOos ? 'warning' : 'success',
+                `Size ${norm.name} marked ${nextOos ? 'Out of Stock' : 'In Stock'}`,
+                'Size Stock Updated'
+            );
+        };
+
+        window.removeSize = (indexOrName) => {
+            if (typeof indexOrName === 'number') {
+                selectedSizes.splice(indexOrName, 1);
+            } else {
+                const key = String(indexOrName || '').trim().toLowerCase();
+                selectedSizes = selectedSizes.filter(s => normalizeAdminSize(s).name.toLowerCase() !== key);
+            }
+            if (sizesInput) sizesInput.value = selectedSizes.map(s => normalizeAdminSize(s).name).join(', ');
+            updateSizeDisplay();
+        };
+
+        window.clearAllSizes = () => {
+            selectedSizes = [];
+            if (sizesInput) sizesInput.value = '';
+            updateSizeDisplay();
+        };
+
         // Reset form
         function resetForm() {
             nameInput.value = "";
@@ -2191,6 +2414,8 @@
             stockInput.disabled = false;
             if (outOfStockCheckbox) outOfStockCheckbox.checked = false;
             sizesInput.value = "";
+            selectedSizes = [];
+            updateSizeDisplay();
             descriptionInput.value = "";
             document.getElementById("multiImageInput").value = "";
 
@@ -2199,6 +2424,7 @@
             updateColorDisplay();
             updateColorInput();
             syncColorGridSelection();
+            updateSizeDisplay();
 
             // Close color dropdown if open
             const panel = document.getElementById('colorDropdownPanel');
@@ -2722,47 +2948,73 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function buildCardColorsHTML(product) {
+        function isAdminProductOutOfStock(product) {
+            if (!product) return false;
             const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
-            if (normalizedColors.length === 0) return '';
+            const normalizedSizes = Array.isArray(product.sizes) ? product.sizes.map(normalizeAdminSize) : [];
+            const allColorsOut = normalizedColors.length > 0 && normalizedColors.every(c => c.outOfStock);
+            const allSizesOut = normalizedSizes.length > 0 && normalizedSizes.every(s => s.outOfStock);
+            const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+            const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
+            return Boolean(isOutOfStockByCategory || isOutOfStockByStock || allColorsOut || allSizesOut);
+        }
 
-            const inStockCount = normalizedColors.filter(c => c.inStock).length;
-            const totalCount = normalizedColors.length;
+        function buildCardVariantSection(product, fieldKey) {
+            const isColor = fieldKey === 'colors';
+            const rawList = Array.isArray(product[fieldKey]) ? product[fieldKey] : [];
+            const normalized = rawList.map(isColor ? normalizeAdminColor : normalizeAdminSize);
+            if (normalized.length === 0) return '';
+
+            const inStockCount = normalized.filter(v => v.inStock).length;
+            const totalCount = normalized.length;
             const countColor = inStockCount === 0 ? '#dc2626' : (inStockCount < totalCount ? '#d97706' : '#16a34a');
+            const sectionClass = isColor ? 'card-colors-section' : 'card-sizes-section';
+            const headerClass = isColor ? 'card-colors-header' : 'card-sizes-header';
+            const listClass = isColor ? 'card-colors-list' : 'card-sizes-list';
+            const chipClass = isColor ? 'card-color-chip' : 'card-size-chip';
+            const nameClass = isColor ? 'card-color-name' : 'card-size-name';
+            const handlerName = isColor ? 'toggleCardColorStock' : 'toggleCardSizeStock';
+            const labelHTML = isColor
+                ? '<i class="fas fa-palette"></i> Colors (click to toggle)'
+                : '<i class="fas fa-ruler"></i> Sizes (click to toggle)';
 
-            const chipsHTML = normalizedColors.map((c, idx) => `
+            const chipsHTML = normalized.map((item, idx) => `
                 <button type="button"
-                        class="card-color-chip ${c.outOfStock ? 'out-of-stock' : 'in-stock'}"
-                        data-color-index="${idx}"
-                        onclick="toggleCardColorStock('${escapeAdminHtml(product.id)}', ${idx}, event)"
-                        title="${escapeAdminHtml(c.name)} — Click to mark ${c.outOfStock ? 'In Stock' : 'Out of Stock'}">
-                    <span class="card-color-dot" style="background: ${escapeAdminHtml(c.hex)};"></span>
-                    <span class="card-color-name">${escapeAdminHtml(c.name)}</span>
-                    <i class="fas ${c.outOfStock ? 'fa-ban' : 'fa-check'}" style="font-size: 0.68rem;"></i>
+                        class="${chipClass} ${item.outOfStock ? 'out-of-stock' : 'in-stock'}"
+                        data-${isColor ? 'color' : 'size'}-index="${idx}"
+                        onclick="${handlerName}('${escapeAdminHtml(product.id)}', ${idx}, event)"
+                        title="${escapeAdminHtml(item.name)} — Click to mark ${item.outOfStock ? 'In Stock' : 'Out of Stock'}">
+                    ${isColor ? `<span class="card-color-dot" style="background: ${escapeAdminHtml(item.hex)};"></span>` : ''}
+                    <span class="${nameClass}">${escapeAdminHtml(item.name)}</span>
+                    <i class="fas ${item.outOfStock ? 'fa-ban' : 'fa-check'}" style="font-size: 0.68rem;"></i>
                 </button>
             `).join('');
 
             return `
-                <div class="card-colors-section">
-                    <div class="card-colors-header">
-                        <span><i class="fas fa-palette"></i> Colors (click to toggle)</span>
+                <div class="${sectionClass}">
+                    <div class="${headerClass}">
+                        <span>${labelHTML}</span>
                         <span style="color: ${countColor};">${inStockCount}/${totalCount} in stock</span>
                     </div>
-                    <div class="card-colors-list">
+                    <div class="${listClass}">
                         ${chipsHTML}
                     </div>
                 </div>
             `;
         }
 
+        function buildCardColorsHTML(product) {
+            return buildCardVariantSection(product, 'colors');
+        }
+
+        function buildCardSizesHTML(product) {
+            return buildCardVariantSection(product, 'sizes');
+        }
+
         function updateProductCardStockUI(card, product) {
             if (!card || !product) return;
 
-            const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
-            const allColorsOutOfStock = normalizedColors.length > 0 && normalizedColors.every(c => c.outOfStock);
-            const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
-            const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
-            const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock;
+            const isOutOfStock = isAdminProductOutOfStock(product);
 
             const badge = card.querySelector('.stock-status-badge');
             if (badge) {
@@ -2777,6 +3029,11 @@
             const colorsBox = card.querySelector('.card-colors-section');
             if (colorsBox) {
                 colorsBox.outerHTML = buildCardColorsHTML(product);
+            }
+
+            const sizesBox = card.querySelector('.card-sizes-section');
+            if (sizesBox) {
+                sizesBox.outerHTML = buildCardSizesHTML(product);
             }
 
             const stockBtn = card.querySelector('.stock-btn');
@@ -2804,14 +3061,9 @@
             products.forEach(product => {
                 const firstImage = Array.isArray(product.imgUrl) ? (product.imgUrl[0] || "") : (product.imgUrl || product.img || "");
 
-                // Check if product is out of stock (by category, stock field, or all colors OOS)
-                const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
-                const oosColorsCount = normalizedColors.filter(c => c.outOfStock).length;
-                const allColorsOutOfStock = normalizedColors.length > 0 && oosColorsCount === normalizedColors.length;
-                const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
-                const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
-                const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock;
+                const isOutOfStock = isAdminProductOutOfStock(product);
                 const cardColorsHTML = buildCardColorsHTML(product);
+                const cardSizesHTML = buildCardSizesHTML(product);
 
                 // Calculate discount percentage for admin display
                 const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
@@ -2828,6 +3080,7 @@
             ${isOutOfStock ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>` :
                         discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : '<p class="stock-status-badge" style="color: #666;">In Stock</p>'}
             ${cardColorsHTML}
+            ${cardSizesHTML}
             <div class="actions" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
                 <button class="edit-btn" onclick="editProduct('${product.id}')" style="flex: 1; min-width: 70px;"><i class="fas fa-edit"></i> Edit</button>
                 <button class="stock-btn" onclick="toggleProductStock('${product.id}', event)" title="${isOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock'}" style="flex: 1.2; min-width: 95px; padding: 6px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: white; background: ${isOutOfStock ? '#16a34a' : '#ef4444'};">
@@ -2957,14 +3210,17 @@
             if (!product) return;
 
             const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
+            const normalizedSizes = Array.isArray(product.sizes) ? product.sizes.map(normalizeAdminSize) : [];
             const allColorsWereOos = normalizedColors.length > 0 && normalizedColors.every(c => c.outOfStock);
-            const isCurrentlyOutOfStock = (product.categories && product.categories.includes('out-of-stock')) || (product.stock !== undefined && Number(product.stock) <= 0) || allColorsWereOos;
+            const allSizesWereOos = normalizedSizes.length > 0 && normalizedSizes.every(s => s.outOfStock);
+            const isCurrentlyOutOfStock = isAdminProductOutOfStock(product);
             const makeOutOfStock = !isCurrentlyOutOfStock;
 
             let currentCategories = Array.isArray(product.categories) ? [...product.categories] : (product.category ? [product.category] : []);
             let newCategories;
             let newStock;
             let updatedColors = null;
+            let updatedSizes = null;
 
             if (makeOutOfStock) {
                 newStock = 0;
@@ -2974,6 +3230,9 @@
                 newCategories = currentCategories.filter(c => c !== 'out-of-stock');
                 if (allColorsWereOos) {
                     updatedColors = normalizedColors.map(c => ({ name: c.name, hex: c.hex, inStock: true, outOfStock: false }));
+                }
+                if (allSizesWereOos) {
+                    updatedSizes = normalizedSizes.map(s => ({ name: s.name, inStock: true, outOfStock: false }));
                 }
             }
 
@@ -2988,17 +3247,15 @@
                     stock: newStock,
                     categories: newCategories
                 };
-                if (updatedColors) {
-                    patchData.colors = updatedColors;
-                }
+                if (updatedColors) patchData.colors = updatedColors;
+                if (updatedSizes) patchData.sizes = updatedSizes;
                 await saveProductToFirestore(id, patchData, true);
 
                 // Update in memory and local storage caches
                 product.stock = newStock;
                 product.categories = newCategories;
-                if (updatedColors) {
-                    product.colors = updatedColors;
-                }
+                if (updatedColors) product.colors = updatedColors;
+                if (updatedSizes) product.sizes = updatedSizes;
                 await setCachedProductsAsync(allProducts);
                 try {
                     localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
@@ -3012,11 +3269,18 @@
                     displayProducts(allProducts);
                 }
 
-                if (editMode && editingProductId === id && updatedColors) {
-                    selectedColors = updatedColors.map(normalizeAdminColor);
-                    updateColorDisplay();
-                    updateColorInput();
-                    syncColorGridSelection();
+                if (editMode && editingProductId === id) {
+                    if (updatedColors) {
+                        selectedColors = updatedColors.map(normalizeAdminColor);
+                        updateColorDisplay();
+                        updateColorInput();
+                        syncColorGridSelection();
+                    }
+                    if (updatedSizes) {
+                        selectedSizes = updatedSizes.map(normalizeAdminSize);
+                        if (sizesInput) sizesInput.value = selectedSizes.map(s => s.name).join(', ');
+                        updateSizeDisplay();
+                    }
                 }
 
                 notify('success', `Product "${product.name}" marked ${makeOutOfStock ? 'Out of Stock' : 'In Stock'}!`, 'Stock Updated');
@@ -3030,39 +3294,44 @@
             }
         };
 
-        // Quick toggle for an individual color's stock directly from product card (without entering Edit)
-        window.toggleCardColorStock = async (id, colorIndex, event) => {
+        // Shared quick toggle for individual color or size stock directly from product card (without entering Edit)
+        async function toggleCardVariantStock(id, fieldKey, variantIndex, event) {
+            const isColor = fieldKey === 'colors';
+            const normalizer = isColor ? normalizeAdminColor : normalizeAdminSize;
+            const otherKey = isColor ? 'sizes' : 'colors';
+            const otherNormalizer = isColor ? normalizeAdminSize : normalizeAdminColor;
+
             const chipBtn = event ? (event.target.closest('button') || event.target) : null;
             const card = chipBtn ? chipBtn.closest('.product-card') : document.querySelector(`.product-card[data-id="${id}"]`);
             const product = allProducts.find(p => p.id === id);
-            if (!product || !Array.isArray(product.colors)) return;
+            if (!product || !Array.isArray(product[fieldKey])) return;
 
-            const updatedColors = product.colors.map(normalizeAdminColor);
-            if (colorIndex < 0 || colorIndex >= updatedColors.length) return;
+            const updatedList = product[fieldKey].map(normalizer);
+            if (variantIndex < 0 || variantIndex >= updatedList.length) return;
 
-            const target = updatedColors[colorIndex];
-            const makeColorOos = !target.outOfStock;
-            updatedColors[colorIndex] = {
-                name: target.name,
-                hex: target.hex,
-                inStock: !makeColorOos,
-                outOfStock: makeColorOos
-            };
+            const target = updatedList[variantIndex];
+            const makeVariantOos = !target.outOfStock;
+            updatedList[variantIndex] = isColor
+                ? { name: target.name, hex: target.hex, inStock: !makeVariantOos, outOfStock: makeVariantOos }
+                : { name: target.name, inStock: !makeVariantOos, outOfStock: makeVariantOos };
+
+            const otherList = Array.isArray(product[otherKey]) ? product[otherKey].map(otherNormalizer) : [];
+            const otherDimensionAllOos = otherList.length > 0 && otherList.every(v => v.outOfStock);
 
             const currentCategories = Array.isArray(product.categories)
                 ? [...product.categories]
                 : (product.category ? [product.category] : []);
             const wasProductOos = currentCategories.includes('out-of-stock') ||
                 (product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0);
-            const allColorsNowOos = updatedColors.every(c => c.outOfStock);
+            const thisDimensionAllOos = updatedList.every(v => v.outOfStock);
 
-            const patchData = { colors: updatedColors };
-            if (allColorsNowOos) {
+            const patchData = { [fieldKey]: updatedList };
+            if (thisDimensionAllOos || otherDimensionAllOos) {
                 patchData.stock = 0;
                 patchData.categories = currentCategories.includes('out-of-stock')
                     ? currentCategories
                     : [...currentCategories, 'out-of-stock'];
-            } else if (!makeColorOos && wasProductOos) {
+            } else if (!makeVariantOos && wasProductOos) {
                 patchData.stock = (product.stock && Number(product.stock) > 0) ? Number(product.stock) : 10;
                 patchData.categories = currentCategories.filter(c => c !== 'out-of-stock');
             }
@@ -3077,7 +3346,7 @@
             try {
                 await saveProductToFirestore(id, patchData, true);
 
-                product.colors = updatedColors;
+                product[fieldKey] = updatedList;
                 if (patchData.stock !== undefined) product.stock = patchData.stock;
                 if (patchData.categories !== undefined) product.categories = patchData.categories;
 
@@ -3094,27 +3363,37 @@
                 }
 
                 if (editMode && editingProductId === id) {
-                    selectedColors = updatedColors.map(normalizeAdminColor);
-                    updateColorDisplay();
-                    updateColorInput();
-                    syncColorGridSelection();
+                    if (isColor) {
+                        selectedColors = updatedList.map(normalizeAdminColor);
+                        updateColorDisplay();
+                        updateColorInput();
+                        syncColorGridSelection();
+                    } else {
+                        selectedSizes = updatedList.map(normalizeAdminSize);
+                        if (sizesInput) sizesInput.value = selectedSizes.map(s => s.name).join(', ');
+                        updateSizeDisplay();
+                    }
                 }
 
+                const labelPrefix = isColor ? '' : 'Size ';
                 notify(
-                    makeColorOos ? 'warning' : 'success',
-                    `${target.name} on "${product.name}" marked ${makeColorOos ? 'Out of Stock' : 'In Stock'}`,
-                    'Color Stock Updated'
+                    makeVariantOos ? 'warning' : 'success',
+                    `${labelPrefix}${target.name} on "${product.name}" marked ${makeVariantOos ? 'Out of Stock' : 'In Stock'}`,
+                    isColor ? 'Color Stock Updated' : 'Size Stock Updated'
                 );
             } catch (err) {
-                console.error('[Admin] Error toggling color stock on card:', err);
+                console.error(`[Admin] Error toggling ${fieldKey} stock on card:`, err);
                 if (chipBtn) {
                     chipBtn.disabled = false;
                     chipBtn.style.opacity = '';
                     chipBtn.innerHTML = origChipHTML;
                 }
-                notify('error', 'Error updating color stock: ' + err.message, 'Stock Error');
+                notify('error', `Error updating ${isColor ? 'color' : 'size'} stock: ` + err.message, 'Stock Error');
             }
-        };
+        }
+
+        window.toggleCardColorStock = (id, colorIndex, event) => toggleCardVariantStock(id, 'colors', colorIndex, event);
+        window.toggleCardSizeStock = (id, sizeIndex, event) => toggleCardVariantStock(id, 'sizes', sizeIndex, event);
 
         // Submit product (add or update)
         window.submitProduct = async () => {
@@ -3160,13 +3439,15 @@
                 }
             }
 
-            const sizes = sizesInput.value.split(",").map(s => s.trim()).filter(s => s);
+            syncSelectedSizesFromInput();
+            const sizes = selectedSizes.map(normalizeAdminSize);
             const colors = selectedColors.map(normalizeAdminColor);
             const description = descriptionInput.value.trim();
             let categories = getSelectedProductCategories();
 
-            // If product has selected colors and ALL of them are marked Out of Stock, treat product stock as 0
-            if (colors.length > 0 && colors.every(c => c.outOfStock)) {
+            // If product has selected colors or sizes and ALL options in either dimension are Out of Stock, treat product stock as 0
+            if ((colors.length > 0 && colors.every(c => c.outOfStock)) ||
+                (sizes.length > 0 && sizes.every(s => s.outOfStock))) {
                 stock = 0;
             }
 
@@ -3339,7 +3620,7 @@
             newPriceInput.value = product.newPrice || product.price || "";
 
             // Out of stock and stock status handling
-            const isOutOfStock = (product.categories && product.categories.includes('out-of-stock')) || (product.stock !== undefined && Number(product.stock) <= 0);
+            const isOutOfStock = isAdminProductOutOfStock(product);
             if (outOfStockCheckbox) {
                 outOfStockCheckbox.checked = isOutOfStock;
             }
@@ -3348,7 +3629,10 @@
                 stockInput.value = isOutOfStock ? 0 : (product.stock !== undefined ? product.stock : 10);
             }
 
-            sizesInput.value = (product.sizes || []).join(", ");
+            const productSizes = Array.isArray(product.sizes) ? product.sizes : [];
+            selectedSizes = productSizes.map(normalizeAdminSize);
+            sizesInput.value = selectedSizes.map(s => s.name).join(", ");
+            updateSizeDisplay();
             descriptionInput.value = product.description || "";
 
             // Load colors into the color selection system
@@ -3589,6 +3873,7 @@
             updateColorDisplay();
             updateColorInput();
             syncColorGridSelection();
+            updateSizeDisplay();
 
             // Load categories for product form
             loadProductCategories();
