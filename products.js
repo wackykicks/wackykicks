@@ -1220,15 +1220,15 @@ function filterProducts(categories = [], categoryData = null) {
     console.log('🎯 Category info:', categoryInfo);
     
     const categoryFilteredProducts = allProducts.filter(product => {
-        if (!product.categories || !Array.isArray(product.categories) || product.categories.length === 0) {
-            console.log('❌ Product has no categories:', product.name);
+        const prodCats = (Array.isArray(product.categories) && product.categories.length > 0)
+            ? product.categories
+            : (typeof product.category === 'string' && product.category.trim() ? [product.category.trim()] : []);
+        if (prodCats.length === 0) {
             return false;
         }
         
-        console.log(`🔍 Checking product "${product.name}" with categories:`, product.categories);
-        
         // Simplified category matching - check multiple common variations
-        const hasCategory = product.categories.some(cat => {
+        const hasCategory = prodCats.some(cat => {
             if (!cat || typeof cat !== 'string') return false;
             
             // Convert both to lowercase for comparison
@@ -1243,6 +1243,10 @@ function filterProducts(categories = [], categoryData = null) {
             // Check for exact match after normalization
             const exactMatch = productCategory === filterCategory;
             const nameMatch = categoryName && productCategory === categoryName;
+            const productSlug = productCategory.replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+            const filterSlug = filterCategory.replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+            const nameSlug = categoryName ? categoryName.replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') : null;
+            const slugMatch = (nameSlug && (productSlug === nameSlug || productCategory === nameSlug)) || (productSlug === filterSlug);
             
                     // Handle special category mappings
                     const specialMatches = {
@@ -1315,7 +1319,7 @@ function filterProducts(categories = [], categoryData = null) {
                 // This allows users to find smartwatches in both categories if appropriately tagged
             }
             
-            const isMatch = (exactMatch || nameMatch || specialMatch || nameSpecialMatch || reverseSpecialMatch) && !isExcluded;
+            const isMatch = (exactMatch || nameMatch || slugMatch || specialMatch || nameSpecialMatch || reverseSpecialMatch) && !isExcluded;
             
             if (isMatch) {
                 console.log(`    ✅ Match found: "${cat}" matches filter "${categoryId}"${categoryName ? ` or name "${categoryInfo.name}"` : ''}`);

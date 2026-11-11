@@ -81,8 +81,67 @@ function parseAdminFirestoreProduct(doc) {
         item.imgUrl = item.img ? [item.img] : [];
     }
     item.img = item.imgUrl[0] || item.img || '';
-    item.categories = item.categories || [];
+    if (Array.isArray(item.categories)) {
+        item.categories = item.categories.filter(Boolean);
+    } else if (typeof item.category === 'string' && item.category.trim()) {
+        item.categories = [item.category.trim()];
+    } else {
+        item.categories = [];
+    }
     return item;
+}
+
+function toFirestoreRestArray(arr) {
+    if (!arr || !Array.isArray(arr) || arr.length === 0) {
+        return { arrayValue: {} };
+    }
+    return {
+        arrayValue: {
+            values: arr.map(item => {
+                if (typeof item === 'string') return { stringValue: item };
+                if (typeof item === 'number') return Number.isInteger(item) ? { integerValue: item.toString() } : { doubleValue: item };
+                if (typeof item === 'boolean') return { booleanValue: item };
+                return { stringValue: String(item) };
+            })
+        }
+    };
+}
+
+async function restUpdateProductCategories(productId, categories, primaryCategory = '') {
+    const cleanCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
+    const catVal = toFirestoreRestArray(cleanCategories);
+    const body = {
+        fields: {
+            categories: catVal,
+            category: { stringValue: primaryCategory || (cleanCategories[0] || '') }
+        }
+    };
+
+    const url = `https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${encodeURIComponent(productId)}?updateMask.fieldPaths=categories&updateMask.fieldPaths=category`;
+
+    const res = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`REST PATCH failed (${res.status}): ${errText}`);
+    }
+
+    // Fire-and-forget background SDK update
+    if (typeof db !== 'undefined') {
+        try {
+            db.collection('products').doc(productId).update({
+                categories: cleanCategories,
+                category: primaryCategory || (cleanCategories[0] || ''),
+                updatedAt: new Date().toISOString()
+            }).catch(() => {});
+        } catch (_) {}
+    }
+
+    return true;
 }
 
 async function fetchAdminProductsViaRest(onBatchLoaded = null) {
@@ -110,7 +169,7 @@ function toCategoryRestDoc(obj) {
         if (typeof v === 'string') fields[k] = { stringValue: v };
         else if (typeof v === 'number') fields[k] = Number.isInteger(v) ? { integerValue: v.toString() } : { doubleValue: v };
         else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
-        else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map(item => ({ stringValue: String(item) })) } };
+        else if (Array.isArray(v)) fields[k] = toFirestoreRestArray(v);
         else fields[k] = { stringValue: String(v) };
     }
     return { fields };
@@ -520,7 +579,8 @@ class AdminCategoryManager {
                             ...rawData,
                             id: trueDocId,
                             firebaseId: trueDocId,
-                            categoryId: rawData.categoryId || rawData.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || trueDocId,
+                            categoryId: rawData.categoryId || trueDocId,
+                            slug: (rawData.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
                             name: rawData.name || 'Unnamed Category',
                             image: rawData.image || rawData.icon || '',
                             color: rawData.color || '#667eea',
@@ -549,7 +609,8 @@ class AdminCategoryManager {
                             return {
                                 id,
                                 firebaseId: id,
-                                categoryId: parseAdminFirestoreValue(fields.id) || name.toLowerCase().replace(/[^a-z0-9]/g, '-') || id,
+                                categoryId: parseAdminFirestoreValue(fields.categoryId) || parseAdminFirestoreValue(fields.id) || id,
+                                slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
                                 name,
                                 image: parseAdminFirestoreValue(fields.image) || parseAdminFirestoreValue(fields.icon) || '',
                                 color: parseAdminFirestoreValue(fields.color) || '#667eea',
@@ -613,6 +674,7 @@ class AdminCategoryManager {
                         this.setupProductSearch();
                         this.renderProductsList();
                         await setAdminCachedProducts(this.products);
+                        this.renderCategoriesTable();
                     }
                 }).catch(e => console.warn('Background products sync failed:', e));
                 return;
@@ -639,6 +701,7 @@ class AdminCategoryManager {
                 this.renderProductsList();
                 await setAdminCachedProducts(this.products);
                 console.log(`✅ Loaded and cached all ${this.products.length} products`);
+                this.renderCategoriesTable();
             } else {
                 this.products = this.getMockProducts();
                 this.filteredProducts = [...this.products];
@@ -1166,18 +1229,18 @@ class AdminCategoryManager {
         }
 
         const checkboxesHTML = this.categories.map(category => {
-            // Use appropriate category identifier for products
-            const categoryIdentifier = category.categoryId || category.id;
+            const catId = category.id;
+            const categoryName = category.name || 'Unnamed Category';
             return `
             <div class="category-checkbox">
-                <input type="checkbox" id="cat_${categoryIdentifier}" value="${categoryIdentifier}" data-category-name="${category.name}">
+                <input type="checkbox" id="cat_${catId}" value="${catId}" data-category-name="${categoryName}">
                 <span class="category-checkbox-icon" style="color: ${category.color || '#667eea'}">
-                    <img src="${category.image || category.icon || 'https://via.placeholder.com/20x20?text=' + (category.name ? category.name.charAt(0) : 'C')}" 
-                         alt="${category.name || 'Category'}" 
+                    <img src="${category.image || category.icon || 'https://via.placeholder.com/20x20?text=' + (categoryName ? categoryName.charAt(0) : 'C')}" 
+                         alt="${categoryName}" 
                          style="width: 20px; height: 20px; border-radius: 4px; object-fit: cover;"
-                         onerror="this.src='https://via.placeholder.com/20x20?text=' + '${category.name ? category.name.charAt(0) : 'C'}'">
+                         onerror="this.src='https://via.placeholder.com/20x20?text=' + '${categoryName ? categoryName.charAt(0) : 'C'}'">
                 </span>
-                <label for="cat_${categoryIdentifier}" class="category-checkbox-name">${category.name || 'Unnamed Category'}</label>
+                <label for="cat_${catId}" class="category-checkbox-name">${categoryName}</label>
             </div>
         `;
         }).join('');
@@ -1186,19 +1249,9 @@ class AdminCategoryManager {
     }
 
     getProductCountForCategory(categoryId) {
-        // Handle both Firebase document ID and category name matching
-        const category = this.categories.find(cat => cat.id === categoryId);
-        const categoryName = category ? category.name : categoryId;
-
-        return this.products.filter(product => {
-            if (!product.categories || !Array.isArray(product.categories)) return false;
-
-            // Check for exact ID match, name match, or common category identifiers
-            return product.categories.includes(categoryId) ||
-                product.categories.includes(categoryName) ||
-                product.categories.includes(categoryName.toLowerCase()) ||
-                (categoryName === "Today's Offers" && product.categories.includes("today offer"));
-        }).length;
+        const category = this.categories.find(cat => cat.id === categoryId || cat.categoryId === categoryId);
+        if (!category) return 0;
+        return this.products.filter(product => this.isProductInCategory(product.categories, category)).length;
     }
 
     editCategory(categoryId) {
@@ -1251,18 +1304,9 @@ class AdminCategoryManager {
     }
 
     getProductsForCategory(categoryId) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        const categoryName = category ? category.name : categoryId;
-
-        return this.products.filter(product => {
-            if (!product.categories || !Array.isArray(product.categories)) return false;
-
-            // Check for exact ID match, name match, or common category identifiers
-            return product.categories.includes(categoryId) ||
-                product.categories.includes(categoryName) ||
-                product.categories.includes(categoryName.toLowerCase()) ||
-                (categoryName === "Today's Offers" && product.categories.includes("today offer"));
-        });
+        const category = this.categories.find(cat => cat.id === categoryId || cat.categoryId === categoryId);
+        if (!category) return [];
+        return this.products.filter(product => this.isProductInCategory(product.categories, category));
     }
 
     showCategoryProductsModal(categoryId, categoryName, products) {
@@ -1357,18 +1401,22 @@ class AdminCategoryManager {
     }
 
     editProductCategories(productId) {
-        // Find the product and select it for category editing
         this.selectedProduct = this.products.find(product => product.id === productId);
 
         if (this.selectedProduct) {
-            // Close the category products modal
-            document.getElementById('categoryProductsModal').style.display = 'none';
+            const modal = document.getElementById('categoryProductsModal');
+            if (modal) modal.style.display = 'none';
 
-            // Select the product in the assignment section
-            this.selectProduct(productId);
+            // Select ONLY this product in the assignment section
+            this.selectedProducts.clear();
+            this.selectedProducts.add(productId);
+            this.renderProductsList();
+            this.renderSelectedProducts();
+            this.updateSelectionCount();
+            this.updateAssignmentForm();
 
             // Scroll to the assignment section
-            const assignmentSection = document.querySelector('.product-assignment-section');
+            const assignmentSection = document.querySelector('.product-assignment-section') || document.querySelector('.category-assignment');
             if (assignmentSection) {
                 assignmentSection.scrollIntoView({ behavior: 'smooth' });
             }
@@ -1683,24 +1731,22 @@ class AdminCategoryManager {
     }
 
     clearCategoryCheckboxes() {
-        // Clear all category checkboxes
         this.categories.forEach(category => {
-            const categoryIdentifier = category.categoryId || category.id;
-            const checkbox = document.getElementById(`cat_${categoryIdentifier}`);
+            const checkbox = document.getElementById(`cat_${category.id}`) ||
+                             document.getElementById(`cat_${category.categoryId}`) ||
+                             (category.slug ? document.getElementById(`cat_${category.slug}`) : null);
             if (checkbox) {
                 checkbox.checked = false;
-            }
-
-            // Reset visual styling
-            const categoryDiv = checkbox.closest('.category-checkbox');
-            if (categoryDiv) {
-                categoryDiv.style.background = 'white';
-                categoryDiv.style.borderColor = '#e9ecef';
-                categoryDiv.title = '';
+                checkbox.removeAttribute('checked');
+                const categoryDiv = checkbox.closest('.category-checkbox');
+                if (categoryDiv) {
+                    categoryDiv.style.background = 'white';
+                    categoryDiv.style.borderColor = '#e9ecef';
+                    categoryDiv.title = '';
+                }
             }
         });
 
-        // Hide common categories info
         const infoContainer = document.getElementById('commonCategoriesInfo');
         if (infoContainer) {
             infoContainer.style.display = 'none';
@@ -1723,20 +1769,23 @@ class AdminCategoryManager {
         const productCategories = product.categories || [];
 
         this.categories.forEach(category => {
-            const categoryIdentifier = category.categoryId || category.id;
-            const checkbox = document.getElementById(`cat_${categoryIdentifier}`);
+            const checkbox = document.getElementById(`cat_${category.id}`) ||
+                             document.getElementById(`cat_${category.categoryId}`) ||
+                             (category.slug ? document.getElementById(`cat_${category.slug}`) : null);
 
             if (checkbox) {
                 const hasCategory = this.isProductInCategory(productCategories, category);
                 checkbox.checked = hasCategory;
+                if (hasCategory) {
+                    checkbox.setAttribute('checked', 'checked');
+                } else {
+                    checkbox.removeAttribute('checked');
+                }
             }
         });
-
-
-
     }
 
-    forceCheckboxUpdate(productCategories) {
+        forceCheckboxUpdate(productCategories) {
         console.log('=== ENHANCED FORCE CHECKBOX UPDATE ===');
         const container = document.getElementById('categoriesCheckboxes');
         if (!container) return;
@@ -1862,254 +1911,50 @@ class AdminCategoryManager {
     loadCommonCategories() {
         if (this.selectedProducts.size < 2) return;
 
-        // Get all selected products
         const selectedProductObjects = Array.from(this.selectedProducts)
             .map(productId => this.products.find(p => p.id === productId))
-            .filter(product => product !== undefined);
-
-        console.log(`Loading common categories for ${selectedProductObjects.length} products:`, selectedProductObjects.map(p => p.name));
+            .filter(Boolean);
 
         if (selectedProductObjects.length === 0) return;
 
-        // Find common categories across all selected products
-        const commonCategories = [];
-        const allProductCategories = selectedProductObjects.map(product => product.categories || []);
-
-        this.categories.forEach(category => {
-            const categoryIdentifier = category.categoryId || category.id;
-            const categoryName = category.name;
-
-            // Check if this category is present in ALL selected products
-            const isCommon = allProductCategories.every(productCats => {
-                return productCats.includes(categoryIdentifier) ||
-                    productCats.includes(category.id) ||
-                    productCats.includes(categoryName) ||
-                    productCats.includes(categoryName.toLowerCase()) ||
-                    (categoryName === "Today's Offers" && productCats.includes("today offer"));
-            });
-
-            if (isCommon) {
-                commonCategories.push({
-                    identifier: categoryIdentifier,
-                    name: categoryName
-                });
-            }
-        });
-
-        console.log('Common categories found:', commonCategories.map(c => c.name));
-
-        // Clear all checkboxes first
         this.clearCategoryCheckboxes();
 
-        // Update checkboxes to show common categories
-        console.log('=== UPDATING CHECKBOXES FOR MULTIPLE PRODUCTS ===');
-
-        // Double-check that checkboxes container exists and has content
-        const container = document.getElementById('categoriesCheckboxes');
-        if (!container) {
-            console.error('❌ categoriesCheckboxes container not found!');
-            return;
-        }
-
-        const allCheckboxes = container.querySelectorAll('input[type="checkbox"]');
-        console.log(`Found ${allCheckboxes.length} checkboxes in DOM for multiple products`);
-
-        if (allCheckboxes.length === 0) {
-            console.error('❌ No checkboxes found in container - re-rendering...');
-            this.renderCategoryCheckboxes();
-            // Wait a bit more and try again
-            setTimeout(() => this.loadCommonCategories(), 200);
-            return;
-        }
-
-        let checkedCount = 0;
-
         this.categories.forEach(category => {
-            const categoryIdentifier = category.categoryId || category.id;
-            const checkbox = document.getElementById(`cat_${categoryIdentifier}`);
+            const isCommon = selectedProductObjects.every(prod => 
+                this.isProductInCategory(prod.categories, category)
+            );
 
-            console.log(`\n--- Checking category: ${category.name} ---`);
-            console.log(`Category ID: ${category.id}, CategoryID: ${category.categoryId}, Identifier: ${categoryIdentifier}`);
-            console.log(`Checkbox found:`, !!checkbox);
+            const checkbox = document.getElementById(`cat_${category.id}`) ||
+                             document.getElementById(`cat_${category.categoryId}`) ||
+                             (category.slug ? document.getElementById(`cat_${category.slug}`) : null);
 
             if (checkbox) {
-                const isCommon = commonCategories.some(common => common.identifier === categoryIdentifier);
-
-                console.log(`Is common category: ${isCommon}`);
-
-                if (isCommon) {
-                    checkedCount++;
-                    console.log(`✅ COMMON CATEGORY FOUND: ${category.name} - setting checkbox to checked`);
-                }
-
                 checkbox.checked = isCommon;
-
-                // Force a visual update to ensure the checkbox state is visible
                 if (isCommon) {
                     checkbox.setAttribute('checked', 'checked');
                 } else {
                     checkbox.removeAttribute('checked');
                 }
 
-                // Add visual indication for common categories
                 const categoryDiv = checkbox.closest('.category-checkbox');
                 if (categoryDiv) {
                     if (isCommon) {
                         categoryDiv.style.background = 'rgba(34, 197, 94, 0.15)';
                         categoryDiv.style.borderColor = '#22c55e';
                         categoryDiv.style.borderWidth = '2px';
-                        categoryDiv.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.3)';
                         categoryDiv.title = 'This category is common to all selected products';
-                        categoryDiv.classList.add('common-category');
-                        console.log(`Applied green styling to common category: ${category.name}`);
                     } else {
                         categoryDiv.style.background = 'white';
                         categoryDiv.style.borderColor = '#e9ecef';
                         categoryDiv.style.borderWidth = '1px';
-                        categoryDiv.style.boxShadow = 'none';
-                        categoryDiv.title = 'This category is not common to all selected products';
-                        categoryDiv.classList.remove('common-category');
+                        categoryDiv.title = '';
                     }
                 }
-            } else {
-                console.error(`❌ Checkbox not found for category: ${category.name} (${categoryIdentifier})`);
             }
         });
-
-        console.log(`\n=== MULTIPLE PRODUCTS SUMMARY ===`);
-        console.log(`Expected common categories: ${commonCategories.length}`);
-        console.log(`Successfully checked categories: ${checkedCount}`);
-        console.log('Common category names:', commonCategories.map(c => c.name));
-        console.log('=== END MULTIPLE PRODUCTS UPDATE ===');
-
-        // Show information about common categories
-        this.showCommonCategoriesInfo(commonCategories.length, selectedProductObjects.length, commonCategories.map(c => c.name));
-
-        // Force another update after a brief delay to ensure visibility
-        setTimeout(() => {
-            this.forceCommonCategoriesUpdate(commonCategories);
-        }, 300);
     }
 
-    showCommonCategoriesInfo(commonCount, productCount, categoryNames = []) {
-        // Find or create info container
-        let infoContainer = document.getElementById('commonCategoriesInfo');
-        if (!infoContainer) {
-            infoContainer = document.createElement('div');
-            infoContainer.id = 'commonCategoriesInfo';
-            infoContainer.style.cssText = `
-                margin: 15px 0;
-                padding: 12px 16px;
-                background: rgba(59, 130, 246, 0.1);
-                border: 1px solid rgba(59, 130, 246, 0.3);
-                border-radius: 8px;
-                color: #1e40af;
-                font-size: 14px;
-                font-weight: 500;
-            `;
-
-            const categoriesCheckboxes = document.getElementById('categoriesCheckboxes');
-            if (categoriesCheckboxes && categoriesCheckboxes.parentNode) {
-                categoriesCheckboxes.parentNode.insertBefore(infoContainer, categoriesCheckboxes);
-            }
-        }
-
-        if (commonCount > 0) {
-            const categoryList = categoryNames.length > 0 ? `: <strong>${categoryNames.join(', ')}</strong>` : '';
-            infoContainer.innerHTML = `
-                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                <strong>${commonCount}</strong> common ${commonCount === 1 ? 'category' : 'categories'} 
-                found across all <strong>${productCount}</strong> selected products${categoryList} (should be highlighted in green below).
-            `;
-            infoContainer.style.display = 'block';
-            infoContainer.style.background = 'rgba(34, 197, 94, 0.1)';
-            infoContainer.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-            infoContainer.style.color = '#15803d';
-            infoContainer.className = 'common-categories-info';
-        } else {
-            infoContainer.innerHTML = `
-                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
-                No common categories found across all <strong>${productCount}</strong> selected products. 
-                Categories you select will be added to all products.
-            `;
-            infoContainer.style.display = 'block';
-            infoContainer.style.background = 'rgba(245, 158, 11, 0.1)';
-            infoContainer.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-            infoContainer.style.color = '#92400e';
-            infoContainer.className = 'no-common-categories-info';
-        }
-    }
-
-    showSingleProductCategoriesInfo(existingCount, productName, categoryNames = [], orphanedCategories = []) {
-        // Find or create info container
-        let infoContainer = document.getElementById('commonCategoriesInfo');
-        if (!infoContainer) {
-            infoContainer = document.createElement('div');
-            infoContainer.id = 'commonCategoriesInfo';
-            infoContainer.style.cssText = `
-                margin: 15px 0;
-                padding: 12px 16px;
-                background: rgba(34, 197, 94, 0.1);
-                border: 1px solid rgba(34, 197, 94, 0.3);
-                border-radius: 8px;
-                color: #15803d;
-                font-size: 14px;
-                font-weight: 500;
-            `;
-
-            const categoriesCheckboxes = document.getElementById('categoriesCheckboxes');
-            if (categoriesCheckboxes && categoriesCheckboxes.parentNode) {
-                categoriesCheckboxes.parentNode.insertBefore(infoContainer, categoriesCheckboxes);
-            }
-        }
-
-        let infoHTML = '';
-
-        if (existingCount > 0) {
-            const categoryList = categoryNames.length > 0 ? `: <strong>${categoryNames.join(', ')}</strong>` : '';
-            infoHTML = `
-                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
-                <strong>${productName}</strong> is currently in <strong>${existingCount}</strong> 
-                ${existingCount === 1 ? 'category' : 'categories'}${categoryList} (should be highlighted in green below).
-            `;
-            infoContainer.style.background = 'rgba(34, 197, 94, 0.1)';
-            infoContainer.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-            infoContainer.style.color = '#15803d';
-        } else {
-            infoHTML = `
-                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                <strong>${productName}</strong> is not currently assigned to any categories. 
-                Select categories below to assign them.
-            `;
-            infoContainer.style.background = 'rgba(59, 130, 246, 0.1)';
-            infoContainer.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-            infoContainer.style.color = '#1e40af';
-        }
-
-        // Add orphaned categories warning if present
-        if (orphanedCategories && orphanedCategories.length > 0) {
-            infoHTML += `
-                <div style="margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); 
-                     border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px;">
-                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #dc2626;"></i>
-                    <strong style="color: #dc2626;">Warning:</strong> This product has <strong>${orphanedCategories.length}</strong> 
-                    orphaned ${orphanedCategories.length === 1 ? 'category' : 'categories'}: 
-                    <strong>${orphanedCategories.join(', ')}</strong>
-                    <br>
-                    <small style="color: #666; margin-top: 4px; display: block;">
-                        These categories don't exist in the system and may cause issues. 
-                        <a href="#" onclick="cleanProductCategories('${this.selectedProducts.size === 1 ? Array.from(this.selectedProducts)[0] : ''}', false); return false;" 
-                           style="color: #dc2626; text-decoration: underline;">Click here to remove them</a>
-                    </small>
-                </div>
-            `;
-        }
-
-        infoContainer.innerHTML = infoHTML;
-        infoContainer.style.display = 'block';
-    }
-
-    loadProductCategories() {
+        loadProductCategories() {
         // Legacy method - redirect to new methods
         if (this.selectedProducts.size === 1) {
             this.loadSingleProductCategories();
@@ -2122,7 +1967,7 @@ class AdminCategoryManager {
 
     // Save categories for single product
     async saveProductCategories() {
-        console.log('� Saving categories for single product...');
+        console.log('💾 Saving categories for single product...');
 
         if (this.selectedProducts.size !== 1) {
             this.showMessage('Please select exactly one product.', 'error');
@@ -2137,28 +1982,39 @@ class AdminCategoryManager {
             return;
         }
 
-        // Get selected categories from checkboxes (this replaces all categories)
         const selectedCategories = this.getSelectedCategories();
-
         console.log(`Updating ${product.name} with categories:`, selectedCategories);
-        console.log(`Previous categories:`, product.categories || []);
+        this.showMessage(`Saving categories for "${product.name}"...`, 'info');
 
         try {
-            // Update in database - this completely replaces the categories array
-            await db.collection('products').doc(productId).update({
-                categories: selectedCategories,
-                lastModified: new Date()
-            });
+            const primaryCat = selectedCategories.length > 0 
+                ? (selectedCategories.includes('today offer') ? 'today offer' : selectedCategories[0]) 
+                : '';
 
-            // Update local data
+            await restUpdateProductCategories(productId, selectedCategories, primaryCat);
+
+            // Update local in-memory product
             product.categories = selectedCategories;
+            product.category = primaryCat;
+            const productIndex = this.products.findIndex(p => p.id === productId);
+            if (productIndex > -1) {
+                this.products[productIndex].categories = selectedCategories;
+                this.products[productIndex].category = primaryCat;
+            }
 
-            this.showMessage(`Updated "${product.name}" with ${selectedCategories.length} categories.`, 'success');
+            // ⚡ Persist to IndexedDB & localStorage cache
+            try {
+                await setAdminCachedProducts(this.products);
+                localStorage.setItem('vexior_products_cache', JSON.stringify(this.products));
+            } catch (_) {}
+
+            this.showMessage(`Updated "${product.name}" with ${selectedCategories.length} categories!`, 'success');
             this.renderCategoriesTable();
+            this.renderProductsList();
 
         } catch (error) {
             console.error('Error saving categories:', error);
-            this.showMessage('Error saving categories.', 'error');
+            this.showMessage('Error saving categories: ' + error.message, 'error');
         }
     }
 
@@ -2170,119 +2026,83 @@ class AdminCategoryManager {
             return;
         }
 
-        // Debug: Check if categoriesCheckboxes container exists
-        const container = document.getElementById('categoriesCheckboxes');
-        console.log('categoriesCheckboxes container:', container);
-        console.log('Container HTML:', container ? container.innerHTML.substring(0, 200) + '...' : 'NOT FOUND');
-
         const selectedCategories = this.getSelectedCategories();
-
         if (selectedCategories.length === 0) {
             this.showMessage('Please select at least one category.', 'error');
             return;
         }
 
-
-
-        // Get full product objects from selected IDs
         const productArray = Array.from(this.selectedProducts)
             .map(productId => this.products.find(p => p.id === productId))
-            .filter(product => product !== undefined);
-        console.log('Products to process:', productArray.length);
+            .filter(Boolean);
+
+        if (productArray.length === 0) {
+            this.showMessage('No valid products selected.', 'error');
+            return;
+        }
+
+        const assignmentMode = document.querySelector('input[name="assignmentMode"]:checked')?.value || 'add';
+
+        this.showMessage(`Applying categories to ${productArray.length} product${productArray.length > 1 ? 's' : ''}...`, 'info');
+
         let successCount = 0;
         let errorCount = 0;
 
-        try {
-            console.log('Starting product processing...');
-            this.showMessage(`Processing ${productArray.length} products...`, 'info');
-
-            // Process each product
-            for (const product of productArray) {
+        // Concurrent batches of 5 for blazing speed
+        const batchSize = 5;
+        for (let i = 0; i < productArray.length; i += batchSize) {
+            const batch = productArray.slice(i, i + batchSize);
+            await Promise.all(batch.map(async (product) => {
                 try {
-                    const assignmentMode = document.querySelector('input[name="assignmentMode"]:checked')?.value || 'replace';
                     let finalCategories = [];
+                    const existingCategories = product.categories || [];
 
                     if (assignmentMode === 'replace') {
-                        // Replace mode: use only selected categories
                         finalCategories = [...selectedCategories];
                     } else if (assignmentMode === 'remove') {
-                        // Remove mode: remove selected categories from existing ones
-                        const existingCategories = product.categories || [];
                         finalCategories = existingCategories.filter(cat => !selectedCategories.includes(cat));
                     } else {
-                        // Add mode: add selected categories to existing ones
-                        const existingCategories = product.categories || [];
+                        // Default 'add': combine existing + selected
                         finalCategories = [...new Set([...existingCategories, ...selectedCategories])];
                     }
 
-                    // Update product in database (with REST fallback)
-                    let updatedInDb = false;
-                    const primaryCat = finalCategories.length > 0 ? (finalCategories.includes('today offer') ? 'today offer' : finalCategories[0]) : '';
-                    if (typeof db !== 'undefined') {
-                        try {
-                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
-                            await Promise.race([
-                                db.collection('products').doc(product.id).update({
-                                    categories: finalCategories,
-                                    category: primaryCat,
-                                    updatedAt: new Date().toISOString()
-                                }),
-                                timeoutPromise
-                            ]);
-                            updatedInDb = true;
-                        } catch (sdkErr) {
-                            console.warn(`[Admin] SDK update failed for ${product.name}, using REST fallback:`, sdkErr);
-                        }
-                    }
+                    const primaryCat = finalCategories.length > 0 
+                        ? (finalCategories.includes('today offer') ? 'today offer' : finalCategories[0]) 
+                        : '';
 
-                    if (!updatedInDb) {
-                        const catVals = finalCategories.map(c => ({ stringValue: c }));
-                        await fetch(`https://firestore.googleapis.com/v1/projects/wackykicks-65cbe/databases/(default)/documents/products/${product.id}?updateMask.fieldPaths=categories&updateMask.fieldPaths=category`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                fields: {
-                                    categories: { arrayValue: { values: catVals } },
-                                    category: { stringValue: primaryCat }
-                                }
-                            })
-                        });
-                        updatedInDb = true;
-                    }
+                    await restUpdateProductCategories(product.id, finalCategories, primaryCat);
 
                     // Update local product data
                     product.categories = finalCategories;
+                    product.category = primaryCat;
                     const productIndex = this.products.findIndex(p => p.id === product.id);
                     if (productIndex > -1) {
                         this.products[productIndex].categories = finalCategories;
+                        this.products[productIndex].category = primaryCat;
                     }
 
                     successCount++;
-                    console.log(`Successfully processed: ${product.name}`);
                 } catch (error) {
                     console.error(`Error updating product ${product.name}:`, error);
                     errorCount++;
                 }
-            }
-
-            // Show results
-            if (errorCount === 0) {
-                this.showMessage(`Successfully updated ${successCount} products!`, 'success');
-            } else {
-                this.showMessage(`Updated ${successCount} products, ${errorCount} failed.`, 'error');
-            }
-
-            // Clear selection and refresh
-            console.log('Clearing selection and refreshing display...');
-            this.clearAllProducts();
-            this.renderCategoriesTable(); // Update product counts
-            console.log('=== BULK CATEGORY ASSIGNMENT COMPLETE ===');
-
-        } catch (error) {
-            console.error('Error in bulk category assignment:', error);
-            console.error('Error stack:', error.stack);
-            this.showMessage('Error processing bulk assignment. Please try again.', 'error');
+            }));
         }
+
+        // ⚡ Persist to IndexedDB & localStorage cache
+        try {
+            await setAdminCachedProducts(this.products);
+            localStorage.setItem('vexior_products_cache', JSON.stringify(this.products));
+        } catch (_) {}
+
+        if (errorCount === 0) {
+            this.showMessage(`Successfully updated ${successCount} products!`, 'success');
+        } else {
+            this.showMessage(`Updated ${successCount} products (${errorCount} failed).`, 'warning');
+        }
+
+        this.clearAllProducts();
+        this.renderCategoriesTable();
     }
 
     // Helper function to get selected categories from checkboxes
@@ -2290,15 +2110,19 @@ class AdminCategoryManager {
         const selectedCategories = [];
 
         this.categories.forEach(category => {
-            const categoryIdentifier = category.categoryId || category.id;
-            const checkbox = document.getElementById(`cat_${categoryIdentifier}`);
+            const checkbox = document.getElementById(`cat_${category.id}`) ||
+                             document.getElementById(`cat_${category.categoryId}`) ||
+                             (category.slug ? document.getElementById(`cat_${category.slug}`) : null);
 
             if (checkbox && checkbox.checked) {
-                // Handle special mappings
-                if (category.name === "Today's Offers") {
-                    selectedCategories.push("today offer");
+                if (category.name === "Today's Offers" || category.id === "today offer" || (category.name && category.name.toLowerCase().includes('today'))) {
+                    if (!selectedCategories.includes("today offer")) {
+                        selectedCategories.push("today offer");
+                    }
                 } else {
-                    selectedCategories.push(categoryIdentifier);
+                    if (!selectedCategories.includes(category.id)) {
+                        selectedCategories.push(category.id);
+                    }
                 }
             }
         });
@@ -2308,30 +2132,44 @@ class AdminCategoryManager {
 
     // Helper function to check if product has a category
     isProductInCategory(productCategories, category) {
-        if (!productCategories || !Array.isArray(productCategories)) {
+        if (!productCategories || !category) return false;
+
+        let catArray = [];
+        if (Array.isArray(productCategories)) {
+            catArray = productCategories;
+        } else if (typeof productCategories === 'string' && productCategories.trim()) {
+            catArray = [productCategories.trim()];
+        } else {
             return false;
         }
 
-        const categoryIdentifier = category.categoryId || category.id;
+        const catId = (category.id || '').trim();
+        const catCategoryId = (category.categoryId || '').trim();
+        const catName = (category.name || '').trim();
+        const catNameLower = catName.toLowerCase();
+        const catSlug = (category.slug || catNameLower.replace(/[^a-z0-9]/g, '-')).replace(/-+/g, '-');
+        const isTodayOffer = catNameLower.includes('today') || catId === 'today offer' || catCategoryId === 'today offer';
 
-        // Check various matching patterns
-        return productCategories.some(prodCat => {
+        return catArray.some(prodCat => {
+            if (!prodCat) return false;
             const pc = String(prodCat).trim();
+            const pcLower = pc.toLowerCase();
+            const pcSlug = pcLower.replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
 
-            // Exact matches
-            if (pc === categoryIdentifier || pc === category.id || pc === category.name) {
-                return true;
-            }
+            // 1. Exact or case-insensitive doc ID match
+            if (pc === catId || (catId && pcLower === catId.toLowerCase())) return true;
 
-            // Case insensitive name match
-            if (pc.toLowerCase() === category.name.toLowerCase()) {
-                return true;
-            }
+            // 2. Category ID / custom ID match
+            if (catCategoryId && (pc === catCategoryId || pcLower === catCategoryId.toLowerCase())) return true;
 
-            // Special case for Today's Offers
-            if (category.name === "Today's Offers" && pc === "today offer") {
-                return true;
-            }
+            // 3. Name match (case-insensitive)
+            if (catNameLower && pcLower === catNameLower) return true;
+
+            // 4. Slug match (e.g. "once-test" matches "once test")
+            if (catSlug && (pcSlug === catSlug || pcLower === catSlug)) return true;
+
+            // 5. Today's offer special match
+            if (isTodayOffer && (pcLower === 'today offer' || pcLower === "today's offers" || pcLower === 'todays offer' || pcLower === 'todays-offers')) return true;
 
             return false;
         });
@@ -2346,7 +2184,6 @@ class AdminCategoryManager {
         }
 
         const selectedCategories = this.getSelectedCategories();
-
         if (selectedCategories.length === 0) {
             this.showMessage('Please select at least one category to remove.', 'error');
             return;
@@ -2354,30 +2191,39 @@ class AdminCategoryManager {
 
         const productArray = Array.from(this.selectedProducts)
             .map(productId => this.products.find(p => p.id === productId))
-            .filter(product => product !== undefined);
+            .filter(Boolean);
+
+        this.showMessage(`Removing categories from ${productArray.length} products...`, 'info');
 
         let successCount = 0;
         let errorCount = 0;
 
-        try {
-            for (const product of productArray) {
+        const batchSize = 5;
+        for (let i = 0; i < productArray.length; i += batchSize) {
+            const batch = productArray.slice(i, i + batchSize);
+            await Promise.all(batch.map(async (product) => {
                 try {
                     const existingCategories = product.categories || [];
-                    const finalCategories = existingCategories.filter(cat => !selectedCategories.includes(cat));
-
-                    // Update in database
-                    if (typeof db !== 'undefined') {
-                        await db.collection('products').doc(product.id).update({
-                            categories: finalCategories,
-                            updatedAt: new Date().toISOString()
+                    const finalCategories = existingCategories.filter(cat => {
+                        return !selectedCategories.some(selCatId => {
+                            const catObj = this.categories.find(c => c.id === selCatId || c.categoryId === selCatId);
+                            if (catObj) return this.isProductInCategory([cat], catObj);
+                            return cat === selCatId;
                         });
-                    }
+                    });
 
-                    // Update local data
+                    const primaryCat = finalCategories.length > 0 
+                        ? (finalCategories.includes('today offer') ? 'today offer' : finalCategories[0]) 
+                        : '';
+
+                    await restUpdateProductCategories(product.id, finalCategories, primaryCat);
+
                     product.categories = finalCategories;
+                    product.category = primaryCat;
                     const productIndex = this.products.findIndex(p => p.id === product.id);
                     if (productIndex > -1) {
                         this.products[productIndex].categories = finalCategories;
+                        this.products[productIndex].category = primaryCat;
                     }
 
                     successCount++;
@@ -2385,21 +2231,22 @@ class AdminCategoryManager {
                     console.error(`Error removing categories from product ${product.name}:`, error);
                     errorCount++;
                 }
-            }
-
-            if (errorCount === 0) {
-                this.showMessage(`Successfully removed categories from ${successCount} products!`, 'success');
-            } else {
-                this.showMessage(`Removed categories from ${successCount} products, ${errorCount} failed.`, 'error');
-            }
-
-            this.clearAllProducts();
-            this.renderCategoriesTable();
-
-        } catch (error) {
-            console.error('Error in removeProductCategories:', error);
-            this.showMessage('Error removing categories.', 'error');
+            }));
         }
+
+        try {
+            await setAdminCachedProducts(this.products);
+            localStorage.setItem('vexior_products_cache', JSON.stringify(this.products));
+        } catch (_) {}
+
+        if (errorCount === 0) {
+            this.showMessage(`Successfully removed categories from ${successCount} products!`, 'success');
+        } else {
+            this.showMessage(`Removed categories from ${successCount} products (${errorCount} failed).`, 'warning');
+        }
+
+        this.clearAllProducts();
+        this.renderCategoriesTable();
     }
 
     async removeProductFromCategory(productId, categoryId, categoryName) {
@@ -2415,41 +2262,47 @@ class AdminCategoryManager {
             }
 
             const existingCategories = product.categories || [];
-
-            // Find the category identifier to remove
             const category = this.categories.find(cat => cat.id === categoryId);
-            const categoryToRemove = category ? (category.name === "Today's Offers" ? "today offer" : (category.categoryId || category.id)) : categoryId;
 
-            const finalCategories = existingCategories.filter(cat => cat !== categoryToRemove);
+            const finalCategories = existingCategories.filter(cat => {
+                if (category) {
+                    return !this.isProductInCategory([cat], category);
+                }
+                return cat !== categoryId && cat !== categoryName;
+            });
 
-            // Update in database
-            if (typeof db !== 'undefined') {
-                await db.collection('products').doc(productId).update({
-                    categories: finalCategories,
-                    updatedAt: new Date().toISOString()
-                });
-            }
+            const primaryCat = finalCategories.length > 0 
+                ? (finalCategories.includes('today offer') ? 'today offer' : finalCategories[0]) 
+                : '';
 
-            // Update local data
+            await restUpdateProductCategories(productId, finalCategories, primaryCat);
+
             product.categories = finalCategories;
+            product.category = primaryCat;
             const productIndex = this.products.findIndex(p => p.id === productId);
             if (productIndex > -1) {
                 this.products[productIndex].categories = finalCategories;
+                this.products[productIndex].category = primaryCat;
             }
+
+            try {
+                await setAdminCachedProducts(this.products);
+                localStorage.setItem('vexior_products_cache', JSON.stringify(this.products));
+            } catch (_) {}
 
             this.showMessage(`Removed product from "${categoryName}" category!`, 'success');
             this.renderCategoriesTable();
 
-            // Close the modal and refresh the category view
-            document.getElementById('categoryProductsModal').style.display = 'none';
+            const modal = document.getElementById('categoryProductsModal');
+            if (modal) modal.style.display = 'none';
 
         } catch (error) {
             console.error('Error removing product from category:', error);
-            this.showMessage('Error removing product from category.', 'error');
+            this.showMessage('Error removing product from category: ' + error.message, 'error');
         }
     }
 
-    previewCategoryChanges() {
+        previewCategoryChanges() {
         if (this.selectedProducts.size === 0) {
             this.showMessage('No products selected for preview.', 'error');
             return;
@@ -2673,19 +2526,16 @@ class AdminCategoryManager {
 
                 if (!dryRun) {
                     try {
-                        // Update in database
-                        if (typeof db !== 'undefined') {
-                            await db.collection('products').doc(product.id).update({
-                                categories: cleanedCategories,
-                                updatedAt: new Date().toISOString()
-                            });
-                        }
+                        const primaryCat = cleanedCategories.length > 0 ? (cleanedCategories.includes('today offer') ? 'today offer' : cleanedCategories[0]) : '';
+                        await restUpdateProductCategories(product.id, cleanedCategories, primaryCat);
 
                         // Update local data
                         product.categories = cleanedCategories;
+                        product.category = primaryCat;
                         const productIndex = this.products.findIndex(p => p.id === product.id);
                         if (productIndex > -1) {
                             this.products[productIndex].categories = cleanedCategories;
+                            this.products[productIndex].category = primaryCat;
                         }
 
                         console.log(`   ✅ Updated successfully`);
@@ -2708,6 +2558,7 @@ class AdminCategoryManager {
             console.log(`\n💡 To actually perform cleanup, run: cleanProductCategories(null, false)`);
         } else {
             console.log(`\n✅ Cleanup completed! Refreshing UI...`);
+            try { await setAdminCachedProducts(this.products); localStorage.setItem('vexior_products_cache', JSON.stringify(this.products)); } catch (_) {}
             this.renderCategoriesTable();
             if (this.selectedProducts.size === 1) {
                 setTimeout(() => this.loadSingleProductCategories(), 500);
