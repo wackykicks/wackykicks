@@ -2245,8 +2245,8 @@ function renderTodaysOffersFromList(productsList) {
         offerHTML += `
             <div class="offer-view-more-card" onclick="showAllTodaysOffers()">
                 <div class="offer-view-more-content">
-                    <i class="fas fa-plus" style="font-size: 0.9rem; margin-bottom: 2px; color: rgba(255,255,255,0.8);"></i>
-                    <h3 style="margin: 2px 0 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.9); font-weight: 600;">View More</h3>
+                    <i class="fas fa-plus" style="font-size: 0.9rem; margin-bottom: 2px; color: inherit;"></i>
+                    <h3 style="margin: 2px 0 0 0; font-size: 0.75rem; color: inherit; font-weight: 600;">View More</h3>
                 </div>
             </div>
         `;

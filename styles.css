@@ -861,19 +861,27 @@ body {
 
 /* Today's Offer Section */
 .todays-offer-section {
-    background-color: #fff;
-    color: #111;
-    padding: 30px 12px;
+    background: linear-gradient(135deg, #ff1e42 0%, #ff4d2e 52%, #ff7a00 100%);
+    color: #ffffff;
+    padding: 36px 16px;
     margin: 20px 0;
-    border-radius: 15px;
+    border-radius: 18px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    box-shadow: none;
+    box-shadow: 0 12px 32px rgba(255, 46, 58, 0.28);
 }
 
 .todays-offer-section::before {
-    display: none;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.12) 0%, transparent 45%);
+    pointer-events: none;
 }
 
 .offer-header {
@@ -883,18 +891,18 @@ body {
 }
 
 .offer-header h2 {
-    font-size: 1.8rem;
+    font-size: 1.85rem;
     margin: 0 0 8px 0;
     font-weight: 800;
-    color: #111;
-    text-shadow: none;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(120, 0, 0, 0.28);
 }
 
 .offer-header p {
     font-size: 1rem;
     margin: 0;
-    opacity: 1;
-    color: #666;
+    opacity: 0.95;
+    color: #ffffff;
     font-weight: 500;
 }
 
@@ -981,27 +989,29 @@ body {
 
 /* View More Card for Today's Offers */
 .offer-view-more-card {
-    background: #f8f9fa;
-    border: 1px dashed #ced4da;
-    color: #333;
-    border-radius: 10px;
-    padding: 8px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1.5px dashed rgba(255, 255, 255, 0.7);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
     min-height: 60px;
-    max-width: 120px;
+    max-width: 140px;
     margin: 0 auto;
     grid-column: 1 / -1;
+    backdrop-filter: blur(6px);
 }
 
 .offer-view-more-card:hover {
-    background: #e9ecef;
-    border-color: #00b140;
-    color: #00b140;
-    transform: translateY(-5px);
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #ff2b4e;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 
 .offer-view-more-content {
@@ -1064,8 +1074,13 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .todays-offer-section {
+        padding: 28px 12px;
+        margin: 16px 8px;
+    }
+
     .offer-header h2 {
-        font-size: 2rem;
+        font-size: 1.45rem;
     }
     
     .offer-grid {
@@ -1100,6 +1115,14 @@ body {
 
 /* Extra small mobile devices */
 @media (max-width: 480px) {
+    .offer-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .offer-header p {
+        font-size: 0.9rem;
+    }
+
     .offer-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 8px;

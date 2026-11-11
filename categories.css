@@ -468,40 +468,73 @@
     }
 }
 
-/* Today's Offers category card - styled cleanly like all other category cards */
-.special-offer-card {
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #1a202c !important;
+/* Today's Offers category card - catchy, vibrant & noticeable */
+.category-card.special-offer-card {
+    background: linear-gradient(135deg, #ff1e42 0%, #ff4d2e 55%, #ff7a00 100%) !important;
+    color: #ffffff !important;
     position: relative;
     overflow: hidden;
     border: none !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 168, 62, 0.06) !important;
+    box-shadow: 0 10px 28px rgba(255, 46, 58, 0.35), 0 4px 12px rgba(255, 122, 0, 0.25), inset 0 0 0 2px rgba(255, 255, 255, 0.75) !important;
 }
 
-.special-offer-card:hover {
-    background: rgba(255, 255, 255, 1) !important;
-    box-shadow: 0 20px 48px rgba(0, 168, 62, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+.category-card.special-offer-card::before,
+.category-card.special-offer-card:hover::before,
+.category-card.special-offer-card.selected::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -130%;
+    right: auto;
+    bottom: 0;
+    width: 65%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+    border-radius: 0;
+    transform: skewX(-20deg);
+    opacity: 1 !important;
+    z-index: 1;
+    pointer-events: none;
+    animation: offerCardShine 3.4s ease-in-out infinite;
 }
 
-.special-offer-card .category-image {
-    background: linear-gradient(135deg, #0d381c 0%, #062410 100%) !important;
+@keyframes offerCardShine {
+    0% { left: -130%; }
+    45%, 100% { left: 160%; }
+}
+
+.category-card.special-offer-card:hover {
+    background: linear-gradient(135deg, #ff2b4e 0%, #ff5c38 55%, #ff8c1a 100%) !important;
+    transform: translateY(-4px) scale(1.03) !important;
+    box-shadow: 0 16px 36px rgba(255, 46, 58, 0.45), 0 6px 16px rgba(255, 122, 0, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.9) !important;
+}
+
+.category-card.special-offer-card .category-image {
+    background: rgba(255, 255, 255, 0.25) !important;
     border: none !important;
-    box-shadow: 0 4px 16px rgba(0, 168, 62, 0.15) !important;
+    box-shadow: 0 4px 14px rgba(160, 20, 0, 0.2), inset 0 0 0 1.5px rgba(255, 255, 255, 0.55) !important;
 }
 
-.special-offer-card .category-name {
-    color: #1a202c !important;
-    font-weight: 600 !important;
-    text-shadow: none !important;
+.category-card.special-offer-card:hover .category-image {
+    background: rgba(255, 255, 255, 0.34) !important;
+    box-shadow: 0 6px 18px rgba(160, 20, 0, 0.25), inset 0 0 0 1.5px rgba(255, 255, 255, 0.75) !important;
 }
 
-.special-offer-card .offer-badge {
+.category-card.special-offer-card .category-name,
+.category-card.special-offer-card:hover .category-name,
+.category-card.special-offer-card.selected .category-name {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 3px rgba(120, 10, 0, 0.45) !important;
+}
+
+.category-card.special-offer-card .offer-badge {
     position: absolute;
     bottom: 5px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.9);
-    color: #495057;
+    background: rgba(255, 255, 255, 0.95);
+    color: #d90429;
     font-size: 0.7rem;
     font-weight: 700;
     padding: 2px 8px;
@@ -516,12 +549,13 @@
     25%, 75% { opacity: 0.7; }
 }
 
-.special-offer-card:hover {
-    transform: translateY(-8px) scale(1.05) !important;
-    box-shadow: 0 15px 40px rgba(108, 117, 125, 0.6) !important;
+.category-card.special-offer-card.selected {
+    background: linear-gradient(135deg, #d90429 0%, #ef233c 55%, #f77f00 100%) !important;
+    box-shadow: 0 12px 30px rgba(217, 4, 41, 0.42), inset 0 0 0 3px #ffffff !important;
 }
 
-.special-offer-card.selected {
-    background: linear-gradient(135deg, #495057 0%, #343a40 100%) !important;
-    box-shadow: 0 8px 25px rgba(73, 80, 87, 0.6) !important;
+.category-card.special-offer-card.selected::after {
+    background: #ffffff !important;
+    color: #ff1e42 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
 }

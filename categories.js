@@ -230,7 +230,7 @@ class CategoryManager {
     getDefaultCategories() {
         return [
             { id: 'all', name: 'All Products', image: 'https://via.placeholder.com/60x60?text=ALL', color: '#667eea' },
-            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#00b140', special: true },
+            { id: 'today offer', name: 'Today\'s Offers', image: 'https://via.placeholder.com/60x60?text=OFFER', color: '#ff3b30', special: true },
             { id: 'watches', name: 'Watches', image: 'https://via.placeholder.com/60x60?text=WATCH', color: '#28a745' },
             { id: 'smart-watches', name: 'Smart Watches', image: 'https://via.placeholder.com/60x60?text=SMART', color: '#667eea' },
             { id: 'gadgets', name: 'Gadgets', image: 'https://via.placeholder.com/60x60?text=GADGET', color: '#667eea' },
@@ -282,7 +282,17 @@ class CategoryManager {
     // Render individual category card
     renderCategoryCard(category) {
         const isSelected = this.selectedCategories.includes(category.id);
-        const isSpecialOffer = category.id === 'today offer';
+        const catIdLower = (category.id || '').toString().toLowerCase().trim();
+        const catNameLower = (category.name || '').toString().toLowerCase().trim();
+        const isSpecialOffer = Boolean(category.special) ||
+            catIdLower === 'today offer' ||
+            catIdLower === 'today-offer' ||
+            catIdLower === 'todays offer' ||
+            catIdLower === "today's offers" ||
+            catNameLower === "today's offers" ||
+            catNameLower === "today's offer" ||
+            catNameLower === 'todays offer' ||
+            catNameLower === 'todays offers';
 
         return `
             <div class="category-card ${isSelected ? 'selected' : ''} ${isSpecialOffer ? 'special-offer-card' : ''}" 
