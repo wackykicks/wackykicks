@@ -483,6 +483,84 @@
             flex-wrap: wrap;
         }
 
+        .card-colors-section {
+            margin: 10px 0 4px;
+            padding: 8px 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .card-colors-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            gap: 6px;
+        }
+
+        .card-colors-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .card-color-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 4px 9px !important;
+            border-radius: 999px !important;
+            font-size: 0.76rem !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #1e293b;
+            box-shadow: none !important;
+        }
+
+        .card-color-chip:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .card-color-chip.in-stock {
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .card-color-chip.out-of-stock {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .card-color-chip.out-of-stock .card-color-name {
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        .card-color-chip.out-of-stock .card-color-dot {
+            opacity: 0.55;
+        }
+
+        .card-color-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.22);
+            flex-shrink: 0;
+        }
+
         .actions button {
             padding: 10px 18px;
             border: none;
@@ -2635,6 +2713,81 @@
     `;
         }
 
+        function escapeAdminHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function buildCardColorsHTML(product) {
+            const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
+            if (normalizedColors.length === 0) return '';
+
+            const inStockCount = normalizedColors.filter(c => c.inStock).length;
+            const totalCount = normalizedColors.length;
+            const countColor = inStockCount === 0 ? '#dc2626' : (inStockCount < totalCount ? '#d97706' : '#16a34a');
+
+            const chipsHTML = normalizedColors.map((c, idx) => `
+                <button type="button"
+                        class="card-color-chip ${c.outOfStock ? 'out-of-stock' : 'in-stock'}"
+                        data-color-index="${idx}"
+                        onclick="toggleCardColorStock('${escapeAdminHtml(product.id)}', ${idx}, event)"
+                        title="${escapeAdminHtml(c.name)} — Click to mark ${c.outOfStock ? 'In Stock' : 'Out of Stock'}">
+                    <span class="card-color-dot" style="background: ${escapeAdminHtml(c.hex)};"></span>
+                    <span class="card-color-name">${escapeAdminHtml(c.name)}</span>
+                    <i class="fas ${c.outOfStock ? 'fa-ban' : 'fa-check'}" style="font-size: 0.68rem;"></i>
+                </button>
+            `).join('');
+
+            return `
+                <div class="card-colors-section">
+                    <div class="card-colors-header">
+                        <span><i class="fas fa-palette"></i> Colors (click to toggle)</span>
+                        <span style="color: ${countColor};">${inStockCount}/${totalCount} in stock</span>
+                    </div>
+                    <div class="card-colors-list">
+                        ${chipsHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateProductCardStockUI(card, product) {
+            if (!card || !product) return;
+
+            const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
+            const allColorsOutOfStock = normalizedColors.length > 0 && normalizedColors.every(c => c.outOfStock);
+            const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
+            const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
+            const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock;
+
+            const badge = card.querySelector('.stock-status-badge');
+            if (badge) {
+                const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
+                    ? Math.round(((Number(product.oldPrice) - Number(product.newPrice)) / Number(product.oldPrice)) * 100)
+                    : null;
+                badge.outerHTML = isOutOfStock
+                    ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>`
+                    : (discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : `<p class="stock-status-badge" style="color: #666;">In Stock</p>`);
+            }
+
+            const colorsBox = card.querySelector('.card-colors-section');
+            if (colorsBox) {
+                colorsBox.outerHTML = buildCardColorsHTML(product);
+            }
+
+            const stockBtn = card.querySelector('.stock-btn');
+            if (stockBtn) {
+                stockBtn.style.background = isOutOfStock ? '#16a34a' : '#ef4444';
+                stockBtn.title = isOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock';
+                stockBtn.innerHTML = `<i class="fas ${isOutOfStock ? 'fa-check-circle' : 'fa-ban'}"></i> ${isOutOfStock ? 'In Stock' : 'Stock Out'}`;
+                stockBtn.disabled = false;
+            }
+        }
+
         function displayProducts(products) {
             productList.innerHTML = "";
 
@@ -2658,9 +2811,7 @@
                 const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
                 const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
                 const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock;
-                const colorStatusLine = normalizedColors.length > 0 && oosColorsCount > 0 && !isOutOfStock
-                    ? `<p style="font-size: 0.78rem; color: #d97706; font-weight: 600; margin: 2px 0;">Colors: ${normalizedColors.length - oosColorsCount}/${normalizedColors.length} in stock (${oosColorsCount} out)</p>`
-                    : '';
+                const cardColorsHTML = buildCardColorsHTML(product);
 
                 // Calculate discount percentage for admin display
                 const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
@@ -2672,11 +2823,11 @@
                 card.dataset.id = product.id;
                 card.innerHTML = `
             <img src="${firstImage}" alt="Product Image" onerror="this.src='../Logo/VEXIOR_logo.png'">
-            <h3>${product.name}</h3>
+            <h3>${escapeAdminHtml(product.name)}</h3>
             <p>₹${product.price || product.newPrice}</p>
             ${isOutOfStock ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>` :
                         discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : '<p class="stock-status-badge" style="color: #666;">In Stock</p>'}
-            ${colorStatusLine}
+            ${cardColorsHTML}
             <div class="actions" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
                 <button class="edit-btn" onclick="editProduct('${product.id}')" style="flex: 1; min-width: 70px;"><i class="fas fa-edit"></i> Edit</button>
                 <button class="stock-btn" onclick="toggleProductStock('${product.id}', event)" title="${isOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock'}" style="flex: 1.2; min-width: 95px; padding: 6px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: white; background: ${isOutOfStock ? '#16a34a' : '#ef4444'};">
@@ -2856,23 +3007,16 @@
 
                 // Update UI on card
                 if (card) {
-                    const badge = card.querySelector('.stock-status-badge') || card.querySelector('p:nth-of-type(2)');
-                    if (badge) {
-                        const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
-                            ? Math.round(((Number(product.oldPrice) - Number(product.newPrice)) / Number(product.oldPrice)) * 100)
-                            : null;
-                        badge.outerHTML = makeOutOfStock
-                            ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>`
-                            : (discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : `<p class="stock-status-badge" style="color: #666;">In Stock</p>`);
-                    }
-                    if (btn) {
-                        btn.style.background = makeOutOfStock ? '#16a34a' : '#ef4444';
-                        btn.title = makeOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock';
-                        btn.innerHTML = `<i class="fas ${makeOutOfStock ? 'fa-check-circle' : 'fa-ban'}"></i> ${makeOutOfStock ? 'In Stock' : 'Stock Out'}`;
-                        btn.disabled = false;
-                    }
+                    updateProductCardStockUI(card, product);
                 } else {
                     displayProducts(allProducts);
+                }
+
+                if (editMode && editingProductId === id && updatedColors) {
+                    selectedColors = updatedColors.map(normalizeAdminColor);
+                    updateColorDisplay();
+                    updateColorInput();
+                    syncColorGridSelection();
                 }
 
                 notify('success', `Product "${product.name}" marked ${makeOutOfStock ? 'Out of Stock' : 'In Stock'}!`, 'Stock Updated');
@@ -2883,6 +3027,92 @@
                     btn.innerHTML = originalBtnHTML;
                 }
                 notify('error', 'Error updating stock: ' + err.message, 'Stock Error');
+            }
+        };
+
+        // Quick toggle for an individual color's stock directly from product card (without entering Edit)
+        window.toggleCardColorStock = async (id, colorIndex, event) => {
+            const chipBtn = event ? (event.target.closest('button') || event.target) : null;
+            const card = chipBtn ? chipBtn.closest('.product-card') : document.querySelector(`.product-card[data-id="${id}"]`);
+            const product = allProducts.find(p => p.id === id);
+            if (!product || !Array.isArray(product.colors)) return;
+
+            const updatedColors = product.colors.map(normalizeAdminColor);
+            if (colorIndex < 0 || colorIndex >= updatedColors.length) return;
+
+            const target = updatedColors[colorIndex];
+            const makeColorOos = !target.outOfStock;
+            updatedColors[colorIndex] = {
+                name: target.name,
+                hex: target.hex,
+                inStock: !makeColorOos,
+                outOfStock: makeColorOos
+            };
+
+            const currentCategories = Array.isArray(product.categories)
+                ? [...product.categories]
+                : (product.category ? [product.category] : []);
+            const wasProductOos = currentCategories.includes('out-of-stock') ||
+                (product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0);
+            const allColorsNowOos = updatedColors.every(c => c.outOfStock);
+
+            const patchData = { colors: updatedColors };
+            if (allColorsNowOos) {
+                patchData.stock = 0;
+                patchData.categories = currentCategories.includes('out-of-stock')
+                    ? currentCategories
+                    : [...currentCategories, 'out-of-stock'];
+            } else if (!makeColorOos && wasProductOos) {
+                patchData.stock = (product.stock && Number(product.stock) > 0) ? Number(product.stock) : 10;
+                patchData.categories = currentCategories.filter(c => c !== 'out-of-stock');
+            }
+
+            const origChipHTML = chipBtn ? chipBtn.innerHTML : '';
+            if (chipBtn) {
+                chipBtn.disabled = true;
+                chipBtn.style.opacity = '0.65';
+                chipBtn.innerHTML = `<i class="fas fa-spinner fa-spin" style="font-size: 0.7rem;"></i> ${escapeAdminHtml(target.name)}`;
+            }
+
+            try {
+                await saveProductToFirestore(id, patchData, true);
+
+                product.colors = updatedColors;
+                if (patchData.stock !== undefined) product.stock = patchData.stock;
+                if (patchData.categories !== undefined) product.categories = patchData.categories;
+
+                await setCachedProductsAsync(allProducts);
+                try {
+                    localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
+                    sessionStorage.removeItem('vexior_active_product_' + id);
+                } catch (e) {}
+
+                if (card) {
+                    updateProductCardStockUI(card, product);
+                } else {
+                    displayProducts(allProducts);
+                }
+
+                if (editMode && editingProductId === id) {
+                    selectedColors = updatedColors.map(normalizeAdminColor);
+                    updateColorDisplay();
+                    updateColorInput();
+                    syncColorGridSelection();
+                }
+
+                notify(
+                    makeColorOos ? 'warning' : 'success',
+                    `${target.name} on "${product.name}" marked ${makeColorOos ? 'Out of Stock' : 'In Stock'}`,
+                    'Color Stock Updated'
+                );
+            } catch (err) {
+                console.error('[Admin] Error toggling color stock on card:', err);
+                if (chipBtn) {
+                    chipBtn.disabled = false;
+                    chipBtn.style.opacity = '';
+                    chipBtn.innerHTML = origChipHTML;
+                }
+                notify('error', 'Error updating color stock: ' + err.message, 'Stock Error');
             }
         };
 
