@@ -24,6 +24,7 @@ function getOrderData() {
                 sessionStorage.removeItem('buyNowProduct');
                 cachedOrderData = {
                     items: [{
+                        id: productData.id || '',
                         name: productData.product,
                         price: productData.price,
                         quantity: parseInt(productData.quantity || '1'),
@@ -320,14 +321,14 @@ function submitCheckout() {
     }
     console.log('✅ Order data retrieved:', orderData);
     
-    // Check if any item in orderData is out of stock
+    // Check if any item (or selected color) in orderData is out of stock
     try {
         const cached = localStorage.getItem('vexior_products_cache');
         if (cached) {
             const parsed = JSON.parse(cached);
             const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
             for (const item of orderData.items) {
-                const prod = list.find(p => p.id === item.id || p.name === item.name);
+                const prod = list.find(p => (item.id && p.id === item.id) || p.name === item.name);
                 if (prod) {
                     const isOutOfStockByCategory = Boolean(
                         prod.categories && (
@@ -338,8 +339,34 @@ function submitCheckout() {
                     );
                     const hasExplicitStock = prod.stock !== undefined && prod.stock !== null && String(prod.stock).trim() !== '';
                     const isOutOfStockByStock = hasExplicitStock && Number(prod.stock) <= 0;
-                    if (isOutOfStockByCategory || isOutOfStockByStock) {
+
+                    const prodColors = Array.isArray(prod.colors) ? prod.colors.map(c => {
+                        if (typeof c === 'string') {
+                            const parts = c.trim().split(':');
+                            const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+                            const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
+                            const cname = (isOos ? parts.slice(0, -1) : parts)[0] || '';
+                            return { name: cname.trim(), inStock: !isOos };
+                        }
+                        if (c && typeof c === 'object') {
+                            const isOos = c.outOfStock === true || c.inStock === false || c.available === false ||
+                                (c.stock !== undefined && c.stock !== null && Number(c.stock) <= 0);
+                            return { name: String(c.name || '').trim(), inStock: !isOos };
+                        }
+                        return { name: '', inStock: true };
+                    }) : [];
+
+                    const allColorsOos = prodColors.length > 0 && prodColors.every(c => !c.inStock);
+                    const selectedColorOos = Boolean(
+                        item.color && prodColors.some(c => c.name.toLowerCase() === String(item.color).trim().toLowerCase() && !c.inStock)
+                    );
+
+                    if (isOutOfStockByCategory || isOutOfStockByStock || allColorsOos) {
                         alert(`Sorry, "${item.name}" is currently out of stock. Please remove it to proceed.`);
+                        return;
+                    }
+                    if (selectedColorOos) {
+                        alert(`Sorry, color "${item.color}" for "${item.name}" is currently out of stock. Please choose another color.`);
                         return;
                     }
                 }

@@ -481,6 +481,34 @@
     z-index: 1;
 }
 
+.product-color-circle.out-of-stock {
+    opacity: 0.48;
+    filter: saturate(0.45);
+    border-color: rgba(220, 38, 38, 0.55);
+}
+
+.product-color-circle.out-of-stock::before {
+    content: '';
+    position: absolute;
+    width: 115%;
+    height: 2.5px;
+    background: #dc2626;
+    border-radius: 2px;
+    transform: rotate(-45deg);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.product-color-circle.out-of-stock.selected {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3), 0 4px 12px rgba(220, 38, 38, 0.18);
+}
+
+.product-color-circle.out-of-stock.selected::after {
+    content: none;
+}
+
 /* Special styling for white color circle */
 .product-color-circle[data-color="White"],
 .product-color-circle[data-color="white"] {
@@ -504,6 +532,11 @@
     font-size: 20px;
 }
 
+.product-color-circle[data-color="White"].out-of-stock.selected::after,
+.product-color-circle[data-color="white"].out-of-stock.selected::after {
+    content: none;
+}
+
 /* Color name display */
 .selected-color-name {
     font-size: 14px;
@@ -521,6 +554,40 @@
     background: rgba(59, 130, 246, 0.15);
     color: #3b82f6;
     border-color: rgba(59, 130, 246, 0.3);
+}
+
+.selected-color-name.out-of-stock {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.35);
+    font-weight: 600;
+}
+
+.color-oos-notice {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-to-cart-btn.variant-oos,
+.buy-now.variant-oos,
+#fixedAddToCart:disabled,
+#fixedBuyNow:disabled {
+    background: #9ca3af !important;
+    color: #ffffff !important;
+    border-color: #9ca3af !important;
+    cursor: not-allowed !important;
+    opacity: 0.85 !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 /* Quantity and Colors section styling */

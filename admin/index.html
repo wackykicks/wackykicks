@@ -1042,7 +1042,18 @@
             color: white;
             font-weight: bold;
             font-size: 14px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.85);
+        }
+
+        .color-circle.selected.color-out-of-stock {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+            opacity: 0.72;
+        }
+
+        .color-circle.selected.color-out-of-stock::after {
+            content: '✕';
+            color: #fee2e2;
         }
 
         .custom-color-input-section {
@@ -1159,59 +1170,117 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            min-height: 40px;
+            min-height: 44px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
         }
 
         .selected-color-tag {
             display: inline-flex;
             align-items: center;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            color: #6b46c1;
-            padding: 8px 12px;
-            border-radius: 20px;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.28);
+            color: #4c1d95;
+            padding: 6px 10px;
+            border-radius: 999px;
             font-size: 13px;
             font-weight: 600;
             gap: 8px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .selected-color-tag:hover {
-            background: rgba(139, 92, 246, 0.15);
+            background: rgba(139, 92, 246, 0.14);
             transform: translateY(-1px);
+        }
+
+        .selected-color-tag.is-out-of-stock {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+
+        .selected-color-tag.is-out-of-stock .tag-color-circle {
+            opacity: 0.55;
+            position: relative;
+        }
+
+        .selected-color-tag.is-out-of-stock .tag-color-name {
+            text-decoration: line-through;
+            opacity: 0.78;
         }
 
         .tag-color-circle {
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+            flex-shrink: 0;
         }
 
         .tag-color-name {
             font-weight: 600;
         }
 
+        .color-stock-toggle {
+            border: none;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+            line-height: 1.2;
+        }
+
+        .color-stock-toggle.in-stock {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .color-stock-toggle.in-stock:hover {
+            background: #bbf7d0;
+        }
+
+        .color-stock-toggle.out-of-stock {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .color-stock-toggle.out-of-stock:hover {
+            background: #fecaca;
+        }
+
         .remove-color {
             cursor: pointer;
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, 0.16);
+            border: none;
             border-radius: 50%;
             width: 20px;
             height: 20px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             font-size: 14px;
             font-weight: bold;
             color: #dc2626;
-            transition: all 0.3s ease;
-            margin-left: 4px;
+            transition: all 0.2s ease;
+            margin-left: 2px;
+            padding: 0;
+            line-height: 1;
         }
 
         .remove-color:hover {
-            background: rgba(239, 68, 68, 0.3);
-            transform: scale(1.1);
+            background: rgba(239, 68, 68, 0.28);
+            transform: scale(1.08);
         }
 
         @media (max-width: 768px) {
@@ -1270,46 +1339,6 @@
         .color-btn.selected {
             transform: scale(0.95);
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .selected-colors-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            min-height: 40px;
-            padding: 10px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
-
-        .selected-color-tag {
-            display: inline-flex;
-            align-items: center;
-            background: #8b5cf6;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-            gap: 8px;
-        }
-
-        .selected-color-tag .remove-color {
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            transition: background 0.3s;
-        }
-
-        .selected-color-tag .remove-color:hover {
-            background: rgba(255, 255, 255, 0.5);
         }
 
         .custom-color-section {
@@ -1505,8 +1534,8 @@
                             <div class="color-display">
                                 <span class="color-label">COLOR</span>
                                 <div class="selected-color-preview" id="selectedColorPreview">
-                                    <div class="color-circle selected" style="background: #3b82f6;"></div>
-                                    <span class="color-name" id="selectedColorName">Blue</span>
+                                    <div class="color-circle" style="background: #e5e7eb; width: 28px; height: 28px;"></div>
+                                    <span class="color-name" id="selectedColorName">Select colors...</span>
                                 </div>
                             </div>
                             <i class="fas fa-chevron-down dropdown-arrow" id="colorDropdownArrow"></i>
@@ -1542,8 +1571,8 @@
                                     style="background: #7c3aed;" onclick="selectColor('Violet', '#7c3aed')"></div>
                                 <div class="color-circle" data-color="Indigo" data-hex="#6366f1"
                                     style="background: #6366f1;" onclick="selectColor('Indigo', '#6366f1')"></div>
-                                <div class="color-circle selected" data-color="Blue" data-hex="#3b82f6"
-                                    style="background: #3b82f6; border: 3px solid #1d4ed8;"
+                                <div class="color-circle" data-color="Blue" data-hex="#3b82f6"
+                                    style="background: #3b82f6;"
                                     onclick="selectColor('Blue', '#3b82f6')"></div>
 
                                 <!-- Row 4 - Greens and Yellows -->
@@ -1583,37 +1612,33 @@
                                 <div class="custom-input-row">
                                     <input type="text" id="customColorName"
                                         placeholder="Custom color name (e.g., Sky Blue)"
-                                        class="custom-color-text-input">
+                                        class="custom-color-text-input"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomColorFromPicker();}">
                                     <input type="color" id="customColorPicker" value="#3b82f6"
                                         class="custom-color-picker">
-                                    <button type="button" onclick="addCustomColorFromPicker()" class="add-custom-btn">
+                                    <button type="button" onclick="addCustomColorFromPicker()" class="add-custom-btn" title="Add custom color">
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
-                                <small class="custom-help-text">Add your own custom colors with hex values</small>
+                                <small class="custom-help-text">Add custom colors, then click In Stock / Out of Stock on each selected color below</small>
                             </div>
                         </div>
 
                         <!-- Selected Colors List -->
                         <div class="selected-colors-container">
                             <div class="selected-colors-header">
-                                <span>Selected Colors:</span>
+                                <span>Selected Colors &amp; Availability:</span>
                                 <button type="button" onclick="clearAllColors()" class="clear-all-btn">
                                     <i class="fas fa-trash"></i> Clear All
                                 </button>
                             </div>
                             <div class="selected-colors-list" id="selectedColorsList">
-                                <!-- Default Blue selection -->
-                                <div class="selected-color-tag" data-color="Blue">
-                                    <div class="tag-color-circle" style="background: #3b82f6;"></div>
-                                    <span class="tag-color-name">Blue</span>
-                                    <div class="remove-color" onclick="removeColor('Blue')">×</div>
-                                </div>
+                                <span style="color: #9ca3af; font-style: italic; padding: 6px 4px; font-size: 13px;">No colors selected — open dropdown to select colors</span>
                             </div>
                         </div>
 
                         <!-- Hidden input for form submission -->
-                        <input type="hidden" id="productColors" value="Blue">
+                        <input type="hidden" id="productColors" value="">
                     </div>
                 </div>
 
@@ -1820,43 +1845,114 @@
             }
         };
 
-        window.selectColor = (colorName, hexValue) => {
-            console.log('Selecting color:', colorName, hexValue);
+        function normalizeAdminColor(colorData) {
+            if (typeof colorData === 'string') {
+                const raw = colorData.trim();
+                const parts = raw.split(':');
+                const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+                const isOos = lastPart === 'oos' || lastPart === 'out-of-stock';
+                const cleanParts = isOos ? parts.slice(0, -1) : parts;
+                const name = (cleanParts[0] || 'Unknown').trim();
+                const hex = (cleanParts[1] && cleanParts[1].trim().startsWith('#'))
+                    ? cleanParts[1].trim()
+                    : getColorHexForAdmin(name);
+                return { name, hex, inStock: !isOos, outOfStock: isOos };
+            }
+            if (colorData && typeof colorData === 'object') {
+                const name = String(colorData.name || 'Unknown').trim();
+                const hex = String(colorData.hex || getColorHexForAdmin(name)).trim();
+                const isOos = colorData.outOfStock === true ||
+                    colorData.inStock === false ||
+                    colorData.available === false ||
+                    (colorData.stock !== undefined && colorData.stock !== null && Number(colorData.stock) <= 0);
+                return { name, hex, inStock: !isOos, outOfStock: isOos };
+            }
+            return { name: 'Unknown', hex: '#6b7280', inStock: true, outOfStock: false };
+        }
 
-            // Check if color is already selected (by name)
-            const alreadySelected = selectedColors.some(color =>
-                (typeof color === 'string' ? color : color.name) === colorName
+        function ensureColorCircleInGrid(colorName, hexValue) {
+            const colorGrid = document.querySelector('#colorDropdownPanel .color-grid');
+            if (!colorGrid || !colorName) return null;
+            const targetKey = colorName.trim().toLowerCase();
+            const existing = Array.from(colorGrid.querySelectorAll('.color-circle')).find(
+                el => (el.getAttribute('data-color') || '').trim().toLowerCase() === targetKey
             );
+            if (existing) return existing;
 
-            if (!alreadySelected) {
-                // Store as object with both name and hex
-                selectedColors.push({ name: colorName, hex: hexValue });
+            const newColorCircle = document.createElement('div');
+            newColorCircle.className = 'color-circle';
+            newColorCircle.setAttribute('data-color', colorName);
+            newColorCircle.setAttribute('data-hex', hexValue);
+            newColorCircle.setAttribute('title', colorName);
+            newColorCircle.style.background = hexValue;
+            newColorCircle.onclick = () => selectColor(colorName, hexValue);
+            colorGrid.appendChild(newColorCircle);
+            return newColorCircle;
+        }
+
+        function syncColorGridSelection() {
+            const colorGrid = document.querySelector('#colorDropdownPanel .color-grid');
+            const selectedMap = new Map();
+            selectedColors.forEach(c => {
+                const norm = normalizeAdminColor(c);
+                selectedMap.set(norm.name.toLowerCase(), norm);
+            });
+
+            if (colorGrid) {
+                colorGrid.querySelectorAll('.color-circle').forEach(circle => {
+                    const key = (circle.getAttribute('data-color') || '').trim().toLowerCase();
+                    const match = selectedMap.get(key);
+                    circle.classList.remove('selected', 'color-out-of-stock');
+                    if (match) {
+                        circle.classList.add('selected');
+                        if (match.outOfStock) {
+                            circle.classList.add('color-out-of-stock');
+                        }
+                        circle.style.borderColor = match.outOfStock ? '#dc2626' : '#1d4ed8';
+                    } else {
+                        circle.style.borderColor = key === 'white' ? '#e5e7eb' : 'transparent';
+                    }
+                });
+            }
+
+            const preview = document.getElementById('selectedColorPreview');
+            if (preview) {
+                const colorNameEl = document.getElementById('selectedColorName');
+                const previewCircle = preview.querySelector('.color-circle');
+                if (selectedColors.length === 0) {
+                    if (previewCircle) previewCircle.style.background = '#e5e7eb';
+                    if (colorNameEl) colorNameEl.textContent = 'Select colors...';
+                } else {
+                    const first = normalizeAdminColor(selectedColors[0]);
+                    const availableCount = selectedColors.filter(c => normalizeAdminColor(c).inStock).length;
+                    if (previewCircle) previewCircle.style.background = first.hex;
+                    if (colorNameEl) {
+                        colorNameEl.textContent = selectedColors.length === 1
+                            ? `${first.name}${first.outOfStock ? ' (Out of Stock)' : ''}`
+                            : `${selectedColors.length} colors (${availableCount} in stock)`;
+                    }
+                }
+            }
+        }
+
+        window.selectColor = (colorName, hexValue) => {
+            const cleanName = String(colorName || '').trim();
+            if (!cleanName) return;
+            const targetKey = cleanName.toLowerCase();
+            const existingIdx = selectedColors.findIndex(c => normalizeAdminColor(c).name.toLowerCase() === targetKey);
+
+            if (existingIdx === -1) {
+                selectedColors.push({ name: cleanName, hex: hexValue || getColorHexForAdmin(cleanName), inStock: true, outOfStock: false });
                 updateColorDisplay();
                 updateColorInput();
-
-                // Update the selected color preview in the dropdown trigger
-                const preview = document.getElementById('selectedColorPreview');
-                const colorName_el = document.getElementById('selectedColorName');
-                const colorCircle = preview.querySelector('.color-circle');
-
-                colorCircle.style.background = hexValue;
-                colorName_el.textContent = colorName;
-
-                // Update visual selection in grid
-                document.querySelectorAll('.color-circle').forEach(circle => {
-                    circle.classList.remove('selected');
-                });
-
-                const selectedCircle = document.querySelector(`[data-color="${colorName}"]`);
-                if (selectedCircle) {
-                    selectedCircle.classList.add('selected');
-                    selectedCircle.style.borderColor = '#1d4ed8';
-                }
-
-                // Visual feedback
-                notify('success', `Added ${colorName} to selection`, 'Color Added');
+                syncColorGridSelection();
+                notify('success', `Added ${cleanName} to selection`, 'Color Added');
             } else {
-                notify('warning', `${colorName} is already selected`, 'Color Already Selected');
+                selectedColors.splice(existingIdx, 1);
+                updateColorDisplay();
+                updateColorInput();
+                syncColorGridSelection();
+                notify('info', `Removed ${cleanName} from selection`, 'Color Removed');
             }
         };
 
@@ -1865,36 +1961,25 @@
             const colorPicker = document.getElementById('customColorPicker');
 
             const colorName = nameInput.value.trim();
-            const hexValue = colorPicker.value;
+            const hexValue = colorPicker.value || '#3b82f6';
 
             if (!colorName) {
                 notify('warning', 'Please enter a color name', 'Color Name Required');
                 return;
             }
 
-            // Check if color is already selected (by name)
-            const alreadySelected = selectedColors.some(color =>
-                (typeof color === 'string' ? color : color.name) === colorName
+            const targetKey = colorName.toLowerCase();
+            const alreadySelected = selectedColors.some(c =>
+                normalizeAdminColor(c).name.toLowerCase() === targetKey
             );
 
             if (!alreadySelected) {
-                // Store as object with both name and hex
-                selectedColors.push({ name: colorName, hex: hexValue });
-
-                // Add the custom color to the grid dynamically
-                const colorGrid = document.querySelector('.color-grid');
-                const newColorCircle = document.createElement('div');
-                newColorCircle.className = 'color-circle';
-                newColorCircle.setAttribute('data-color', colorName);
-                newColorCircle.setAttribute('data-hex', hexValue);
-                newColorCircle.style.background = hexValue;
-                newColorCircle.onclick = () => selectColor(colorName, hexValue);
-                colorGrid.appendChild(newColorCircle);
-
+                selectedColors.push({ name: colorName, hex: hexValue, inStock: true, outOfStock: false });
+                ensureColorCircleInGrid(colorName, hexValue);
                 updateColorDisplay();
                 updateColorInput();
+                syncColorGridSelection();
 
-                // Clear inputs
                 nameInput.value = '';
                 colorPicker.value = '#3b82f6';
 
@@ -1904,85 +1989,111 @@
             }
         };
 
-        window.removeColor = (colorName) => {
-            selectedColors = selectedColors.filter(color =>
-                (typeof color === 'string' ? color : color.name) !== colorName
-            );
+        window.toggleColorStock = (indexOrName) => {
+            let idx = -1;
+            if (typeof indexOrName === 'number') {
+                idx = indexOrName;
+            } else {
+                const targetKey = String(indexOrName || '').trim().toLowerCase();
+                idx = selectedColors.findIndex(c => normalizeAdminColor(c).name.toLowerCase() === targetKey);
+            }
+            if (idx < 0 || idx >= selectedColors.length) return;
+
+            const norm = normalizeAdminColor(selectedColors[idx]);
+            const nextOutOfStock = !norm.outOfStock;
+            selectedColors[idx] = {
+                name: norm.name,
+                hex: norm.hex,
+                inStock: !nextOutOfStock,
+                outOfStock: nextOutOfStock
+            };
+
             updateColorDisplay();
             updateColorInput();
+            syncColorGridSelection();
+            notify(
+                nextOutOfStock ? 'warning' : 'success',
+                `${norm.name} marked ${nextOutOfStock ? 'Out of Stock' : 'In Stock'}`,
+                'Color Stock Updated'
+            );
+        };
 
-            // Remove visual selection if it was the active one
-            const selectedCircle = document.querySelector(`[data-color="${colorName}"].selected`);
-            if (selectedCircle) {
-                selectedCircle.classList.remove('selected');
-                selectedCircle.style.borderColor = 'transparent';
-
-                // Reset to default blue selection if no colors left
-                if (selectedColors.length === 0) {
-                    const preview = document.getElementById('selectedColorPreview');
-                    const colorName_el = document.getElementById('selectedColorName');
-                    const colorCircle = preview.querySelector('.color-circle');
-
-                    colorCircle.style.background = '#3b82f6';
-                    colorName_el.textContent = 'Select Color';
-
-                    // Reset Blue as selected in grid
-                    const blueCircle = document.querySelector(`[data-color="Blue"]`);
-                    if (blueCircle) {
-                        blueCircle.classList.add('selected');
-                        blueCircle.style.borderColor = '#1d4ed8';
-                    }
-                }
+        window.removeColor = (indexOrName) => {
+            if (typeof indexOrName === 'number') {
+                selectedColors.splice(indexOrName, 1);
+            } else {
+                const targetKey = String(indexOrName || '').trim().toLowerCase();
+                selectedColors = selectedColors.filter(c =>
+                    normalizeAdminColor(c).name.toLowerCase() !== targetKey
+                );
             }
+            updateColorDisplay();
+            updateColorInput();
+            syncColorGridSelection();
         };
 
         function updateColorDisplay() {
-            console.log('Updating color display. Selected colors:', selectedColors);
             const container = document.getElementById('selectedColorsList');
-
-            if (!container) {
-                console.error('selectedColorsList container not found');
-                return;
-            }
+            if (!container) return;
 
             container.innerHTML = '';
 
             if (selectedColors.length === 0) {
-                container.innerHTML = '<span style="color: #999; font-style: italic; padding: 10px; display: flex; align-items: center; justify-content: center; min-height: 40px;">No colors selected</span>';
-            } else {
-                selectedColors.forEach(colorData => {
-                    // Handle both old string format and new object format
-                    const colorName = typeof colorData === 'string' ? colorData : colorData.name;
-                    const hexValue = typeof colorData === 'string' ?
-                        (document.querySelector(`[data-color="${colorData}"]`)?.getAttribute('data-hex') || '#6b7280') :
-                        colorData.hex;
-
-                    const tag = document.createElement('div');
-                    tag.className = 'selected-color-tag';
-                    tag.setAttribute('data-color', colorName);
-                    tag.innerHTML = `
-                <div class="tag-color-circle" style="background: ${hexValue};"></div>
-                <span class="tag-color-name">${colorName}</span>
-                <div class="remove-color" onclick="removeColor('${colorName}')">×</div>
-            `;
-                    container.appendChild(tag);
-                });
+                const emptyMsg = document.createElement('span');
+                emptyMsg.style.cssText = 'color: #9ca3af; font-style: italic; padding: 6px 4px; font-size: 13px; display: inline-flex; align-items: center;';
+                emptyMsg.textContent = 'No colors selected — open dropdown to select colors';
+                container.appendChild(emptyMsg);
+                return;
             }
 
-            console.log('Color display updated successfully');
+            selectedColors = selectedColors.map(normalizeAdminColor);
+            selectedColors.forEach((colorObj, idx) => {
+                const tag = document.createElement('div');
+                tag.className = `selected-color-tag${colorObj.outOfStock ? ' is-out-of-stock' : ''}`;
+                tag.setAttribute('data-color', colorObj.name);
+
+                const circle = document.createElement('div');
+                circle.className = 'tag-color-circle';
+                circle.style.background = colorObj.hex;
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'tag-color-name';
+                nameSpan.textContent = colorObj.name;
+
+                const stockBtn = document.createElement('button');
+                stockBtn.type = 'button';
+                stockBtn.className = `color-stock-toggle ${colorObj.outOfStock ? 'out-of-stock' : 'in-stock'}`;
+                stockBtn.title = colorObj.outOfStock
+                    ? `Click to mark ${colorObj.name} In Stock`
+                    : `Click to mark ${colorObj.name} Out of Stock`;
+                stockBtn.innerHTML = colorObj.outOfStock
+                    ? '<i class="fas fa-ban"></i> Out of Stock'
+                    : '<i class="fas fa-check"></i> In Stock';
+                stockBtn.onclick = () => toggleColorStock(idx);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-color';
+                removeBtn.title = `Remove ${colorObj.name}`;
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => removeColor(idx);
+
+                tag.appendChild(circle);
+                tag.appendChild(nameSpan);
+                tag.appendChild(stockBtn);
+                tag.appendChild(removeBtn);
+                container.appendChild(tag);
+            });
         }
 
         function updateColorInput() {
-            // Create a string that preserves both color names and hex values
-            const colorString = selectedColors.map(colorData => {
-                if (typeof colorData === 'string') {
-                    return colorData; // Backward compatibility for old format
-                } else {
-                    return `${colorData.name}:${colorData.hex}`; // New format with hex
-                }
+            const colorString = selectedColors.map(c => {
+                const norm = normalizeAdminColor(c);
+                return `${norm.name}:${norm.hex}${norm.outOfStock ? ':oos' : ''}`;
             }).join(', ');
 
-            document.getElementById('productColors').value = colorString;
+            const hiddenInput = document.getElementById('productColors');
+            if (hiddenInput) hiddenInput.value = colorString;
         }
 
         // Clear all colors
@@ -1990,6 +2101,7 @@
             selectedColors = [];
             updateColorDisplay();
             updateColorInput();
+            syncColorGridSelection();
         };
 
         // Reset form
@@ -2004,35 +2116,17 @@
             descriptionInput.value = "";
             document.getElementById("multiImageInput").value = "";
 
-            // Reset color selection to default Blue
-            selectedColors = [{ name: 'Blue', hex: '#3b82f6' }];
+            // Reset color selection cleanly (empty by default, no forced phantom color)
+            selectedColors = [];
             updateColorDisplay();
             updateColorInput();
-
-            // Reset color dropdown to blue selection
-            const preview = document.getElementById('selectedColorPreview');
-            const colorName_el = document.getElementById('selectedColorName');
-            const colorCircle = preview.querySelector('.color-circle');
-
-            colorCircle.style.background = '#3b82f6';
-            colorName_el.textContent = 'Blue';
-
-            // Reset visual selection in grid
-            document.querySelectorAll('.color-circle').forEach(circle => {
-                circle.classList.remove('selected');
-            });
-
-            const blueCircle = document.querySelector(`[data-color="Blue"]`);
-            if (blueCircle) {
-                blueCircle.classList.add('selected');
-                blueCircle.style.borderColor = '#1d4ed8';
-            }
+            syncColorGridSelection();
 
             // Close color dropdown if open
             const panel = document.getElementById('colorDropdownPanel');
             const arrow = document.getElementById('colorDropdownArrow');
-            panel.classList.remove('open');
-            arrow.classList.remove('rotated');
+            if (panel) panel.classList.remove('open');
+            if (arrow) arrow.classList.remove('rotated');
             isColorDropdownOpen = false;
 
             // Clear category selections
@@ -2557,10 +2651,16 @@
             products.forEach(product => {
                 const firstImage = Array.isArray(product.imgUrl) ? (product.imgUrl[0] || "") : (product.imgUrl || product.img || "");
 
-                // Check if product is out of stock (by category or stock field)
+                // Check if product is out of stock (by category, stock field, or all colors OOS)
+                const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
+                const oosColorsCount = normalizedColors.filter(c => c.outOfStock).length;
+                const allColorsOutOfStock = normalizedColors.length > 0 && oosColorsCount === normalizedColors.length;
                 const isOutOfStockByCategory = product.categories && product.categories.includes('out-of-stock');
                 const isOutOfStockByStock = product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0;
-                const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock;
+                const isOutOfStock = isOutOfStockByCategory || isOutOfStockByStock || allColorsOutOfStock;
+                const colorStatusLine = normalizedColors.length > 0 && oosColorsCount > 0 && !isOutOfStock
+                    ? `<p style="font-size: 0.78rem; color: #d97706; font-weight: 600; margin: 2px 0;">Colors: ${normalizedColors.length - oosColorsCount}/${normalizedColors.length} in stock (${oosColorsCount} out)</p>`
+                    : '';
 
                 // Calculate discount percentage for admin display
                 const discountPercentage = product.oldPrice && product.newPrice && Number(product.oldPrice) > Number(product.newPrice)
@@ -2576,6 +2676,7 @@
             <p>₹${product.price || product.newPrice}</p>
             ${isOutOfStock ? `<p class="stock-status-badge" style="color: #ef4444; font-weight: bold;"><i class="fas fa-ban"></i> OUT OF STOCK</p>` :
                         discountPercentage ? `<p class="stock-status-badge" style="color: #16a34a; font-weight: bold;">${discountPercentage}% OFF (In Stock)</p>` : '<p class="stock-status-badge" style="color: #666;">In Stock</p>'}
+            ${colorStatusLine}
             <div class="actions" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
                 <button class="edit-btn" onclick="editProduct('${product.id}')" style="flex: 1; min-width: 70px;"><i class="fas fa-edit"></i> Edit</button>
                 <button class="stock-btn" onclick="toggleProductStock('${product.id}', event)" title="${isOutOfStock ? 'Click to mark In Stock' : 'Click to mark Out of Stock'}" style="flex: 1.2; min-width: 95px; padding: 6px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: white; background: ${isOutOfStock ? '#16a34a' : '#ef4444'};">
@@ -2704,12 +2805,15 @@
             const product = allProducts.find(p => p.id === id);
             if (!product) return;
 
-            const isCurrentlyOutOfStock = (product.categories && product.categories.includes('out-of-stock')) || (product.stock !== undefined && Number(product.stock) <= 0);
+            const normalizedColors = Array.isArray(product.colors) ? product.colors.map(normalizeAdminColor) : [];
+            const allColorsWereOos = normalizedColors.length > 0 && normalizedColors.every(c => c.outOfStock);
+            const isCurrentlyOutOfStock = (product.categories && product.categories.includes('out-of-stock')) || (product.stock !== undefined && Number(product.stock) <= 0) || allColorsWereOos;
             const makeOutOfStock = !isCurrentlyOutOfStock;
 
             let currentCategories = Array.isArray(product.categories) ? [...product.categories] : (product.category ? [product.category] : []);
             let newCategories;
             let newStock;
+            let updatedColors = null;
 
             if (makeOutOfStock) {
                 newStock = 0;
@@ -2717,6 +2821,9 @@
             } else {
                 newStock = (product.stock && Number(product.stock) > 0) ? Number(product.stock) : 10;
                 newCategories = currentCategories.filter(c => c !== 'out-of-stock');
+                if (allColorsWereOos) {
+                    updatedColors = normalizedColors.map(c => ({ name: c.name, hex: c.hex, inStock: true, outOfStock: false }));
+                }
             }
 
             const originalBtnHTML = btn ? btn.innerHTML : '';
@@ -2730,11 +2837,17 @@
                     stock: newStock,
                     categories: newCategories
                 };
+                if (updatedColors) {
+                    patchData.colors = updatedColors;
+                }
                 await saveProductToFirestore(id, patchData, true);
 
                 // Update in memory and local storage caches
                 product.stock = newStock;
                 product.categories = newCategories;
+                if (updatedColors) {
+                    product.colors = updatedColors;
+                }
                 await setCachedProductsAsync(allProducts);
                 try {
                     localStorage.setItem('vexior_products_cache', JSON.stringify(allProducts));
@@ -2818,9 +2931,14 @@
             }
 
             const sizes = sizesInput.value.split(",").map(s => s.trim()).filter(s => s);
-            const colors = selectedColors;
+            const colors = selectedColors.map(normalizeAdminColor);
             const description = descriptionInput.value.trim();
             let categories = getSelectedProductCategories();
+
+            // If product has selected colors and ALL of them are marked Out of Stock, treat product stock as 0
+            if (colors.length > 0 && colors.every(c => c.outOfStock)) {
+                stock = 0;
+            }
 
             // Synchronize out-of-stock category with stock status
             if (stock === 0) {
@@ -3004,25 +3122,13 @@
             descriptionInput.value = product.description || "";
 
             // Load colors into the color selection system
-            const productColors = product.colors || [];
-            selectedColors = [];
-
-            productColors.forEach(colorData => {
-                if (typeof colorData === 'string') {
-                    if (colorData.includes(':')) {
-                        const [name, hex] = colorData.split(':');
-                        selectedColors.push({ name: name.trim(), hex: hex.trim() });
-                    } else {
-                        const hex = getColorHexForAdmin(colorData);
-                        selectedColors.push({ name: colorData, hex: hex });
-                    }
-                } else if (colorData && colorData.name && colorData.hex) {
-                    selectedColors.push(colorData);
-                }
-            });
+            const productColors = Array.isArray(product.colors) ? product.colors : [];
+            selectedColors = productColors.map(normalizeAdminColor);
+            selectedColors.forEach(c => ensureColorCircleInGrid(c.name, c.hex));
 
             updateColorDisplay();
             updateColorInput();
+            syncColorGridSelection();
 
             // Set categories if available (ensure availableCategories is loaded first)
             if (availableCategories.length === 0) {
@@ -3250,10 +3356,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM loaded, initializing color system');
 
-            // Initialize with default Blue color
-            selectedColors = [{ name: 'Blue', hex: '#3b82f6' }];
             updateColorDisplay();
             updateColorInput();
+            syncColorGridSelection();
 
             // Load categories for product form
             loadProductCategories();
@@ -3370,15 +3475,6 @@
 
         // Initial load
         loadProducts();
-
-        // Initialize color display (backup)
-        setTimeout(() => {
-            if (selectedColors.length === 0) {
-                selectedColors = [{ name: 'Blue', hex: '#3b82f6' }];
-            }
-            updateColorDisplay();
-            updateColorInput();
-        }, 100);
 
         // Highlight active link
         const path = window.location.pathname;
