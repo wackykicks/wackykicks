@@ -162,6 +162,89 @@ function getUnavailableVariantMessage(status) {
     return 'Sorry, this product is currently out of stock.';
 }
 
+function stepProductQuantity(delta) {
+    const input = document.getElementById('quantity');
+    if (!input || input.disabled) return;
+    const min = parseInt(input.min, 10) || 1;
+    const max = parseInt(input.max, 10) || 100;
+    const current = parseInt(input.value, 10) || min;
+    input.value = String(Math.min(max, Math.max(min, current + delta)));
+}
+window.stepProductQuantity = stepProductQuantity;
+
+function selectProductSlide(index) {
+    const slider = document.querySelector('.slider');
+    if (slider && slider.offsetWidth) {
+        slider.scrollTo({ left: slider.offsetWidth * index, behavior: 'smooth' });
+    }
+    document.querySelectorAll('.product-thumb').forEach((thumb, i) => {
+        thumb.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+}
+window.selectProductSlide = selectProductSlide;
+
+function resolveProductEyebrow(product) {
+    if (!product) return '';
+    const ignored = new Set(['all', 'today-offer', 'todays-offer', "today's offers", 'out-of-stock', 'out of stock']);
+    const isTechnicalId = (val) => /^[A-Za-z0-9]{15,}$/.test(val) && !/^[a-z]+$/.test(val) && !/^[A-Z]+$/.test(val);
+
+    let categoryMap = null;
+    try {
+        const rawCats = localStorage.getItem('vexior_categories_cache');
+        if (rawCats) {
+            const parsed = JSON.parse(rawCats);
+            const list = Array.isArray(parsed) ? parsed : (parsed.data || []);
+            categoryMap = new Map(list.filter(c => c && c.id && c.name).map(c => [String(c.id), String(c.name)]));
+        }
+    } catch (e) {}
+
+    const cats = Array.isArray(product.categories) ? product.categories : [];
+    for (const cat of cats) {
+        const mapped = categoryMap?.get(String(cat)) || String(cat || '').trim();
+        const lower = mapped.toLowerCase();
+        if (mapped && !ignored.has(lower) && !isTechnicalId(mapped)) {
+            return mapped.replace(/-/g, ' ').toUpperCase();
+        }
+    }
+
+    const nameLower = String(product.name || '').toLowerCase();
+    const knownBrands = [
+        'air jordan', 'jordan', 'nike', 'adidas', 'puma', 'reebok', 'converse',
+        'vans', 'new balance', 'under armour', 'crocs', 'birkenstock',
+        'ray-ban', 'rayban', 'oakley', 'rolex', 'casio', 'g-shock', 'fossil',
+        'tissot', 'seiko', 'omega', 'apple', 'samsung', 'boat', 'noise', 'fire-boltt'
+    ];
+    for (const brand of knownBrands) {
+        if (nameLower.includes(brand)) {
+            return brand.toUpperCase();
+        }
+    }
+    return '';
+}
+
+function formatProductDescriptionHTML(rawDescription) {
+    const raw = String(rawDescription || '').trim();
+    if (!raw) {
+        return '<p class="description">No description available.</p>';
+    }
+    const lines = raw
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+    if (lines.length > 1) {
+        const itemsHTML = lines.map(line => {
+            const cleanLine = line.replace(/^[-•*✓✔]+\s*/, '');
+            return `<li class="description-item"><i class="fas fa-check"></i><span>${escapeHtmlAttr(cleanLine)}</span></li>`;
+        }).join('');
+        return `<ul class="description-list">${itemsHTML}</ul>`;
+    }
+    return `<p class="description">${escapeHtmlAttr(lines[0])}</p>`;
+}
+
 function updatePurchaseControlsForSelectedVariant() {
     const product = window.currentProductData;
     const status = isSelectedVariantOutOfStock(product, window.selectedColor, window.selectedSize);
@@ -203,6 +286,7 @@ function updatePurchaseControlsForSelectedVariant() {
     const fixedAddBtn = document.getElementById('fixedAddToCart');
     const fixedBuyBtn = document.getElementById('fixedBuyNow');
     const qtyInput = document.getElementById('quantity');
+    const qtyStepBtns = document.querySelectorAll('.qty-step-btn');
 
     if (wholeOos) {
         if (fixedBar) {
@@ -217,6 +301,8 @@ function updatePurchaseControlsForSelectedVariant() {
                 btn.style.pointerEvents = 'none';
             }
         });
+        if (qtyInput) qtyInput.disabled = true;
+        qtyStepBtns.forEach(btn => { btn.disabled = true; });
         return;
     }
 
@@ -260,6 +346,9 @@ function updatePurchaseControlsForSelectedVariant() {
     if (qtyInput) {
         qtyInput.disabled = variantOosOnly;
     }
+    qtyStepBtns.forEach(btn => {
+        btn.disabled = variantOosOnly;
+    });
 }
 
 const updatePurchaseControlsForSelectedColor = updatePurchaseControlsForSelectedVariant;
@@ -297,23 +386,38 @@ function renderProductDetails(product) {
         window.currentProductData.normalizedSizes = sizes;
     }
 
-    // ✅ Build gallery HTML
+    // ✅ Build compact hero slider + square thumbnail grid
     let galleryHTML = `
-        <div class="slider">
-    `;
-    images.forEach(url => {
-        galleryHTML += `
-            <div class="image-slide">
-                <img src="${url}" alt="${product.name}">
+        <div class="product-main-image-wrap">
+            <div class="slider">
+                ${images.map((url, idx) => `
+                    <div class="image-slide">
+                        <img src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(product.name)} image ${idx + 1}">
+                    </div>
+                `).join('')}
             </div>
-        `;
-    });
-    galleryHTML += `</div>
-        <div class="photo-slider-arrows">
-            <button type="button" onclick="scrollPhotoSlider(-1)">&larr;</button>
-            <div class="pagination" id="pagination"></div>
-            <button type="button" onclick="scrollPhotoSlider(1)">&rarr;</button>
+            ${images.length > 1 ? `
+                <button type="button" class="slider-nav-btn slider-nav-prev" aria-label="Previous image" onclick="scrollPhotoSlider(-1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" class="slider-nav-btn slider-nav-next" aria-label="Next image" onclick="scrollPhotoSlider(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            ` : ''}
         </div>
+        ${images.length > 1 ? `
+            <div class="product-thumbnails" id="productThumbnails">
+                ${images.map((url, idx) => `
+                    <button type="button"
+                            class="product-thumb${idx === 0 ? ' active' : ''}"
+                            data-slide-index="${idx}"
+                            aria-label="View image ${idx + 1}"
+                            onclick="selectProductSlide(${idx})">
+                        <img src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(product.name)} thumbnail ${idx + 1}">
+                    </button>
+                `).join('')}
+            </div>
+        ` : ''}
     `;
 
     // Calculate discount percentage
@@ -345,9 +449,21 @@ function renderProductDetails(product) {
 
     let sizesHTML = '';
     if (sizes.length) {
+        const defaultSizeObj = defaultSizeIndex >= 0 ? sizes[defaultSizeIndex] : null;
+        const defaultSizeLabel = defaultSizeObj
+            ? ((isOutOfStock || !defaultSizeObj.inStock)
+                ? `Size ${defaultSizeObj.name} (Out of Stock)`
+                : `Selected Size: ${defaultSizeObj.name}`)
+            : 'Select Size';
+
         sizesHTML = `
             <div class="sizes">
-                <h4>Available Sizes:</h4>
+                <div class="variant-header-row">
+                    <h4 class="variant-label">Size</h4>
+                    <span class="selected-size-name${defaultSizeObj && (isOutOfStock || !defaultSizeObj.inStock) ? ' out-of-stock' : ''}" id="selectedSizeDisplay">
+                        ${escapeHtmlAttr(defaultSizeLabel)}
+                    </span>
+                </div>
                 <div class="size-pills-container">
         `;
         sizes.forEach((sizeObj, index) => {
@@ -366,16 +482,7 @@ function renderProductDetails(product) {
                 </button>
             `;
         });
-        const defaultSizeObj = defaultSizeIndex >= 0 ? sizes[defaultSizeIndex] : null;
-        const defaultSizeLabel = defaultSizeObj
-            ? ((isOutOfStock || !defaultSizeObj.inStock)
-                ? `Size ${defaultSizeObj.name} (Out of Stock)`
-                : `Selected Size: ${defaultSizeObj.name}`)
-            : 'Select Size';
         sizesHTML += `
-                </div>
-                <div class="selected-size-name${defaultSizeObj && (isOutOfStock || !defaultSizeObj.inStock) ? ' out-of-stock' : ''}" id="selectedSizeDisplay">
-                    ${escapeHtmlAttr(defaultSizeLabel)}
                 </div>
                 <div class="size-oos-notice" id="sizeOosNotice" style="display: none;">
                     <i class="fas fa-ban"></i>
@@ -387,11 +494,19 @@ function renderProductDetails(product) {
 
     let colorsHTML = '';
     if (colors.length) {
+        const defaultColorObj = defaultColorIndex >= 0 ? colors[defaultColorIndex] : null;
+        const defaultColorLabel = defaultColorObj
+            ? `${defaultColorObj.name}${isOutOfStock || !defaultColorObj.inStock ? ' (Out of Stock)' : ''}`
+            : 'Select Color';
+
         colorsHTML = `
             <div class="colors">
                 <div class="modern-color-selection">
-                    <div class="color-section-header">
-                        <h4 class="color-section-title">Colors</h4>
+                    <div class="color-section-header variant-header-row">
+                        <h4 class="color-section-title">Color</h4>
+                        <div class="selected-color-name${colors.length > 0 ? ' active' : ''}${defaultColorObj && (isOutOfStock || !defaultColorObj.inStock) ? ' out-of-stock' : ''}" id="selectedColorDisplay">
+                            ${escapeHtmlAttr(defaultColorLabel)}
+                        </div>
                     </div>
                     <div class="color-circles-container">
         `;
@@ -414,15 +529,7 @@ function renderProductDetails(product) {
             `;
         });
 
-        const defaultColorObj = defaultColorIndex >= 0 ? colors[defaultColorIndex] : null;
-        const defaultColorLabel = defaultColorObj
-            ? `${defaultColorObj.name}${isOutOfStock || !defaultColorObj.inStock ? ' (Out of Stock)' : ''}`
-            : 'Select Color';
-
         colorsHTML += `
-                        <div class="selected-color-name${colors.length > 0 ? ' active' : ''}${defaultColorObj && (isOutOfStock || !defaultColorObj.inStock) ? ' out-of-stock' : ''}" id="selectedColorDisplay">
-                            ${escapeHtmlAttr(defaultColorLabel)}
-                        </div>
                     </div>
                     <div class="color-oos-notice" id="colorOosNotice" style="display: none;">
                         <i class="fas fa-ban"></i>
@@ -448,10 +555,10 @@ function renderProductDetails(product) {
         }
         productButtonsHTML = `
             <div class="product-buttons out-of-stock-wrapper">
-                <button class="out-of-stock-main-btn" disabled style="width: 100%; background: #9ca3af !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; padding: 16px !important; font-size: 1.15rem !important; font-weight: 700 !important; cursor: not-allowed !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; box-shadow: none !important; pointer-events: none !important;">
+                <button class="out-of-stock-main-btn" disabled style="width: 100%; background: #9ca3af !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; padding: 14px !important; font-size: 1rem !important; font-weight: 700 !important; cursor: not-allowed !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; box-shadow: none !important; pointer-events: none !important;">
                     <i class="fas fa-ban"></i> Out of Stock
                 </button>
-                <p class="out-of-stock-subtext" style="width: 100%; text-align: center; margin-top: 10px; color: #dc2626; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <p class="out-of-stock-subtext" style="width: 100%; text-align: center; margin-top: 8px; color: #dc2626; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     <i class="fas fa-exclamation-circle"></i> ${oosReasonText}
                 </p>
             </div>
@@ -468,60 +575,59 @@ function renderProductDetails(product) {
         `;
     }
 
-    // ✅ Inject product HTML
+    const eyebrowText = resolveProductEyebrow(product);
+    const safePrice = product.newPrice || product.price;
+    const descriptionHTML = formatProductDescriptionHTML(product.description);
+
+    // ✅ Inject compact product HTML
     productDetails.innerHTML = `
         <div class="product-container">
             <div class="product-gallery">
                 ${galleryHTML}
             </div>
             <div class="product-info">
-                <h2>${product.name}</h2>
+                <div class="product-meta-row">
+                    ${eyebrowText ? `<span class="product-eyebrow">${escapeHtmlAttr(eyebrowText)}</span>` : '<span class="product-eyebrow">VEXIOR</span>'}
+                    <button type="button" class="share-btn" onclick="shareProduct('${product.name.replace(/'/g, "\\'")}', '${safePrice}', window.location.href)" title="Share product">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+                <h2>${escapeHtmlAttr(product.name)}</h2>
                 <div class="price">
-                    ${product.oldPrice ? `<span class="old-price">₹${product.oldPrice}</span>` : ''}
-                    <span class="new-price">₹${product.newPrice || product.price}</span>
+                    <span class="new-price">₹${escapeHtmlAttr(safePrice)}</span>
+                    ${product.oldPrice ? `<span class="old-price">₹${escapeHtmlAttr(product.oldPrice)}</span>` : ''}
                     ${discountPercentage && !isOutOfStock ? `<span class="discount-tag-price">${discountPercentage}% OFF</span>` : ''}
                     ${isOutOfStock ? `<span class="out-stock-tag-price">Out of Stock</span>` : ''}
                 </div>
+                ${sizesHTML}
                 ${colorsHTML}
                 <div class="quantity-container">
-                    <span>Quantity:</span>
-                    <input type="number" id="quantity" value="1" min="1" max="100" ${isOutOfStock ? 'disabled style="background:#f3f4f6;cursor:not-allowed;"' : ''}>
+                    <button type="button" class="qty-step-btn" onclick="stepProductQuantity(-1)" aria-label="Decrease quantity" ${isOutOfStock ? 'disabled' : ''}>&minus;</button>
+                    <input type="number" id="quantity" value="1" min="1" max="100" aria-label="Quantity" ${isOutOfStock ? 'disabled style="background:#f3f4f6;cursor:not-allowed;"' : ''}>
+                    <button type="button" class="qty-step-btn" onclick="stepProductQuantity(1)" aria-label="Increase quantity" ${isOutOfStock ? 'disabled' : ''}>+</button>
                 </div>
-                <button class="share-btn" onclick="shareProduct('${product.name}', '${product.newPrice || product.price}', window.location.href)">Share</button>
-                ${sizesHTML}
-                <p class="description">${product.description || 'No description available.'}</p>
                 ${productButtonsHTML}
+                <div class="product-description-section">
+                    <div class="description-heading">Description</div>
+                    ${descriptionHTML}
+                </div>
             </div>
         </div>
     `;
 
-    // ✅ Setup slider & pagination (AFTER rendering HTML)
+    // ✅ Sync active thumbnail on horizontal slider scroll
     const slider = document.querySelector('.slider');
-    const pagination = document.getElementById('pagination');
-
-    if (slider && pagination) {
-        pagination.innerHTML = '';
-        images.forEach((url, index) => {
-            const dot = document.createElement('span');
-            dot.classList.add('dot');
-            if (index === 0) dot.classList.add('active');
-
-            dot.addEventListener('click', () => {
-                slider.scrollTo({
-                    left: slider.offsetWidth * index,
-                    behavior: 'smooth'
-                });
-            });
-
-            pagination.appendChild(dot);
-        });
-
+    if (slider) {
         slider.addEventListener('scroll', () => {
+            if (!slider.offsetWidth) return;
             const index = Math.round(slider.scrollLeft / slider.offsetWidth);
+            document.querySelectorAll('.product-thumb').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
             document.querySelectorAll('.dot').forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);
             });
-        });
+        }, { passive: true });
     }
 
     // ✅ Auto-adjust layout based on image size
@@ -1851,14 +1957,16 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-window.addEventListener('scroll', () => {
+function revealVisibleFeatures() {
     document.querySelectorAll('.feature').forEach(el => {
         const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight - 100) {
+        if (rect.top < window.innerHeight - 40) {
             el.classList.add('visible');
         }
     });
-});
+}
+window.addEventListener('scroll', revealVisibleFeatures, { passive: true });
+document.addEventListener('DOMContentLoaded', revealVisibleFeatures);
 
 // ✅ Load Related Products
 async function loadRelatedProducts() {
@@ -2052,17 +2160,14 @@ function adjustLayoutToImageSize() {
         const imageAspectRatio = this.naturalWidth / this.naturalHeight;
         const imageWidth = this.offsetWidth;
 
-        // If image is smaller or more square, reduce gap
-        if (imageAspectRatio >= 0.8 && imageWidth < 400) {
-            productContainer.style.gap = '15px';
-            productContainer.classList.add('compact-layout');
-        } else if (imageWidth < 300) {
-            productContainer.style.gap = '10px';
+        // Keep desktop gap compact and let CSS media queries control mobile spacing
+        productContainer.style.gap = '';
+        productContainer.classList.remove('compact-layout', 'very-compact-layout');
+
+        if (imageWidth < 300) {
             productContainer.classList.add('very-compact-layout');
-        } else {
-            // Default gap for larger images
-            productContainer.style.gap = '30px';
-            productContainer.classList.remove('compact-layout', 'very-compact-layout');
+        } else if (imageAspectRatio >= 0.8 && imageWidth < 400) {
+            productContainer.classList.add('compact-layout');
         }
     };
 
